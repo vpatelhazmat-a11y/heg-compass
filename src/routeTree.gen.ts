@@ -15,7 +15,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
+import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment.index'
+import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment.$equipmentId'
 import { Route as AuthenticatedSitesIndexRouteImport } from './routes/_authenticated/sites.index'
+import { Route as AuthenticatedSitesSiteIdRouteImport } from './routes/_authenticated/sites.$siteId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -49,18 +52,39 @@ const AuthenticatedCustomersCustomerIdRoute =
     path: '/customers/$customerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedEquipmentIndexRoute =
+  AuthenticatedEquipmentIndexRouteImport.update({
+    id: '/equipment/',
+    path: '/equipment/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedEquipmentEquipmentIdRoute =
+  AuthenticatedEquipmentEquipmentIdRouteImport.update({
+    id: '/equipment/$equipmentId',
+    path: '/equipment/$equipmentId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSitesIndexRoute = AuthenticatedSitesIndexRouteImport.update({
   id: '/sites/',
   path: '/sites/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSitesSiteIdRoute =
+  AuthenticatedSitesSiteIdRouteImport.update({
+    id: '/sites/$siteId',
+    path: '/sites/$siteId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
+  '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -68,7 +92,10 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
+  '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
+  '/equipment': typeof AuthenticatedEquipmentIndexRoute
   '/sites': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRoutesById {
@@ -78,7 +105,10 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
+  '/_authenticated/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
+  '/_authenticated/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/_authenticated/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/_authenticated/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRouteTypes {
@@ -88,7 +118,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/command-center'
     | '/customers/$customerId'
+    | '/equipment/$equipmentId'
+    | '/sites/$siteId'
     | '/customers/'
+    | '/equipment/'
     | '/sites/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -96,7 +129,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/command-center'
     | '/customers/$customerId'
+    | '/equipment/$equipmentId'
+    | '/sites/$siteId'
     | '/customers'
+    | '/equipment'
     | '/sites'
   id:
     | '__root__'
@@ -105,7 +141,10 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/command-center'
     | '/_authenticated/customers/$customerId'
+    | '/_authenticated/equipment/$equipmentId'
+    | '/_authenticated/sites/$siteId'
     | '/_authenticated/customers/'
+    | '/_authenticated/equipment/'
     | '/_authenticated/sites/'
   fileRoutesById: FileRoutesById
 }
@@ -159,11 +198,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomersCustomerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/equipment/': {
+      id: '/_authenticated/equipment/'
+      path: '/equipment'
+      fullPath: '/equipment/'
+      preLoaderRoute: typeof AuthenticatedEquipmentIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/equipment/$equipmentId': {
+      id: '/_authenticated/equipment/$equipmentId'
+      path: '/equipment/$equipmentId'
+      fullPath: '/equipment/$equipmentId'
+      preLoaderRoute: typeof AuthenticatedEquipmentEquipmentIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sites/': {
       id: '/_authenticated/sites/'
       path: '/sites'
       fullPath: '/sites/'
       preLoaderRoute: typeof AuthenticatedSitesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sites/$siteId': {
+      id: '/_authenticated/sites/$siteId'
+      path: '/sites/$siteId'
+      fullPath: '/sites/$siteId'
+      preLoaderRoute: typeof AuthenticatedSitesSiteIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
   }
@@ -172,14 +232,21 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
+  AuthenticatedEquipmentEquipmentIdRoute: typeof AuthenticatedEquipmentEquipmentIdRoute
+  AuthenticatedSitesSiteIdRoute: typeof AuthenticatedSitesSiteIdRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
+  AuthenticatedEquipmentIndexRoute: typeof AuthenticatedEquipmentIndexRoute
   AuthenticatedSitesIndexRoute: typeof AuthenticatedSitesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
+  AuthenticatedEquipmentEquipmentIdRoute:
+    AuthenticatedEquipmentEquipmentIdRoute,
+  AuthenticatedSitesSiteIdRoute: AuthenticatedSitesSiteIdRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
+  AuthenticatedEquipmentIndexRoute: AuthenticatedEquipmentIndexRoute,
   AuthenticatedSitesIndexRoute: AuthenticatedSitesIndexRoute,
 }
 
