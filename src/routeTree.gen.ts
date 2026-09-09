@@ -13,10 +13,13 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
+import { Route as AuthenticatedBidsIndexRouteImport } from './routes/_authenticated/bids.index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
 import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment.index'
 import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment.$equipmentId'
+import { Route as AuthenticatedSafetyIndexRouteImport } from './routes/_authenticated/safety.index'
+import { Route as AuthenticatedSalesIndexRouteImport } from './routes/_authenticated/sales.index'
 import { Route as AuthenticatedSitesIndexRouteImport } from './routes/_authenticated/sites.index'
 import { Route as AuthenticatedSitesSiteIdRouteImport } from './routes/_authenticated/sites.$siteId'
 
@@ -40,6 +43,11 @@ const AuthenticatedCommandCenterRoute =
     path: '/command-center',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBidsIndexRoute = AuthenticatedBidsIndexRouteImport.update({
+  id: '/bids/',
+  path: '/bids/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCustomersIndexRoute =
   AuthenticatedCustomersIndexRouteImport.update({
     id: '/customers/',
@@ -64,6 +72,17 @@ const AuthenticatedEquipmentEquipmentIdRoute =
     path: '/equipment/$equipmentId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSafetyIndexRoute =
+  AuthenticatedSafetyIndexRouteImport.update({
+    id: '/safety/',
+    path: '/safety/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedSalesIndexRoute = AuthenticatedSalesIndexRouteImport.update({
+  id: '/sales/',
+  path: '/sales/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSitesIndexRoute = AuthenticatedSitesIndexRouteImport.update({
   id: '/sites/',
   path: '/sites/',
@@ -83,8 +102,11 @@ export interface FileRoutesByFullPath {
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
+  '/bids/': typeof AuthenticatedBidsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/equipment/': typeof AuthenticatedEquipmentIndexRoute
+  '/safety/': typeof AuthenticatedSafetyIndexRoute
+  '/sales/': typeof AuthenticatedSalesIndexRoute
   '/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRoutesByTo {
@@ -94,8 +116,11 @@ export interface FileRoutesByTo {
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
+  '/bids': typeof AuthenticatedBidsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/equipment': typeof AuthenticatedEquipmentIndexRoute
+  '/safety': typeof AuthenticatedSafetyIndexRoute
+  '/sales': typeof AuthenticatedSalesIndexRoute
   '/sites': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRoutesById {
@@ -107,8 +132,11 @@ export interface FileRoutesById {
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
   '/_authenticated/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
+  '/_authenticated/bids/': typeof AuthenticatedBidsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/equipment/': typeof AuthenticatedEquipmentIndexRoute
+  '/_authenticated/safety/': typeof AuthenticatedSafetyIndexRoute
+  '/_authenticated/sales/': typeof AuthenticatedSalesIndexRoute
   '/_authenticated/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRouteTypes {
@@ -120,8 +148,11 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/equipment/$equipmentId'
     | '/sites/$siteId'
+    | '/bids/'
     | '/customers/'
     | '/equipment/'
+    | '/safety/'
+    | '/sales/'
     | '/sites/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -131,8 +162,11 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/equipment/$equipmentId'
     | '/sites/$siteId'
+    | '/bids'
     | '/customers'
     | '/equipment'
+    | '/safety'
+    | '/sales'
     | '/sites'
   id:
     | '__root__'
@@ -143,8 +177,11 @@ export interface FileRouteTypes {
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/equipment/$equipmentId'
     | '/_authenticated/sites/$siteId'
+    | '/_authenticated/bids/'
     | '/_authenticated/customers/'
     | '/_authenticated/equipment/'
+    | '/_authenticated/safety/'
+    | '/_authenticated/sales/'
     | '/_authenticated/sites/'
   fileRoutesById: FileRoutesById
 }
@@ -184,6 +221,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCommandCenterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/bids/': {
+      id: '/_authenticated/bids/'
+      path: '/bids'
+      fullPath: '/bids/'
+      preLoaderRoute: typeof AuthenticatedBidsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/customers/': {
       id: '/_authenticated/customers/'
       path: '/customers'
@@ -212,6 +256,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEquipmentEquipmentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/safety/': {
+      id: '/_authenticated/safety/'
+      path: '/safety'
+      fullPath: '/safety/'
+      preLoaderRoute: typeof AuthenticatedSafetyIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sales/': {
+      id: '/_authenticated/sales/'
+      path: '/sales'
+      fullPath: '/sales/'
+      preLoaderRoute: typeof AuthenticatedSalesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/sites/': {
       id: '/_authenticated/sites/'
       path: '/sites'
@@ -234,8 +292,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedEquipmentEquipmentIdRoute: typeof AuthenticatedEquipmentEquipmentIdRoute
   AuthenticatedSitesSiteIdRoute: typeof AuthenticatedSitesSiteIdRoute
+  AuthenticatedBidsIndexRoute: typeof AuthenticatedBidsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedEquipmentIndexRoute: typeof AuthenticatedEquipmentIndexRoute
+  AuthenticatedSafetyIndexRoute: typeof AuthenticatedSafetyIndexRoute
+  AuthenticatedSalesIndexRoute: typeof AuthenticatedSalesIndexRoute
   AuthenticatedSitesIndexRoute: typeof AuthenticatedSitesIndexRoute
 }
 
@@ -245,8 +306,11 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEquipmentEquipmentIdRoute:
     AuthenticatedEquipmentEquipmentIdRoute,
   AuthenticatedSitesSiteIdRoute: AuthenticatedSitesSiteIdRoute,
+  AuthenticatedBidsIndexRoute: AuthenticatedBidsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedEquipmentIndexRoute: AuthenticatedEquipmentIndexRoute,
+  AuthenticatedSafetyIndexRoute: AuthenticatedSafetyIndexRoute,
+  AuthenticatedSalesIndexRoute: AuthenticatedSalesIndexRoute,
   AuthenticatedSitesIndexRoute: AuthenticatedSitesIndexRoute,
 }
 
