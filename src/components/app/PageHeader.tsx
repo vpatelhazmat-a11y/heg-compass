@@ -12,10 +12,10 @@ export function PageHeader({
   actions,
 }: {
   title: string;
-  description?: string;
-  breadcrumbs?: Crumb[];
-  meta?: ReactNode;
-  actions?: ReactNode;
+  description?: string | undefined;
+  breadcrumbs?: Crumb[] | undefined;
+  meta?: ReactNode | undefined;
+  actions?: ReactNode | undefined;
 }) {
   return (
     <header className="border-b border-border bg-surface px-6 py-5">

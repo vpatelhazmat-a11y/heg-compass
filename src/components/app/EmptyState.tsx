@@ -8,9 +8,9 @@ export function EmptyState({
   icon,
 }: {
   title: string;
-  description?: string;
-  action?: ReactNode;
-  icon?: ReactNode;
+  description?: string | undefined;
+  action?: ReactNode | undefined;
+  icon?: ReactNode | undefined;
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-surface px-6 py-14 text-center">
@@ -37,7 +37,7 @@ export function LoadingState({ label = "Loading" }: { label?: string }) {
   );
 }
 
-export function ErrorState({ message, onRetry }: { message?: string; onRetry?: () => void }) {
+export function ErrorState({ message, onRetry }: { message?: string | undefined; onRetry?: (() => void) | undefined }) {
   return (
     <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-4 text-sm">
       <p className="font-medium text-danger">We couldn't load this information.</p>

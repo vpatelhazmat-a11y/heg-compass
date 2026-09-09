@@ -145,7 +145,7 @@ export function RecordForm({
                               id={id}
                               checked={Boolean(values[field.name])}
                               onCheckedChange={(checked) =>
-                                setValues((prev) => ({ ...prev, [field.name]: Boolean(checked) }))
+                                setValues((prev: Row) => ({ ...prev, [field.name]: Boolean(checked) }))
                               }
                             />
                             <Label htmlFor={id} className="text-sm font-normal">
@@ -164,13 +164,13 @@ export function RecordForm({
                                 rows={3}
                                 value={values[field.name] ?? ""}
                                 placeholder={field.placeholder}
-                                onChange={(event) => setValues((prev) => ({ ...prev, [field.name]: event.target.value }))}
+                                onChange={(event) => setValues((prev: Row) => ({ ...prev, [field.name]: event.target.value }))}
                               />
                             ) : field.type === "select" ? (
                               <select
                                 id={id}
                                 value={values[field.name] ?? ""}
-                                onChange={(event) => setValues((prev) => ({ ...prev, [field.name]: event.target.value }))}
+                                onChange={(event) => setValues((prev: Row) => ({ ...prev, [field.name]: event.target.value }))}
                                 className="h-9 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground"
                               >
                                 <option value="">Select…</option>
@@ -188,7 +188,7 @@ export function RecordForm({
                                 value={values[field.name] ?? ""}
                                 placeholder={field.placeholder}
                                 aria-invalid={Boolean(error)}
-                                onChange={(event) => setValues((prev) => ({ ...prev, [field.name]: event.target.value }))}
+                                onChange={(event) => setValues((prev: Row) => ({ ...prev, [field.name]: event.target.value }))}
                               />
                             )}
                             {field.help && !error && <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>}

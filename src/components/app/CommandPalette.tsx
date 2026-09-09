@@ -78,7 +78,7 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
   };
 
   return (
-    <CommandDialog open={open} onOpenChange={onOpenChange} shouldFilter={false}>
+    <CommandDialog open={open} onOpenChange={onOpenChange}>
       <CommandInput value={term} onValueChange={setTerm} placeholder="Search customers, sites, equipment, bids…" />
       <CommandList>
         {term.trim().length < 2 ? (

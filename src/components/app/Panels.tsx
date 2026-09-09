@@ -9,12 +9,12 @@ export function Panel({
   className,
   footer,
 }: {
-  title?: string;
-  description?: string;
-  actions?: ReactNode;
+  title?: string | undefined;
+  description?: string | undefined;
+  actions?: ReactNode | undefined;
   children: ReactNode;
-  className?: string;
-  footer?: ReactNode;
+  className?: string | undefined;
+  footer?: ReactNode | undefined;
 }) {
   return (
     <section className={cn("rounded-lg border border-border bg-surface", className)}>
@@ -65,9 +65,9 @@ export function StatTile({
 }: {
   label: string;
   value: ReactNode;
-  hint?: string;
-  tone?: "neutral" | "danger" | "warning" | "success" | "info";
-  onClick?: () => void;
+  hint?: string | undefined;
+  tone?: ("neutral" | "danger" | "warning" | "success" | "info") | undefined;
+  onClick?: (() => void) | undefined;
 }) {
   const toneClass = {
     neutral: "text-foreground",
