@@ -210,6 +210,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={() => navigate({ to: "/profile" })}>Your profile</DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => navigate({ to: "/settings" })}>Settings</DropdownMenuItem>
                 <DropdownMenuItem onSelect={signOut}>
                   <LogOut className="h-4 w-4" aria-hidden /> Sign out
                 </DropdownMenuItem>
