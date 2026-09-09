@@ -5,7 +5,9 @@ import { supabase } from "@/integrations/supabase/client";
  * to the database client directly and every table gets the same behaviour.
  */
 
-export type Row = Record<string, any>;
+// Records are dynamic across many tables, so callers get permissive access.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type Row = any;
 
 export type ListOptions = {
   select?: string;
