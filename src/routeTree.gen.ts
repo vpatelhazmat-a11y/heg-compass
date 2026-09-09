@@ -15,6 +15,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedCommandCenterRouteImport } from './routes/_authenticated/command-center'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers.index'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers.$customerId'
+import { Route as AuthenticatedSitesIndexRouteImport } from './routes/_authenticated/sites.index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -48,6 +49,11 @@ const AuthenticatedCustomersCustomerIdRoute =
     path: '/customers/$customerId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSitesIndexRoute = AuthenticatedSitesIndexRouteImport.update({
+  id: '/sites/',
+  path: '/sites/',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -55,6 +61,7 @@ export interface FileRoutesByFullPath {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -62,6 +69,7 @@ export interface FileRoutesByTo {
   '/command-center': typeof AuthenticatedCommandCenterRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
+  '/sites': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -71,14 +79,25 @@ export interface FileRoutesById {
   '/_authenticated/command-center': typeof AuthenticatedCommandCenterRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
+  '/_authenticated/sites/': typeof AuthenticatedSitesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/auth' | '/command-center' | '/customers/$customerId' | '/customers/'
+    | '/'
+    | '/auth'
+    | '/command-center'
+    | '/customers/$customerId'
+    | '/customers/'
+    | '/sites/'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/auth' | '/command-center' | '/customers/$customerId' | '/customers'
+    | '/'
+    | '/auth'
+    | '/command-center'
+    | '/customers/$customerId'
+    | '/customers'
+    | '/sites'
   id:
     | '__root__'
     | '/'
@@ -87,6 +106,7 @@ export interface FileRouteTypes {
     | '/_authenticated/command-center'
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/customers/'
+    | '/_authenticated/sites/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -139,6 +159,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCustomersCustomerIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sites/': {
+      id: '/_authenticated/sites/'
+      path: '/sites'
+      fullPath: '/sites/'
+      preLoaderRoute: typeof AuthenticatedSitesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -146,12 +173,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCommandCenterRoute: typeof AuthenticatedCommandCenterRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
+  AuthenticatedSitesIndexRoute: typeof AuthenticatedSitesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCommandCenterRoute: AuthenticatedCommandCenterRoute,
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
+  AuthenticatedSitesIndexRoute: AuthenticatedSitesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
