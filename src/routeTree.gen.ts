@@ -22,6 +22,7 @@ import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_
 import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment.index'
 import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment.$equipmentId'
 import { Route as AuthenticatedKnowledgeIndexRouteImport } from './routes/_authenticated/knowledge.index'
+import { Route as AuthenticatedLostLoadsNewRouteImport } from './routes/_authenticated/lost-loads.new'
 import { Route as AuthenticatedRefusedLoadsIndexRouteImport } from './routes/_authenticated/refused-loads.index'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
 import { Route as AuthenticatedSafetyIndexRouteImport } from './routes/_authenticated/safety.index'
@@ -100,6 +101,12 @@ const AuthenticatedKnowledgeIndexRoute =
     path: '/knowledge/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLostLoadsNewRoute =
+  AuthenticatedLostLoadsNewRouteImport.update({
+    id: '/lost-loads/new',
+    path: '/lost-loads/new',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRefusedLoadsIndexRoute =
   AuthenticatedRefusedLoadsIndexRouteImport.update({
     id: '/refused-loads/',
@@ -148,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
+  '/lost-loads/new': typeof AuthenticatedLostLoadsNewRoute
   '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/bids/': typeof AuthenticatedBidsIndexRoute
@@ -169,6 +177,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
+  '/lost-loads/new': typeof AuthenticatedLostLoadsNewRoute
   '/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/bids': typeof AuthenticatedBidsIndexRoute
@@ -192,6 +201,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/equipment/$equipmentId': typeof AuthenticatedEquipmentEquipmentIdRoute
+  '/_authenticated/lost-loads/new': typeof AuthenticatedLostLoadsNewRoute
   '/_authenticated/sites/$siteId': typeof AuthenticatedSitesSiteIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/bids/': typeof AuthenticatedBidsIndexRoute
@@ -215,6 +225,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/customers/$customerId'
     | '/equipment/$equipmentId'
+    | '/lost-loads/new'
     | '/sites/$siteId'
     | '/admin/'
     | '/bids/'
@@ -236,6 +247,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/customers/$customerId'
     | '/equipment/$equipmentId'
+    | '/lost-loads/new'
     | '/sites/$siteId'
     | '/admin'
     | '/bids'
@@ -258,6 +270,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/equipment/$equipmentId'
+    | '/_authenticated/lost-loads/new'
     | '/_authenticated/sites/$siteId'
     | '/_authenticated/admin/'
     | '/_authenticated/bids/'
@@ -371,6 +384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKnowledgeIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lost-loads/new': {
+      id: '/_authenticated/lost-loads/new'
+      path: '/lost-loads/new'
+      fullPath: '/lost-loads/new'
+      preLoaderRoute: typeof AuthenticatedLostLoadsNewRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/refused-loads/': {
       id: '/_authenticated/refused-loads/'
       path: '/refused-loads'
@@ -429,6 +449,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedEquipmentEquipmentIdRoute: typeof AuthenticatedEquipmentEquipmentIdRoute
+  AuthenticatedLostLoadsNewRoute: typeof AuthenticatedLostLoadsNewRoute
   AuthenticatedSitesSiteIdRoute: typeof AuthenticatedSitesSiteIdRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
   AuthenticatedBidsIndexRoute: typeof AuthenticatedBidsIndexRoute
@@ -450,6 +471,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
   AuthenticatedEquipmentEquipmentIdRoute:
     AuthenticatedEquipmentEquipmentIdRoute,
+  AuthenticatedLostLoadsNewRoute: AuthenticatedLostLoadsNewRoute,
   AuthenticatedSitesSiteIdRoute: AuthenticatedSitesSiteIdRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
   AuthenticatedBidsIndexRoute: AuthenticatedBidsIndexRoute,
