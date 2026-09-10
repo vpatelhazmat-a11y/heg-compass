@@ -203,7 +203,7 @@ export function RefusedLoadForm({
       return insertRow("refused_loads", payload);
     },
     onSuccess: (row) => {
-      void recordAudit("refused_load", row.id, recordId ? "update" : "create");
+      void recordAudit({ entity_type: "refused_load", entity_id: row.id, action: recordId ? "update" : "create" });
       queryClient.invalidateQueries({ queryKey: ["refused-loads"] });
       toast.success(recordId ? "Refused load updated" : "Refused load recorded");
       if (intent === "again") setForm({ ...empty, cs_rep: form.cs_rep, call_in_date: form.call_in_date });
