@@ -22,6 +22,7 @@ import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_
 import { Route as AuthenticatedEquipmentIndexRouteImport } from './routes/_authenticated/equipment.index'
 import { Route as AuthenticatedEquipmentEquipmentIdRouteImport } from './routes/_authenticated/equipment.$equipmentId'
 import { Route as AuthenticatedKnowledgeIndexRouteImport } from './routes/_authenticated/knowledge.index'
+import { Route as AuthenticatedLostLoadsIndexRouteImport } from './routes/_authenticated/lost-loads.index'
 import { Route as AuthenticatedLostLoadsNewRouteImport } from './routes/_authenticated/lost-loads.new'
 import { Route as AuthenticatedRefusedLoadsIndexRouteImport } from './routes/_authenticated/refused-loads.index'
 import { Route as AuthenticatedReportsIndexRouteImport } from './routes/_authenticated/reports.index'
@@ -101,6 +102,12 @@ const AuthenticatedKnowledgeIndexRoute =
     path: '/knowledge/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedLostLoadsIndexRoute =
+  AuthenticatedLostLoadsIndexRouteImport.update({
+    id: '/lost-loads/',
+    path: '/lost-loads/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedLostLoadsNewRoute =
   AuthenticatedLostLoadsNewRouteImport.update({
     id: '/lost-loads/new',
@@ -162,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/knowledge/': typeof AuthenticatedKnowledgeIndexRoute
+  '/lost-loads/': typeof AuthenticatedLostLoadsIndexRoute
   '/refused-loads/': typeof AuthenticatedRefusedLoadsIndexRoute
   '/reports/': typeof AuthenticatedReportsIndexRoute
   '/safety/': typeof AuthenticatedSafetyIndexRoute
@@ -184,6 +192,7 @@ export interface FileRoutesByTo {
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/equipment': typeof AuthenticatedEquipmentIndexRoute
   '/knowledge': typeof AuthenticatedKnowledgeIndexRoute
+  '/lost-loads': typeof AuthenticatedLostLoadsIndexRoute
   '/refused-loads': typeof AuthenticatedRefusedLoadsIndexRoute
   '/reports': typeof AuthenticatedReportsIndexRoute
   '/safety': typeof AuthenticatedSafetyIndexRoute
@@ -208,6 +217,7 @@ export interface FileRoutesById {
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/equipment/': typeof AuthenticatedEquipmentIndexRoute
   '/_authenticated/knowledge/': typeof AuthenticatedKnowledgeIndexRoute
+  '/_authenticated/lost-loads/': typeof AuthenticatedLostLoadsIndexRoute
   '/_authenticated/refused-loads/': typeof AuthenticatedRefusedLoadsIndexRoute
   '/_authenticated/reports/': typeof AuthenticatedReportsIndexRoute
   '/_authenticated/safety/': typeof AuthenticatedSafetyIndexRoute
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/customers/'
     | '/equipment/'
     | '/knowledge/'
+    | '/lost-loads/'
     | '/refused-loads/'
     | '/reports/'
     | '/safety/'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/customers'
     | '/equipment'
     | '/knowledge'
+    | '/lost-loads'
     | '/refused-loads'
     | '/reports'
     | '/safety'
@@ -277,6 +289,7 @@ export interface FileRouteTypes {
     | '/_authenticated/customers/'
     | '/_authenticated/equipment/'
     | '/_authenticated/knowledge/'
+    | '/_authenticated/lost-loads/'
     | '/_authenticated/refused-loads/'
     | '/_authenticated/reports/'
     | '/_authenticated/safety/'
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKnowledgeIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/lost-loads/': {
+      id: '/_authenticated/lost-loads/'
+      path: '/lost-loads'
+      fullPath: '/lost-loads/'
+      preLoaderRoute: typeof AuthenticatedLostLoadsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/lost-loads/new': {
       id: '/_authenticated/lost-loads/new'
       path: '/lost-loads/new'
@@ -456,6 +476,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedEquipmentIndexRoute: typeof AuthenticatedEquipmentIndexRoute
   AuthenticatedKnowledgeIndexRoute: typeof AuthenticatedKnowledgeIndexRoute
+  AuthenticatedLostLoadsIndexRoute: typeof AuthenticatedLostLoadsIndexRoute
   AuthenticatedRefusedLoadsIndexRoute: typeof AuthenticatedRefusedLoadsIndexRoute
   AuthenticatedReportsIndexRoute: typeof AuthenticatedReportsIndexRoute
   AuthenticatedSafetyIndexRoute: typeof AuthenticatedSafetyIndexRoute
@@ -478,6 +499,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedEquipmentIndexRoute: AuthenticatedEquipmentIndexRoute,
   AuthenticatedKnowledgeIndexRoute: AuthenticatedKnowledgeIndexRoute,
+  AuthenticatedLostLoadsIndexRoute: AuthenticatedLostLoadsIndexRoute,
   AuthenticatedRefusedLoadsIndexRoute: AuthenticatedRefusedLoadsIndexRoute,
   AuthenticatedReportsIndexRoute: AuthenticatedReportsIndexRoute,
   AuthenticatedSafetyIndexRoute: AuthenticatedSafetyIndexRoute,
