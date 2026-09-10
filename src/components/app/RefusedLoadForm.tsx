@@ -444,7 +444,7 @@ function Choice({
   clearable?: boolean;
 }) {
   return (
-    <Select value={value || undefined} onValueChange={(next) => onChange(next === NONE ? "" : next)}>
+    <Select value={value ? value : ""} onValueChange={(next) => onChange(next === NONE ? "" : next)}>
       <SelectTrigger>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>

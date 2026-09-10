@@ -34,7 +34,7 @@ export function DataTable({
   rows: Row[];
   isLoading?: boolean;
   error?: unknown;
-  onRowClick?: (row: Row) => void;
+  onRowClick?: ((row: Row) => void) | undefined;
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: ReactNode;
