@@ -10,18 +10,39 @@ import { cn } from "@/lib/utils";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreate, type QuickCreateKind } from "./QuickCreate";
 
-const NAV = [
-  { to: "/command-center", label: "Command Center", icon: Gauge },
-  { to: "/sales", label: "Sales", icon: Target },
-  { to: "/customers", label: "Customers", icon: Building2 },
-  { to: "/sites", label: "Sites", icon: MapPin },
-  { to: "/bids", label: "Bids", icon: FileText },
-  { to: "/refused-loads", label: "Refused Loads", icon: CircleOff },
-  { to: "/equipment", label: "Equipment", icon: Truck },
-  { to: "/safety", label: "Safety", icon: ShieldAlert },
-  { to: "/tasks", label: "Tasks", icon: CheckSquare },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-  { to: "/knowledge", label: "Knowledge", icon: BookOpen },
+const NAV_GROUPS = [
+  {
+    label: null,
+    items: [
+      { to: "/command-center", label: "Home", icon: Gauge },
+      { to: "/tasks", label: "Tasks", icon: CheckSquare },
+    ],
+  },
+  {
+    label: "Commercial",
+    items: [
+      { to: "/sales", label: "Sales Control Center", icon: Target },
+      { to: "/customers", label: "Customers", icon: Building2 },
+      { to: "/sites", label: "Sites", icon: MapPin },
+      { to: "/bids", label: "Bids / RFPs", icon: FileText },
+      { to: "/lost-loads", label: "Lost Loads", icon: CircleOff },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [{ to: "/equipment", label: "Equipment", icon: Truck }],
+  },
+  {
+    label: "Safety",
+    items: [{ to: "/safety", label: "Incidents & Assessments", icon: ShieldAlert }],
+  },
+  {
+    label: "Knowledge & reporting",
+    items: [
+      { to: "/knowledge", label: "Knowledge", icon: BookOpen },
+      { to: "/reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -40,7 +61,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return <div className="flex min-h-screen bg-background">
     <aside className={cn("fixed inset-y-0 left-0 z-40 flex w-60 flex-col bg-sidebar text-sidebar-foreground transition-transform lg:static lg:translate-x-0", mobileNavOpen ? "translate-x-0" : "-translate-x-full")}>
       <div className="flex h-14 items-center gap-2 border-b border-sidebar-border px-4"><div className="flex h-7 w-7 items-center justify-center rounded bg-sidebar-primary text-xs font-bold text-sidebar-primary-foreground">HEG</div><div className="leading-tight"><p className="text-sm font-semibold">Commercial Hub</p><p className="text-[11px] text-sidebar-muted">HazMat Environmental Group</p></div></div>
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3" aria-label="Main">{NAV.map((item) => { const active = pathname.startsWith(item.to); return <Link key={item.to} to={item.to} className={cn("flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors", active ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground" : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground")}><item.icon className="h-4 w-4 shrink-0" aria-hidden />{item.label}</Link>; })}{isAdmin && <Link to="/admin" className={cn("mt-2 flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors", pathname.startsWith("/admin") ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground" : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60")}><Settings className="h-4 w-4" aria-hidden />Administration</Link>}</nav>
+      <nav className="flex-1 space-y-4 overflow-y-auto px-2 py-3" aria-label="Main">{NAV_GROUPS.map((group, index) => (<div key={group.label ?? `group-${index}`} className="space-y-0.5">{group.label && <p className="px-3 pb-1 text-[11px] font-semibold uppercase tracking-wider text-sidebar-foreground/50">{group.label}</p>}{group.items.map((item) => { const active = pathname.startsWith(item.to); return <Link key={item.to} to={item.to} className={cn("flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors", active ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground" : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground")}><item.icon className="h-4 w-4 shrink-0" aria-hidden />{item.label}</Link>; })}</div>))}{isAdmin && <Link to="/admin" className={cn("mt-2 flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors", pathname.startsWith("/admin") ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground" : "text-sidebar-foreground/85 hover:bg-sidebar-accent/60")}><Settings className="h-4 w-4" aria-hidden />Administration</Link>}</nav>
       <div className="border-t border-sidebar-border px-4 py-3 text-[11px] text-sidebar-muted">Trimble/TMW remains the system of record for operational data.</div>
     </aside>
     {mobileNavOpen && <button aria-label="Close navigation" className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={() => setMobileNavOpen(false)} />}
