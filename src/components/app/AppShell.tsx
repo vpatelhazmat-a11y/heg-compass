@@ -10,18 +10,39 @@ import { cn } from "@/lib/utils";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreate, type QuickCreateKind } from "./QuickCreate";
 
-const NAV = [
-  { to: "/command-center", label: "Command Center", icon: Gauge },
-  { to: "/sales", label: "Sales", icon: Target },
-  { to: "/customers", label: "Customers", icon: Building2 },
-  { to: "/sites", label: "Sites", icon: MapPin },
-  { to: "/bids", label: "Bids", icon: FileText },
-  { to: "/refused-loads", label: "Refused Loads", icon: CircleOff },
-  { to: "/equipment", label: "Equipment", icon: Truck },
-  { to: "/safety", label: "Safety", icon: ShieldAlert },
-  { to: "/tasks", label: "Tasks", icon: CheckSquare },
-  { to: "/reports", label: "Reports", icon: BarChart3 },
-  { to: "/knowledge", label: "Knowledge", icon: BookOpen },
+const NAV_GROUPS = [
+  {
+    label: null,
+    items: [
+      { to: "/command-center", label: "Home", icon: Gauge },
+      { to: "/tasks", label: "Tasks", icon: CheckSquare },
+    ],
+  },
+  {
+    label: "Commercial",
+    items: [
+      { to: "/sales", label: "Sales Control Center", icon: Target },
+      { to: "/customers", label: "Customers", icon: Building2 },
+      { to: "/sites", label: "Sites", icon: MapPin },
+      { to: "/bids", label: "Bids / RFPs", icon: FileText },
+      { to: "/lost-loads", label: "Lost Loads", icon: CircleOff },
+    ],
+  },
+  {
+    label: "Operations",
+    items: [{ to: "/equipment", label: "Equipment", icon: Truck }],
+  },
+  {
+    label: "Safety",
+    items: [{ to: "/safety", label: "Incidents & Assessments", icon: ShieldAlert }],
+  },
+  {
+    label: "Knowledge & reporting",
+    items: [
+      { to: "/knowledge", label: "Knowledge", icon: BookOpen },
+      { to: "/reports", label: "Reports", icon: BarChart3 },
+    ],
+  },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
