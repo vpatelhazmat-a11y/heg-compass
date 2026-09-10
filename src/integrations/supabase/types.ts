@@ -1954,6 +1954,181 @@ export type Database = {
           },
         ]
       }
+      refused_loads: {
+        Row: {
+          bid_id: string | null
+          call_in_date: string
+          contact_id: string | null
+          created_at: string
+          created_by: string | null
+          cs_rep: string | null
+          currency: string
+          customer_id: string | null
+          delivery_city: string | null
+          delivery_state: string | null
+          equipment_id: string | null
+          equipment_type: string | null
+          estimated_lost_revenue: number | null
+          id: string
+          internal_notes: string | null
+          lane_id: string | null
+          load_count: number | null
+          loss_reason: string | null
+          multiple_requested_dates: boolean
+          offered_comments: string | null
+          offered_date: string | null
+          opportunity_id: string | null
+          pickup_city: string | null
+          pickup_state: string | null
+          product: string | null
+          product_id: string | null
+          rate_id: string | null
+          rated_status: string | null
+          record_status: string
+          requested_comments: string | null
+          review_status: string
+          site_id: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          bid_id?: string | null
+          call_in_date?: string
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          cs_rep?: string | null
+          currency?: string
+          customer_id?: string | null
+          delivery_city?: string | null
+          delivery_state?: string | null
+          equipment_id?: string | null
+          equipment_type?: string | null
+          estimated_lost_revenue?: number | null
+          id?: string
+          internal_notes?: string | null
+          lane_id?: string | null
+          load_count?: number | null
+          loss_reason?: string | null
+          multiple_requested_dates?: boolean
+          offered_comments?: string | null
+          offered_date?: string | null
+          opportunity_id?: string | null
+          pickup_city?: string | null
+          pickup_state?: string | null
+          product?: string | null
+          product_id?: string | null
+          rate_id?: string | null
+          rated_status?: string | null
+          record_status?: string
+          requested_comments?: string | null
+          review_status?: string
+          site_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          bid_id?: string | null
+          call_in_date?: string
+          contact_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          cs_rep?: string | null
+          currency?: string
+          customer_id?: string | null
+          delivery_city?: string | null
+          delivery_state?: string | null
+          equipment_id?: string | null
+          equipment_type?: string | null
+          estimated_lost_revenue?: number | null
+          id?: string
+          internal_notes?: string | null
+          lane_id?: string | null
+          load_count?: number | null
+          loss_reason?: string | null
+          multiple_requested_dates?: boolean
+          offered_comments?: string | null
+          offered_date?: string | null
+          opportunity_id?: string | null
+          pickup_city?: string | null
+          pickup_state?: string | null
+          product?: string | null
+          product_id?: string | null
+          rate_id?: string | null
+          rated_status?: string | null
+          record_status?: string
+          requested_comments?: string | null
+          review_status?: string
+          site_id?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refused_loads_bid_id_fkey"
+            columns: ["bid_id"]
+            isOneToOne: false
+            referencedRelation: "bids"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_lane_id_fkey"
+            columns: ["lane_id"]
+            isOneToOne: false
+            referencedRelation: "lanes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_rate_id_fkey"
+            columns: ["rate_id"]
+            isOneToOne: false
+            referencedRelation: "rates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_site_id_fkey"
+            columns: ["site_id"]
+            isOneToOne: false
+            referencedRelation: "sites"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       requirements: {
         Row: {
           category: string
