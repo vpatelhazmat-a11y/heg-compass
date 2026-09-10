@@ -5,6 +5,7 @@ export function Panel({
   title,
   description,
   actions,
+  icon,
   children,
   className,
   footer,
@@ -12,17 +13,21 @@ export function Panel({
   title?: string | undefined;
   description?: string | undefined;
   actions?: ReactNode | undefined;
+  icon?: ReactNode | undefined;
   children: ReactNode;
   className?: string | undefined;
   footer?: ReactNode | undefined;
 }) {
   return (
     <section className={cn("rounded-lg border border-border bg-surface", className)}>
-      {(title || actions) && (
+      {(title || actions || icon) && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
-          <div>
-            {title && <h2 className="text-sm font-semibold text-foreground">{title}</h2>}
-            {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+          <div className="flex items-start gap-2">
+            {icon && <span className="mt-0.5 text-muted-foreground">{icon}</span>}
+            <div>
+              {title && <h2 className="text-sm font-semibold text-foreground">{title}</h2>}
+              {description && <p className="mt-0.5 text-xs text-muted-foreground">{description}</p>}
+            </div>
           </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
