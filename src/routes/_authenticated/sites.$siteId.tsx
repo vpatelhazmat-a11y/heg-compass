@@ -11,6 +11,8 @@ import { RecordForm, type FieldConfig } from "@/components/app/RecordForm";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRow, listRows } from "@/lib/data";
+import { scopeDefaults, scopeFilters } from "@/lib/relations";
+
 import { assessmentFields, documentFields, requirementFields, siteFields } from "@/lib/entities";
 import { formatDate, orDash } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
