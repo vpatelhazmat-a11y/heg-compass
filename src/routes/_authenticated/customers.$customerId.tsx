@@ -11,6 +11,8 @@ import { RecordForm, type FieldConfig } from "@/components/app/RecordForm";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRow, listRows } from "@/lib/data";
+import { scopeDefaults, scopeFilters } from "@/lib/relations";
+
 import {
   contactFields,
   contractFields,
@@ -55,20 +57,22 @@ function CustomerDetail() {
   const related = useQuery({
     queryKey: ["customer-related", customerId],
     queryFn: async () => {
+      const scoped = (table: string) => scopeFilters(table, "customer", customerId);
       const filters = { customer_id: customerId };
       const [sites, contacts, requirements, products, rates, bids, opportunities, contracts, documents, lost] =
         await Promise.all([
           listRows("sites", { filters, order: { column: "site_name", ascending: true } }),
           listRows("contacts", { filters, order: { column: "last_name", ascending: true } }),
-          listRows("requirements", { filters }),
+          listRows("requirements", { filters: scoped("requirements") }),
           listRows("products", { filters, order: { column: "product_name", ascending: true } }),
           listRows("rates", { filters, order: { column: "effective_date", ascending: false } }),
           listRows("bids", { filters, order: { column: "due_date", ascending: false } }),
           listRows("opportunities", { filters, order: { column: "expected_close_date", ascending: true } }),
           listRows("contracts", { filters, order: { column: "expiration_date", ascending: true } }),
-          listRows("documents", { filters }),
+          listRows("documents", { filters: scoped("documents") }),
           listRows("lost_business", { filters, order: { column: "occurred_on", ascending: false } }),
         ]);
+
       return { sites, contacts, requirements, products, rates, bids, opportunities, contracts, documents, lost };
     },
   });
@@ -399,7 +403,7 @@ function CustomerDetail() {
           title={creator.title}
           table={creator.table}
           fields={creator.fields}
-          defaults={{ customer_id: customerId }}
+          defaults={scopeDefaults(creator.table, "customer", customerId)}
           invalidateKeys={[["customer-related", customerId]]}
         />
       )}
