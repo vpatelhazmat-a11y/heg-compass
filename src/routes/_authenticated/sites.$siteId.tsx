@@ -45,11 +45,12 @@ function SiteDetail() {
     queryFn: async () => {
       const filters = { site_id: siteId };
       const [requirements, assessments, documents, incidents] = await Promise.all([
-        listRows("requirements", { filters }),
+        listRows("requirements", { filters: scopeFilters("requirements", "site", siteId) }),
         listRows("site_assessments", { filters, order: { column: "assessment_date", ascending: false } }).catch(() => []),
-        listRows("documents", { filters }),
+        listRows("documents", { filters: scopeFilters("documents", "site", siteId) }),
         listRows("incidents", { filters, order: { column: "incident_date", ascending: false } }).catch(() => []),
       ]);
+
       return { requirements, assessments, documents, incidents };
     },
   });
@@ -253,7 +254,7 @@ function SiteDetail() {
           title={creator.title}
           table={creator.table}
           fields={creator.fields}
-          defaults={{ site_id: siteId, customer_id: site.customer_id }}
+          defaults={scopeDefaults(creator.table, "site", siteId, { customer_id: site.customer_id })}
           invalidateKeys={[["site-related", siteId]]}
         />
       )}
