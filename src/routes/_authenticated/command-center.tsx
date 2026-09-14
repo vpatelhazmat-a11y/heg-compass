@@ -51,14 +51,14 @@ function useCommandData() {
       });
 
       return {
-        tasks: values.tasks ?? [],
-        bids: values.bids ?? [],
-        contracts: values.contracts ?? [],
-        assessments: values.assessments ?? [],
-        incidents: values.incidents ?? [],
-        actions: values.actions ?? [],
-        opportunities: values.opportunities ?? [],
-        lost: values.lost ?? [],
+        tasks: values["tasks"] ?? [],
+        bids: values["bids"] ?? [],
+        contracts: values["contracts"] ?? [],
+        assessments: values["assessments"] ?? [],
+        incidents: values["incidents"] ?? [],
+        actions: values["actions"] ?? [],
+        opportunities: values["opportunities"] ?? [],
+        lost: values["lost"] ?? [],
         failures,
       };
     },
