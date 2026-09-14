@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CalendarClock, ClipboardCheck, ShieldAlert } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel, StatTile } from "@/components/app/Panels";
-import { EmptyState, LoadingState } from "@/components/app/EmptyState";
+import { EmptyState, ErrorState, LoadingState } from "@/components/app/EmptyState";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import { listRows, type Row } from "@/lib/data";
 import { daysUntil, dueLabel, formatDate, formatMoney, isoInDays, todayISO } from "@/lib/format";
@@ -25,24 +25,49 @@ function useCommandData() {
   return useQuery({
     queryKey: ["command-center"],
     queryFn: async () => {
-      const [tasks, bids, contracts, assessments, incidents, actions, opportunities, lost] = await Promise.all([
-        listRows("tasks", { order: { column: "due_date", ascending: true } }),
-        listRows("bids", { order: { column: "due_date", ascending: true } }),
-        listRows("contracts", { order: { column: "expiration_date", ascending: true } }),
-        listRows("site_assessments", { order: { column: "next_review_date", ascending: true } }),
-        listRows("incidents", { order: { column: "incident_date", ascending: false } }).catch(() => [] as Row[]),
-        listRows("corrective_actions", { order: { column: "due_date", ascending: true } }).catch(() => [] as Row[]),
-        listRows("opportunities", { order: { column: "expected_close_date", ascending: true } }),
-        listRows("lost_business", { order: { column: "occurred_on", ascending: false } }),
-      ]);
-      return { tasks, bids, contracts, assessments, incidents, actions, opportunities, lost };
+      const requests = {
+        tasks: listRows("tasks", { order: { column: "due_date", ascending: true } }),
+        bids: listRows("bids", { order: { column: "due_date", ascending: true } }),
+        contracts: listRows("contracts", { order: { column: "expiration_date", ascending: true } }),
+        assessments: listRows("site_assessments", { order: { column: "next_review_date", ascending: true } }),
+        incidents: listRows("incidents", { order: { column: "incident_date", ascending: false } }),
+        actions: listRows("corrective_actions", { order: { column: "due_date", ascending: true } }),
+        opportunities: listRows("opportunities", { order: { column: "expected_close_date", ascending: true } }),
+        lost: listRows("lost_business", { order: { column: "occurred_on", ascending: false } }),
+      };
+      const entries = Object.entries(requests);
+      const settled = await Promise.allSettled(entries.map(([, request]) => request));
+      const failures: string[] = [];
+      const values: Record<string, Row[]> = {};
+
+      settled.forEach((result, index) => {
+        const key = entries[index]?.[0];
+        if (!key) return;
+        if (result.status === "fulfilled") values[key] = result.value;
+        else {
+          values[key] = [];
+          failures.push(key);
+        }
+      });
+
+      return {
+        tasks: values["tasks"] ?? [],
+        bids: values["bids"] ?? [],
+        contracts: values["contracts"] ?? [],
+        assessments: values["assessments"] ?? [],
+        incidents: values["incidents"] ?? [],
+        actions: values["actions"] ?? [],
+        opportunities: values["opportunities"] ?? [],
+        lost: values["lost"] ?? [],
+        failures,
+      };
     },
   });
 }
 
 function CommandCenter() {
   const { session, canViewSafety } = useSession();
-  const { data, isLoading } = useCommandData();
+  const { data, isLoading, refetch } = useCommandData();
 
   if (isLoading || !data) {
     return (
@@ -97,6 +122,12 @@ function CommandCenter() {
       />
 
       <div className="space-y-6 p-6">
+        {data.failures.length > 0 && (
+          <ErrorState
+            message="Some dashboard sections are temporarily unavailable. The rest of the Hub remains usable."
+            onRetry={() => void refetch()}
+          />
+        )}
         {nothingYet && (
           <EmptyState
             title="Your Hub is ready and empty"
