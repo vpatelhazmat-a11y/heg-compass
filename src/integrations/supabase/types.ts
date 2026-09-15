@@ -3056,6 +3056,27 @@ export type Database = {
           },
         ]
       }
+      staff_directory: {
+        Row: {
+          active: boolean | null
+          full_name: string | null
+          id: string | null
+          title: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          full_name?: string | null
+          id?: string | null
+          title?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          full_name?: string | null
+          id?: string | null
+          title?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       can_access_link: {
