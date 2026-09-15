@@ -32,7 +32,7 @@ export function usePeople() {
     queryKey: ["people-options"],
     staleTime: 5 * 60_000,
     queryFn: () =>
-      listRows("profiles", {
+      listRows("staff_directory", {
         filters: { active: true },
         order: { column: "full_name", ascending: true },
       }),
