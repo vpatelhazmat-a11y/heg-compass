@@ -2744,6 +2744,35 @@ export type Database = {
           },
         ]
       }
+      staff_directory: {
+        Row: {
+          active: boolean
+          full_name: string | null
+          id: string
+          title: string | null
+        }
+        Insert: {
+          active?: boolean
+          full_name?: string | null
+          id: string
+          title?: string | null
+        }
+        Update: {
+          active?: boolean
+          full_name?: string | null
+          id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_directory_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           completed_date: string | null
