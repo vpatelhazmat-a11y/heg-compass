@@ -1,13 +1,23 @@
+import { useSession } from "@/hooks/use-session";
+import { formPayload, validateFields } from "@/lib/form-values";
+import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { insertRow, recordAudit, updateRow, type Row } from "@/lib/data";
+import { insertRow, updateRow, type Row } from "@/lib/data";
 
 export type FieldType = "text" | "textarea" | "number" | "date" | "select" | "checkbox" | "money";
 
@@ -17,7 +27,8 @@ export type FieldConfig = {
   type?: FieldType;
   section?: string;
   required?: boolean;
-  options?: { value: string; label: string }[];
+  options?: { value: string; label: string; parentValue?: string | null }[];
+  dependsOn?: string;
   placeholder?: string;
   help?: string;
   full?: boolean;
@@ -49,6 +60,7 @@ export function RecordForm({
   onSaved?: (row: Row) => void;
 }) {
   const queryClient = useQueryClient();
+  const { canEdit } = useSession();
   const [values, setValues] = useState<Row>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -75,24 +87,25 @@ export function RecordForm({
 
   const mutation = useMutation({
     mutationFn: async () => {
-      const payload: Row = {};
-      for (const field of fields) {
-        const raw = values[field.name];
-        if (field.type === "checkbox") payload[field.name] = Boolean(raw);
-        else if (raw === "" || raw === undefined) payload[field.name] = null;
-        else if (field.type === "number" || field.type === "money") payload[field.name] = Number(raw);
-        else payload[field.name] = raw;
-      }
+      if (!canEdit(table)) throw new Error("You do not have permission to edit this record.");
+      const payload: Row = formPayload(fields, values, Boolean(recordId));
       for (const [key, value] of Object.entries(defaults ?? {})) {
         if (payload[key] === undefined || payload[key] === null) payload[key] = value;
       }
 
-      const saved = recordId ? await updateRow(table, recordId, payload) : await insertRow(table, payload);
-      await recordAudit({
-        entity_type: table,
-        entity_id: saved.id as string,
-        action: recordId ? "Updated" : "Created",
-      }).catch(() => undefined);
+      let saved: Row;
+      if (table === "rates" && recordId) {
+        const { data, error } = await supabase.rpc("revise_rate", {
+          _id: recordId,
+          _expected_updated_at: initialValues.updated_at,
+          _values: payload,
+        });
+        if (error) throw new Error(error.message);
+        saved = Array.isArray(data) ? data[0] : data;
+      } else
+        saved = recordId
+          ? await updateRow(table, recordId, payload)
+          : await insertRow(table, payload);
       return saved;
     },
     onSuccess: (saved) => {
@@ -106,12 +119,7 @@ export function RecordForm({
   });
 
   const submit = () => {
-    const nextErrors: Record<string, string> = {};
-    for (const field of fields) {
-      if (field.required && (values[field.name] === "" || values[field.name] === undefined || values[field.name] === null)) {
-        nextErrors[field.name] = `${field.label} is required`;
-      }
-    }
+    const nextErrors = validateFields(fields, values);
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
     mutation.mutate();
@@ -137,7 +145,9 @@ export function RecordForm({
                     return (
                       <div
                         key={field.name}
-                        className={field.full || field.type === "textarea" ? "sm:col-span-2" : undefined}
+                        className={
+                          field.full || field.type === "textarea" ? "sm:col-span-2" : undefined
+                        }
                       >
                         {field.type === "checkbox" ? (
                           <div className="flex items-center gap-2 pt-6">
@@ -145,7 +155,10 @@ export function RecordForm({
                               id={id}
                               checked={Boolean(values[field.name])}
                               onCheckedChange={(checked) =>
-                                setValues((prev: Row) => ({ ...prev, [field.name]: Boolean(checked) }))
+                                setValues((prev: Row) => ({
+                                  ...prev,
+                                  [field.name]: Boolean(checked),
+                                }))
                               }
                             />
                             <Label htmlFor={id} className="text-sm font-normal">
@@ -164,34 +177,73 @@ export function RecordForm({
                                 rows={3}
                                 value={values[field.name] ?? ""}
                                 placeholder={field.placeholder}
-                                onChange={(event) => setValues((prev: Row) => ({ ...prev, [field.name]: event.target.value }))}
+                                onChange={(event) =>
+                                  setValues((prev: Row) => ({
+                                    ...prev,
+                                    ...Object.fromEntries(
+                                      fields
+                                        .filter((child) => child.dependsOn === field.name)
+                                        .map((child) => [child.name, ""]),
+                                    ),
+                                    [field.name]: event.target.value,
+                                  }))
+                                }
                               />
                             ) : field.type === "select" ? (
                               <select
                                 id={id}
                                 value={values[field.name] ?? ""}
-                                onChange={(event) => setValues((prev: Row) => ({ ...prev, [field.name]: event.target.value }))}
+                                onChange={(event) =>
+                                  setValues((prev: Row) => ({
+                                    ...prev,
+                                    ...Object.fromEntries(
+                                      fields
+                                        .filter((child) => child.dependsOn === field.name)
+                                        .map((child) => [child.name, ""]),
+                                    ),
+                                    [field.name]: event.target.value,
+                                  }))
+                                }
                                 className="h-9 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground"
                               >
                                 <option value="">Select…</option>
-                                {(field.options ?? []).map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
+                                {(field.options ?? [])
+                                  .filter(
+                                    (option) =>
+                                      !field.dependsOn ||
+                                      option.parentValue === values[field.dependsOn],
+                                  )
+                                  .map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
                               </select>
                             ) : (
                               <Input
                                 id={id}
-                                type={field.type === "date" ? "date" : field.type === "number" || field.type === "money" ? "number" : "text"}
+                                type={
+                                  field.type === "date"
+                                    ? "date"
+                                    : field.type === "number" || field.type === "money"
+                                      ? "number"
+                                      : "text"
+                                }
                                 step={field.type === "money" ? "0.01" : undefined}
                                 value={values[field.name] ?? ""}
                                 placeholder={field.placeholder}
                                 aria-invalid={Boolean(error)}
-                                onChange={(event) => setValues((prev: Row) => ({ ...prev, [field.name]: event.target.value }))}
+                                onChange={(event) =>
+                                  setValues((prev: Row) => ({
+                                    ...prev,
+                                    [field.name]: event.target.value,
+                                  }))
+                                }
                               />
                             )}
-                            {field.help && !error && <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>}
+                            {field.help && !error && (
+                              <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>
+                            )}
                             {error && <p className="mt-1 text-xs text-danger">{error}</p>}
                           </>
                         )}
@@ -208,7 +260,7 @@ export function RecordForm({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={submit} disabled={mutation.isPending}>
+          <Button onClick={submit} disabled={mutation.isPending || !canEdit(table)}>
             {mutation.isPending ? "Saving…" : recordId ? "Save changes" : "Create"}
           </Button>
         </SheetFooter>

@@ -20,7 +20,10 @@ function ProfilePage() {
   const { session, roles } = useSession();
   return (
     <>
-      <PageHeader title="Your profile" description="Your account details and what you can access." />
+      <PageHeader
+        title="Your profile"
+        description="Your account details and what you can access."
+      />
       <div className="p-6">
         <Panel title="Account">
           <FieldGrid>
@@ -28,11 +31,14 @@ function ProfilePage() {
             <Field label="Email">{orDash(session?.email)}</Field>
             <Field label="Title">{orDash(session?.title)}</Field>
             <Field label="Role">
-              {roles.length ? roles.map((role) => ROLE_LABELS[role]).join(", ") : "No role assigned yet"}
+              {roles.length
+                ? roles.map((role) => ROLE_LABELS[role]).join(", ")
+                : "No role assigned yet"}
             </Field>
           </FieldGrid>
           <p className="mt-4 text-sm text-muted-foreground">
-            Roles are assigned by an administrator. Ask one if you need access to safety information or editing rights.
+            Roles are assigned by an administrator. Ask one if you need access to safety information
+            or editing rights.
           </p>
         </Panel>
       </div>

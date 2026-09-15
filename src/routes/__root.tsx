@@ -45,9 +45,13 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          This page didn't load
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong. Try again, and let an administrator know if it keeps happening.
+          {error.message.startsWith("Your account needs administrator approval")
+            ? error.message
+            : "Something went wrong. Try again, and let an administrator know if it keeps happening."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -125,7 +129,10 @@ function RootComponent() {
     const { data } = supabase.auth.onAuthStateChange((event) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
       router.invalidate();
-      if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        void queryClient.cancelQueries();
+        queryClient.clear();
+      } else queryClient.invalidateQueries();
     });
     return () => data.subscription.unsubscribe();
   }, [router, queryClient]);

@@ -55,8 +55,9 @@ export function DataTable({
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return rows;
-    return rows.filter((row) => columns.some((column) => cellValue(row, column).toLowerCase().includes(term)));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    return rows.filter((row) =>
+      columns.some((column) => cellValue(row, column).toLowerCase().includes(term)),
+    );
   }, [rows, search, columns]);
 
   const sorted = useMemo(() => {
@@ -69,10 +70,11 @@ export function DataTable({
       const an = Number(av);
       const bn = Number(bv);
       const cmp =
-        av !== "" && bv !== "" && !Number.isNaN(an) && !Number.isNaN(bn) ? an - bn : av.localeCompare(bv);
+        av !== "" && bv !== "" && !Number.isNaN(an) && !Number.isNaN(bn)
+          ? an - bn
+          : av.localeCompare(bv);
       return sort.asc ? cmp : -cmp;
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, sort, columns]);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
@@ -100,7 +102,10 @@ export function DataTable({
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         <div className="relative min-w-[200px] flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Search
+            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
           <Input
             value={search}
             onChange={(event) => {
@@ -124,7 +129,10 @@ export function DataTable({
       {rows.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
       ) : sorted.length === 0 ? (
-        <EmptyState title="No matches" description={`Nothing matches "${search}". Try a different search.`} />
+        <EmptyState
+          title="No matches"
+          description={`Nothing matches "${search}". Try a different search.`}
+        />
       ) : (
         <div className="overflow-hidden rounded-lg border border-border bg-surface">
           <div className="max-h-[70vh] overflow-auto">
@@ -149,7 +157,9 @@ export function DataTable({
                           className="inline-flex items-center gap-1 hover:text-foreground"
                           onClick={() =>
                             setSort((prev) =>
-                              prev?.key === column.key ? { key: column.key, asc: !prev.asc } : { key: column.key, asc: true },
+                              prev?.key === column.key
+                                ? { key: column.key, asc: !prev.asc }
+                                : { key: column.key, asc: true },
                             )
                           }
                         >
@@ -196,7 +206,11 @@ export function DataTable({
                           column.className,
                         )}
                       >
-                        {column.render ? column.render(row) : cellValue(row, column) || <span className="text-muted-foreground">—</span>}
+                        {column.render
+                          ? column.render(row)
+                          : cellValue(row, column) || (
+                              <span className="text-muted-foreground">—</span>
+                            )}
                       </td>
                     ))}
                   </tr>
@@ -210,13 +224,24 @@ export function DataTable({
       {sorted.length > pageSize && (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <span>
-            Showing {current * pageSize + 1}–{Math.min(sorted.length, (current + 1) * pageSize)} of {sorted.length}
+            Showing {current * pageSize + 1}–{Math.min(sorted.length, (current + 1) * pageSize)} of{" "}
+            {sorted.length}
           </span>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" disabled={current === 0} onClick={() => setPage(current - 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current === 0}
+              onClick={() => setPage(current - 1)}
+            >
               Previous
             </Button>
-            <Button variant="outline" size="sm" disabled={current >= pageCount - 1} onClick={() => setPage(current + 1)}>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={current >= pageCount - 1}
+              onClick={() => setPage(current + 1)}
+            >
               Next
             </Button>
           </div>

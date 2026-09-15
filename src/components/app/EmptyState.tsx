@@ -19,7 +19,9 @@ export function EmptyState({
       </div>
       <div>
         <p className="text-sm font-semibold text-foreground">{title}</p>
-        {description && <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>}
+        {description && (
+          <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
+        )}
       </div>
       {action}
     </div>
@@ -37,13 +39,22 @@ export function LoadingState({ label = "Loading" }: { label?: string }) {
   );
 }
 
-export function ErrorState({ message, onRetry }: { message?: string | undefined; onRetry?: (() => void) | undefined }) {
+export function ErrorState({
+  message,
+  onRetry,
+}: {
+  message?: string | undefined;
+  onRetry?: (() => void) | undefined;
+}) {
   return (
     <div className="rounded-lg border border-danger/30 bg-danger-soft px-4 py-4 text-sm">
       <p className="font-medium text-danger">We couldn't load this information.</p>
       <p className="mt-1 text-muted-foreground">{message ?? "Please try again in a moment."}</p>
       {onRetry && (
-        <button onClick={onRetry} className="mt-3 text-sm font-medium text-danger underline underline-offset-4">
+        <button
+          onClick={onRetry}
+          className="mt-3 text-sm font-medium text-danger underline underline-offset-4"
+        >
           Try again
         </button>
       )}

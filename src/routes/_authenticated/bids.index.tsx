@@ -18,26 +18,43 @@ export const Route = createFileRoute("/_authenticated/bids/")({
   head: () => ({
     meta: [
       { title: "Bid Center — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Every bid HEG is working, with deadlines, readiness and outcomes." },
+      {
+        name: "description",
+        content: "Every bid HEG is working, with deadlines, readiness and outcomes.",
+      },
       { property: "og:title", content: "Bid Center — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Bid pipeline and deadlines for HazMat Environmental Group." },
+      {
+        property: "og:description",
+        content: "Bid pipeline and deadlines for HazMat Environmental Group.",
+      },
     ],
   }),
   component: BidsPage,
 });
 
 function BidsPage() {
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("bids");
   const [creating, setCreating] = useState(false);
   const { data: customerOptions = [] } = useCustomerOptions();
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["bids"],
-    queryFn: () => listRows("bids", { select: "*, customers(legal_name)", order: { column: "due_date", ascending: true } }),
+    queryFn: () =>
+      listRows("bids", {
+        select: "*, customers(legal_name)",
+        order: { column: "due_date", ascending: true },
+      }),
   });
 
   const today = todayISO();
-  const live = data.filter((row) => !["Won", "Lost", "Withdrawn", "Cancelled"].includes(row.status));
+  const live = data.filter(
+    (row) => !["Won", "Lost", "Withdrawn", "Cancelled"].includes(row.status),
+  );
   const overdue = live.filter((row) => row.due_date && row.due_date < today);
   const won = data.filter((row) => row.status === "Won");
 
@@ -59,31 +76,54 @@ function BidsPage() {
       <div className="space-y-6 p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatTile label="Live bids" value={live.length} />
-          <StatTile label="Past due" value={overdue.length} tone={overdue.length ? "danger" : "neutral"} />
+          <StatTile
+            label="Past due"
+            value={overdue.length}
+            tone={overdue.length ? "danger" : "neutral"}
+          />
           <StatTile label="Won" value={won.length} tone="success" />
           <StatTile
             label="Live bid value"
-            value={formatMoney(live.reduce((sum, row) => sum + Number(row.estimated_revenue ?? 0), 0))}
+            value={formatMoney(
+              live.reduce((sum, row) => sum + Number(row.estimated_revenue ?? 0), 0),
+            )}
           />
         </div>
 
         <DataTable
           columns={[
             { key: "bid_name", header: "Bid" },
-            { key: "customer", header: "Customer", value: (row) => row.customers?.legal_name ?? "" },
+            {
+              key: "customer",
+              header: "Customer",
+              value: (row) => row.customers?.legal_name ?? "",
+            },
             { key: "bid_type", header: "Type" },
-            { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+            {
+              key: "status",
+              header: "Status",
+              render: (row) => <StatusBadge status={row.status} />,
+            },
             {
               key: "due_date",
               header: "Due",
               render: (row) => {
                 const due = dueLabel(row.due_date);
-                return due.tone === "neutral" ? formatDate(row.due_date) : <StatusBadge status={due.label} tone={due.tone} />;
+                return due.tone === "neutral" ? (
+                  formatDate(row.due_date)
+                ) : (
+                  <StatusBadge status={due.label} tone={due.tone} />
+                );
               },
             },
             { key: "pricing_status", header: "Pricing" },
             { key: "document_status", header: "Documents" },
-            { key: "estimated_revenue", header: "Estimated revenue", align: "right", render: (row) => formatMoney(row.estimated_revenue) },
+            {
+              key: "estimated_revenue",
+              header: "Estimated revenue",
+              align: "right",
+              render: (row) => formatMoney(row.estimated_revenue),
+            },
           ]}
           rows={data}
           isLoading={isLoading}
@@ -92,7 +132,9 @@ function BidsPage() {
           exportName="heg-bids"
           emptyTitle="No bids yet"
           emptyDescription="Add a bid to start tracking its deadlines, pricing readiness and outcome."
-          emptyAction={canWrite ? <Button onClick={() => setCreating(true)}>Add a bid</Button> : undefined}
+          emptyAction={
+            canWrite ? <Button onClick={() => setCreating(true)}>Add a bid</Button> : undefined
+          }
         />
       </div>
 
@@ -102,7 +144,14 @@ function BidsPage() {
         title="New bid"
         table="bids"
         fields={[
-          { name: "customer_id", label: "Customer", type: "select", required: true, options: customerOptions, section: "Basic information" },
+          {
+            name: "customer_id",
+            label: "Customer",
+            type: "select",
+            required: true,
+            options: customerOptions,
+            section: "Basic information",
+          },
           ...bidFields,
         ]}
         invalidateKeys={[["bids"]]}

@@ -19,32 +19,48 @@ export const Route = createFileRoute("/_authenticated/safety/")({
   head: () => ({
     meta: [
       { title: "Safety Center — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Incidents, corrective actions and site assessments in one place." },
+      {
+        name: "description",
+        content: "Incidents, corrective actions and site assessments in one place.",
+      },
       { property: "og:title", content: "Safety Center — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Safety and compliance oversight for HazMat Environmental Group." },
+      {
+        property: "og:description",
+        content: "Safety and compliance oversight for HazMat Environmental Group.",
+      },
     ],
   }),
   component: SafetyPage,
 });
 
 function SafetyPage() {
-  const { canWrite, canViewSafety, hasAnyRole } = useSession();
+  const { canEdit, canViewSafety, hasAnyRole } = useSession();
+  const canWrite = canEdit("incidents");
   const [creating, setCreating] = useState(false);
   const canSeeIncidents = canViewSafety || hasAnyRole(["operations"]);
 
   const incidents = useQuery({
     queryKey: ["incidents"],
-    queryFn: () => listRows("incidents", { select: "*, customers(legal_name)", order: { column: "incident_date", ascending: false } }),
+    queryFn: () =>
+      listRows("incidents", {
+        select: "*, customers(legal_name)",
+        order: { column: "incident_date", ascending: false },
+      }),
     enabled: canSeeIncidents,
   });
   const actions = useQuery({
     queryKey: ["corrective-actions"],
-    queryFn: () => listRows("corrective_actions", { order: { column: "due_date", ascending: true } }),
+    queryFn: () =>
+      listRows("corrective_actions", { order: { column: "due_date", ascending: true } }),
     enabled: canSeeIncidents,
   });
   const assessments = useQuery({
     queryKey: ["assessments"],
-    queryFn: () => listRows("site_assessments", { select: "*, sites(site_name)", order: { column: "next_review_date", ascending: true } }),
+    queryFn: () =>
+      listRows("site_assessments", {
+        select: "*, sites(site_name)",
+        order: { column: "next_review_date", ascending: true },
+      }),
   });
 
   if (!canSeeIncidents) {
@@ -66,7 +82,8 @@ function SafetyPage() {
   const actionRows = actions.data ?? [];
   const openIncidents = incidentRows.filter((row) => ["Open", "In Process"].includes(row.status));
   const overdueActions = actionRows.filter(
-    (row) => !["Completed", "Cancelled"].includes(row.status) && row.due_date && row.due_date < today,
+    (row) =>
+      !["Completed", "Cancelled"].includes(row.status) && row.due_date && row.due_date < today,
   );
 
   return (
@@ -86,8 +103,16 @@ function SafetyPage() {
 
       <div className="space-y-6 p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile label="Open incidents" value={openIncidents.length} tone={openIncidents.length ? "warning" : "neutral"} />
-          <StatTile label="Overdue corrective actions" value={overdueActions.length} tone={overdueActions.length ? "danger" : "neutral"} />
+          <StatTile
+            label="Open incidents"
+            value={openIncidents.length}
+            tone={openIncidents.length ? "warning" : "neutral"}
+          />
+          <StatTile
+            label="Overdue corrective actions"
+            value={overdueActions.length}
+            tone={overdueActions.length ? "danger" : "neutral"}
+          />
           <StatTile label="Incidents recorded" value={incidentRows.length} />
           <StatTile label="Assessments on file" value={assessments.data?.length ?? 0} />
         </div>
@@ -103,12 +128,32 @@ function SafetyPage() {
             <Panel title="Incidents">
               <DataTable
                 columns={[
-                  { key: "incident_date", header: "Date", render: (row) => formatDate(row.incident_date) },
+                  {
+                    key: "incident_date",
+                    header: "Date",
+                    render: (row) => formatDate(row.incident_date),
+                  },
                   { key: "incident_type", header: "Type" },
-                  { key: "customer", header: "Customer", value: (row) => row.customers?.legal_name ?? "" },
-                  { key: "severity", header: "Severity", render: (row) => <StatusBadge status={row.severity} /> },
-                  { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
-                  { key: "due_date", header: "Action due", render: (row) => formatDate(row.due_date) },
+                  {
+                    key: "customer",
+                    header: "Customer",
+                    value: (row) => row.customers?.legal_name ?? "",
+                  },
+                  {
+                    key: "severity",
+                    header: "Severity",
+                    render: (row) => <StatusBadge status={row.severity} />,
+                  },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
+                  {
+                    key: "due_date",
+                    header: "Action due",
+                    render: (row) => formatDate(row.due_date),
+                  },
                 ]}
                 rows={incidentRows}
                 isLoading={incidents.isLoading}
@@ -125,8 +170,16 @@ function SafetyPage() {
                 columns={[
                   { key: "action", header: "Action" },
                   { key: "due_date", header: "Due", render: (row) => formatDate(row.due_date) },
-                  { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
-                  { key: "completion_date", header: "Completed", render: (row) => formatDate(row.completion_date) },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
+                  {
+                    key: "completion_date",
+                    header: "Completed",
+                    render: (row) => formatDate(row.completion_date),
+                  },
                 ]}
                 rows={actionRows}
                 isLoading={actions.isLoading}
@@ -141,9 +194,21 @@ function SafetyPage() {
                 columns={[
                   { key: "site", header: "Site", value: (row) => row.sites?.site_name ?? "" },
                   { key: "assessment_type", header: "Type" },
-                  { key: "assessment_date", header: "Assessed", render: (row) => formatDate(row.assessment_date) },
-                  { key: "next_review_date", header: "Next review", render: (row) => formatDate(row.next_review_date) },
-                  { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+                  {
+                    key: "assessment_date",
+                    header: "Assessed",
+                    render: (row) => formatDate(row.assessment_date),
+                  },
+                  {
+                    key: "next_review_date",
+                    header: "Next review",
+                    render: (row) => formatDate(row.next_review_date),
+                  },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
                 ]}
                 rows={assessments.data ?? []}
                 isLoading={assessments.isLoading}

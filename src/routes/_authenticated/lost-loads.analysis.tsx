@@ -15,9 +15,16 @@ export const Route = createFileRoute("/_authenticated/lost-loads/analysis")({
   head: () => ({
     meta: [
       { title: "Lost Revenue Analysis — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Where HEG loses qualified business: by reason, customer, lane, product and equipment." },
+      {
+        name: "description",
+        content:
+          "Where HEG loses qualified business: by reason, customer, lane, product and equipment.",
+      },
       { property: "og:title", content: "Lost Revenue Analysis — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Breakdown of refused loads and the revenue behind them." },
+      {
+        property: "og:description",
+        content: "Breakdown of refused loads and the revenue behind them.",
+      },
     ],
   }),
   component: LostRevenueAnalysis,
@@ -28,15 +35,26 @@ function LostRevenueAnalysis() {
 
   const rows = useQuery({
     queryKey: ["refused-loads"],
-    queryFn: () => listRows("refused_loads", { order: { column: "call_in_date", ascending: false } }),
+    queryFn: () =>
+      listRows("refused_loads", { order: { column: "call_in_date", ascending: false } }),
   });
   const customers = useQuery({
     queryKey: ["customer-names"],
-    queryFn: () => listRows("customers", { select: "id, legal_name, dba_name", order: { column: "legal_name", ascending: true } }),
+    queryFn: () =>
+      listRows("customers", {
+        select: "id, legal_name, dba_name",
+        order: { column: "legal_name", ascending: true },
+      }),
   });
 
   const nameById = useMemo(
-    () => new Map((customers.data ?? []).map((c: Row) => [c.id, c.legal_name ?? c.dba_name ?? "Unnamed customer"])),
+    () =>
+      new Map(
+        (customers.data ?? []).map((c: Row) => [
+          c.id,
+          c.legal_name ?? c.dba_name ?? "Unnamed customer",
+        ]),
+      ),
     [customers.data],
   );
 
@@ -51,16 +69,22 @@ function LostRevenueAnalysis() {
   );
 
   const totalLoads = data.reduce((sum: number, row: Row) => sum + Number(row.load_count ?? 0), 0);
-  const knownRevenue = data.reduce((sum: number, row: Row) => sum + Number(row.estimated_lost_revenue ?? 0), 0);
+  const knownRevenue = data.reduce(
+    (sum: number, row: Row) => sum + Number(row.estimated_lost_revenue ?? 0),
+    0,
+  );
   const missingRate = data.filter((row: Row) => row.estimated_lost_revenue == null).length;
 
-  const byMonth = groupCount(data, (row) => (row.call_in_date ? String(row.call_in_date).slice(0, 7) : "No date")).sort((a, b) =>
-    a.label.localeCompare(b.label),
-  );
+  const byMonth = groupCount(data, (row) =>
+    row.call_in_date ? String(row.call_in_date).slice(0, 7) : "No date",
+  ).sort((a, b) => a.label.localeCompare(b.label));
 
   return (
     <>
-      <PageHeader title="Lost revenue analysis" description="Where are we losing qualified business, and what does it cost?" />
+      <PageHeader
+        title="Lost revenue analysis"
+        description="Where are we losing qualified business, and what does it cost?"
+      />
       <LostLoadTabs />
 
       <div className="space-y-6 p-6">
@@ -68,11 +92,19 @@ function LostRevenueAnalysis() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
               <Label>From</Label>
-              <Input type="date" value={range.from} onChange={(e) => setRange((p) => ({ ...p, from: e.target.value }))} />
+              <Input
+                type="date"
+                value={range.from}
+                onChange={(e) => setRange((p) => ({ ...p, from: e.target.value }))}
+              />
             </div>
             <div className="space-y-1.5">
               <Label>To</Label>
-              <Input type="date" value={range.to} onChange={(e) => setRange((p) => ({ ...p, to: e.target.value }))} />
+              <Input
+                type="date"
+                value={range.to}
+                onChange={(e) => setRange((p) => ({ ...p, to: e.target.value }))}
+              />
             </div>
           </div>
         </Panel>
@@ -87,7 +119,11 @@ function LostRevenueAnalysis() {
             <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
               <StatTile label="Records" value={formatNumber(data.length)} />
               <StatTile label="Loads lost" value={formatNumber(totalLoads)} />
-              <StatTile label="Known lost revenue" value={formatMoney(knownRevenue)} hint="Entries with a known rate only" />
+              <StatTile
+                label="Known lost revenue"
+                value={formatMoney(knownRevenue)}
+                hint="Entries with a known rate only"
+              />
               <StatTile
                 label="Records without a rate"
                 value={formatNumber(missingRate)}
@@ -101,7 +137,12 @@ function LostRevenueAnalysis() {
                 <Bars rows={groupCount(data, (row) => row.loss_reason ?? "Not recorded")} />
               </Panel>
               <Panel title="By customer">
-                <Bars rows={groupCount(data, (row) => nameById.get(row.customer_id) ?? "Not linked").slice(0, 10)} />
+                <Bars
+                  rows={groupCount(
+                    data,
+                    (row) => nameById.get(row.customer_id) ?? "Not linked",
+                  ).slice(0, 10)}
+                />
               </Panel>
               <Panel title="By lane">
                 <Bars
@@ -113,16 +154,25 @@ function LostRevenueAnalysis() {
                 />
               </Panel>
               <Panel title="By product">
-                <Bars rows={groupCount(data, (row) => row.product ?? "Not recorded").slice(0, 10)} />
+                <Bars
+                  rows={groupCount(data, (row) => row.product ?? "Not recorded").slice(0, 10)}
+                />
               </Panel>
               <Panel title="By equipment type">
                 <Bars rows={groupCount(data, (row) => row.equipment_type ?? "Not recorded")} />
               </Panel>
               <Panel title="By pickup state">
-                <Bars rows={groupCount(data, (row) => row.pickup_state ?? "Not recorded").slice(0, 10)} />
+                <Bars
+                  rows={groupCount(data, (row) => row.pickup_state ?? "Not recorded").slice(0, 10)}
+                />
               </Panel>
               <Panel title="By delivery state">
-                <Bars rows={groupCount(data, (row) => row.delivery_state ?? "Not recorded").slice(0, 10)} />
+                <Bars
+                  rows={groupCount(data, (row) => row.delivery_state ?? "Not recorded").slice(
+                    0,
+                    10,
+                  )}
+                />
               </Panel>
               <Panel title="By CS representative">
                 <Bars rows={groupCount(data, (row) => row.cs_rep ?? "Not recorded").slice(0, 10)} />

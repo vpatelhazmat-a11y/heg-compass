@@ -14,20 +14,32 @@ export const Route = createFileRoute("/_authenticated/knowledge/")({
   head: () => ({
     meta: [
       { title: "Knowledge Hub — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Written-down know-how that would otherwise live only in people's heads." },
+      {
+        name: "description",
+        content: "Written-down know-how that would otherwise live only in people's heads.",
+      },
       { property: "og:title", content: "Knowledge Hub — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Institutional knowledge for HazMat Environmental Group." },
+      {
+        property: "og:description",
+        content: "Institutional knowledge for HazMat Environmental Group.",
+      },
     ],
   }),
   component: KnowledgePage,
 });
 
 function KnowledgePage() {
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("knowledge_articles");
   const [creating, setCreating] = useState(false);
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["knowledge"],
-    queryFn: () => listRows("knowledge_articles", { order: { column: "updated_at", ascending: false } }),
+    queryFn: () =>
+      listRows("knowledge_articles", { order: { column: "updated_at", ascending: false } }),
   });
 
   return (
@@ -49,14 +61,22 @@ function KnowledgePage() {
           columns={[
             { key: "title", header: "Title" },
             { key: "category", header: "Category" },
-            { key: "updated_at", header: "Last updated", render: (row) => formatDate(row.updated_at) },
+            {
+              key: "updated_at",
+              header: "Last updated",
+              render: (row) => formatDate(row.updated_at),
+            },
           ]}
           rows={data}
           isLoading={isLoading}
           error={error}
           emptyTitle="Nothing written down yet"
           emptyDescription="Capture how HEG actually does things — the knowledge that usually leaves with people."
-          emptyAction={canWrite ? <Button onClick={() => setCreating(true)}>Write the first article</Button> : undefined}
+          emptyAction={
+            canWrite ? (
+              <Button onClick={() => setCreating(true)}>Write the first article</Button>
+            ) : undefined
+          }
         />
       </div>
       <RecordForm

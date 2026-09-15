@@ -11,9 +11,22 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { Building2, MapPin, Truck, FileText, Gauge, ShieldAlert, Users } from "lucide-react";
 
-type Hit = { id: string; label: string; sublabel?: string; group: string; to: string; params?: Record<string, string> };
+type Hit = {
+  id: string;
+  label: string;
+  sublabel?: string;
+  group: string;
+  to: string;
+  params?: Record<string, string>;
+};
 
-export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
+export function CommandPalette({
+  open,
+  onOpenChange,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
   const navigate = useNavigate();
   const [term, setTerm] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
@@ -28,30 +41,83 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
     const timer = setTimeout(async () => {
       const like = `%${q}%`;
       const [customers, sites, equipment, bids, contacts, incidents] = await Promise.all([
-        (supabase.from("customers" as never) as any).select("id, legal_name, status").ilike("legal_name", like).limit(5),
-        (supabase.from("sites" as never) as any).select("id, site_name, city, state").ilike("site_name", like).limit(5),
-        (supabase.from("equipment" as never) as any).select("id, unit_number, category").ilike("unit_number", like).limit(5),
-        (supabase.from("bids" as never) as any).select("id, bid_name, status").ilike("bid_name", like).limit(5),
-        (supabase.from("contacts" as never) as any).select("id, first_name, last_name, customer_id").or(`first_name.ilike.${like},last_name.ilike.${like}`).limit(5),
-        (supabase.from("incidents" as never) as any).select("id, incident_type, status").ilike("incident_type", like).limit(5),
+        supabase
+          .from("customers")
+          .select("id, legal_name, status")
+          .is("archived_at", null)
+          .ilike("legal_name", like)
+          .limit(5),
+        supabase
+          .from("sites")
+          .select("id, site_name, city, state")
+          .is("archived_at", null)
+          .ilike("site_name", like)
+          .limit(5),
+        supabase
+          .from("equipment")
+          .select("id, unit_number, category")
+          .is("archived_at", null)
+          .ilike("unit_number", like)
+          .limit(5),
+        supabase.from("bids").select("id, bid_name, status").ilike("bid_name", like).limit(5),
+        supabase
+          .from("contacts")
+          .select("id, first_name, last_name, customer_id")
+          .or(`first_name.ilike.${like},last_name.ilike.${like}`)
+          .limit(5),
+        supabase
+          .from("incidents")
+          .select("id, incident_type, status")
+          .ilike("incident_type", like)
+          .limit(5),
       ]);
       if (cancelled) return;
       const next: Hit[] = [
-        ...((customers.data ?? []) as any[]).map((r) => ({
-          id: r.id, group: "Customers", label: r.legal_name, sublabel: r.status, to: "/customers/$customerId", params: { customerId: r.id },
+        ...(customers.data ?? []).map((r) => ({
+          id: r.id,
+          group: "Customers",
+          label: r.legal_name,
+          sublabel: r.status ?? "",
+          to: "/customers/$customerId",
+          params: { customerId: r.id },
         })),
-        ...((sites.data ?? []) as any[]).map((r) => ({
-          id: r.id, group: "Sites", label: r.site_name, sublabel: [r.city, r.state].filter(Boolean).join(", "), to: "/sites/$siteId", params: { siteId: r.id },
+        ...(sites.data ?? []).map((r) => ({
+          id: r.id,
+          group: "Sites",
+          label: r.site_name,
+          sublabel: [r.city, r.state].filter(Boolean).join(", "),
+          to: "/sites/$siteId",
+          params: { siteId: r.id },
         })),
-        ...((equipment.data ?? []) as any[]).map((r) => ({
-          id: r.id, group: "Equipment", label: `Unit ${r.unit_number}`, sublabel: r.category, to: "/equipment/$equipmentId", params: { equipmentId: r.id },
+        ...(equipment.data ?? []).map((r) => ({
+          id: r.id,
+          group: "Equipment",
+          label: `Unit ${r.unit_number}`,
+          sublabel: r.category ?? "",
+          to: "/equipment/$equipmentId",
+          params: { equipmentId: r.id },
         })),
-        ...((bids.data ?? []) as any[]).map((r) => ({ id: r.id, group: "Bids", label: r.bid_name, sublabel: r.status, to: "/bids" })),
-        ...((contacts.data ?? []) as any[]).map((r) => ({
-          id: r.id, group: "Contacts", label: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim(),
-          to: "/customers/$customerId", params: { customerId: r.customer_id },
+        ...(bids.data ?? []).map((r) => ({
+          id: r.id,
+          group: "Bids",
+          label: r.bid_name,
+          sublabel: r.status ?? "",
+          to: "/bids",
         })),
-        ...((incidents.data ?? []) as any[]).map((r) => ({ id: r.id, group: "Incidents", label: r.incident_type ?? "Incident", sublabel: r.status, to: "/safety" })),
+        ...(contacts.data ?? []).map((r) => ({
+          id: r.id,
+          group: "Contacts",
+          label: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim(),
+          to: "/customers/$customerId",
+          params: { customerId: r.customer_id ?? "" },
+        })),
+        ...(incidents.data ?? []).map((r) => ({
+          id: r.id,
+          group: "Incidents",
+          label: r.incident_type ?? "Incident",
+          sublabel: r.status ?? "",
+          to: "/safety",
+        })),
       ];
       setHits(next);
     }, 220);
@@ -79,7 +145,11 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
 
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
-      <CommandInput value={term} onValueChange={setTerm} placeholder="Search customers, sites, equipment, bids…" />
+      <CommandInput
+        value={term}
+        onValueChange={setTerm}
+        placeholder="Search customers, sites, equipment, bids…"
+      />
       <CommandList>
         {term.trim().length < 2 ? (
           <CommandGroup heading="Go to">
@@ -109,10 +179,18 @@ export function CommandPalette({ open, onOpenChange }: { open: boolean; onOpenCh
                   {hits
                     .filter((hit) => hit.group === group)
                     .map((hit) => (
-                      <CommandItem key={`${group}-${hit.id}`} value={`${group}-${hit.id}`} onSelect={() => go(hit.to, hit.params)}>
+                      <CommandItem
+                        key={`${group}-${hit.id}`}
+                        value={`${group}-${hit.id}`}
+                        onSelect={() => go(hit.to, hit.params)}
+                      >
                         <Icon className="h-4 w-4" />
                         <span>{hit.label}</span>
-                        {hit.sublabel && <span className="ml-auto text-xs text-muted-foreground">{hit.sublabel}</span>}
+                        {hit.sublabel && (
+                          <span className="ml-auto text-xs text-muted-foreground">
+                            {hit.sublabel}
+                          </span>
+                        )}
                       </CommandItem>
                     ))}
                 </CommandGroup>

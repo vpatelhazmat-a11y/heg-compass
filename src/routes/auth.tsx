@@ -15,7 +15,10 @@ export const Route = createFileRoute("/auth")({
       { title: "Sign in — HEG Commercial Intelligence Hub" },
       { name: "description", content: "Sign in to the HEG Commercial Intelligence Hub." },
       { property: "og:title", content: "Sign in — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Internal access for HazMat Environmental Group staff." },
+      {
+        property: "og:description",
+        content: "Internal access for HazMat Environmental Group staff.",
+      },
     ],
   }),
   component: AuthPage,
@@ -68,7 +71,9 @@ function AuthPage() {
   };
 
   const signInWithGoogle = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin,
+    });
     if (result.error) {
       toast.error("Google sign-in isn't available right now.");
       return;
@@ -114,7 +119,14 @@ function AuthPage() {
                     <Label htmlFor="email" className="mb-1.5 block">
                       Work email
                     </Label>
-                    <Input id="email" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <Input
+                      id="email"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="password" className="mb-1.5 block">
@@ -141,13 +153,25 @@ function AuthPage() {
                     <Label htmlFor="name" className="mb-1.5 block">
                       Full name
                     </Label>
-                    <Input id="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                    <Input
+                      id="name"
+                      required
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="email-up" className="mb-1.5 block">
                       Work email
                     </Label>
-                    <Input id="email-up" type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+                    <Input
+                      id="email-up"
+                      type="email"
+                      autoComplete="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                    />
                   </div>
                   <div>
                     <Label htmlFor="password-up" className="mb-1.5 block">

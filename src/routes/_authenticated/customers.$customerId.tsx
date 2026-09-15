@@ -10,13 +10,14 @@ import { DataTable, type Column } from "@/components/app/DataTable";
 import { RecordForm, type FieldConfig } from "@/components/app/RecordForm";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getRow, listRows } from "@/lib/data";
+import { getRow, listRows, type Row } from "@/lib/data";
 import { scopeDefaults, scopeFilters } from "@/lib/relations";
 
 import {
   contactFields,
   contractFields,
   customerFields,
+  laneFields,
   documentFields,
   lostBusinessFields,
   opportunityFields,
@@ -34,7 +35,10 @@ export const Route = createFileRoute("/_authenticated/customers/$customerId")({
       { title: "Customer — HEG Commercial Intelligence Hub" },
       { name: "description", content: "Everything HEG knows about this customer in one place." },
       { property: "og:title", content: "Customer — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Customer 360 view: sites, contacts, rates, bids and history." },
+      {
+        property: "og:description",
+        content: "Customer 360 view: sites, contacts, rates, bids and history.",
+      },
     ],
   }),
   component: CustomerDetail,
@@ -45,8 +49,10 @@ type Creator = { table: string; title: string; fields: FieldConfig[] } | null;
 function CustomerDetail() {
   const { customerId } = Route.useParams();
   const navigate = useNavigate();
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("customers");
   const [editing, setEditing] = useState(false);
+  const [editingRate, setEditingRate] = useState<Row | null>(null);
   const [creator, setCreator] = useState<Creator>(null);
 
   const customerQuery = useQuery({
@@ -59,21 +65,57 @@ function CustomerDetail() {
     queryFn: async () => {
       const scoped = (table: string) => scopeFilters(table, "customer", customerId);
       const filters = { customer_id: customerId };
-      const [sites, contacts, requirements, products, rates, bids, opportunities, contracts, documents, lost] =
-        await Promise.all([
-          listRows("sites", { filters, order: { column: "site_name", ascending: true } }),
-          listRows("contacts", { filters, order: { column: "last_name", ascending: true } }),
-          listRows("requirements", { filters: scoped("requirements") }),
-          listRows("products", { filters, order: { column: "product_name", ascending: true } }),
-          listRows("rates", { filters, order: { column: "effective_date", ascending: false } }),
-          listRows("bids", { filters, order: { column: "due_date", ascending: false } }),
-          listRows("opportunities", { filters, order: { column: "expected_close_date", ascending: true } }),
-          listRows("contracts", { filters, order: { column: "expiration_date", ascending: true } }),
-          listRows("documents", { filters: scoped("documents") }),
-          listRows("lost_business", { filters, order: { column: "occurred_on", ascending: false } }),
-        ]);
+      const [
+        sites,
+        contacts,
+        requirements,
+        products,
+        rates,
+        bids,
+        opportunities,
+        contracts,
+        documents,
+        lost,
+        refused,
+        lanes,
+        equipment,
+      ] = await Promise.all([
+        listRows("sites", { filters, order: { column: "site_name", ascending: true } }),
+        listRows("contacts", { filters, order: { column: "last_name", ascending: true } }),
+        listRows("requirements", { filters: scoped("requirements") }),
+        listRows("products", { filters, order: { column: "product_name", ascending: true } }),
+        listRows("rates", { filters, order: { column: "effective_date", ascending: false } }),
+        listRows("bids", { filters, order: { column: "due_date", ascending: false } }),
+        listRows("opportunities", {
+          filters,
+          order: { column: "expected_close_date", ascending: true },
+        }),
+        listRows("contracts", { filters, order: { column: "expiration_date", ascending: true } }),
+        listRows("documents", { filters: scoped("documents") }),
+        listRows("lost_business", { filters, order: { column: "occurred_on", ascending: false } }),
+        listRows("refused_loads", { filters, order: { column: "call_in_date", ascending: false } }),
+        listRows("lanes", { filters }),
+        listRows("current_equipment_assignments", {
+          filters,
+          select: "*, equipment!equipment_assignments_equipment_id_fkey(unit_number)",
+        }),
+      ]);
 
-      return { sites, contacts, requirements, products, rates, bids, opportunities, contracts, documents, lost };
+      return {
+        sites,
+        contacts,
+        requirements,
+        products,
+        rates,
+        bids,
+        opportunities,
+        contracts,
+        documents,
+        lost,
+        refused,
+        lanes,
+        equipment,
+      };
     },
   });
 
@@ -104,10 +146,50 @@ function CustomerDetail() {
   const openOpps = (data?.opportunities ?? []).filter((o) => !["Won", "Lost"].includes(o.stage));
   const activeRates = (data?.rates ?? []).filter((r) => r.status === "Active");
 
-  const create = (table: string, title: string, fields: FieldConfig[]) => setCreator({ table, title, fields });
+  const create = (table: string, title: string, fields: FieldConfig[]) => {
+    const relationships: FieldConfig[] = [];
+    if (["rates", "contacts", "opportunities"].includes(table))
+      relationships.push({
+        name: "site_id",
+        label: "Site",
+        type: "select",
+        section: "Relationships",
+        options: (data?.sites ?? []).map((row) => ({ value: row.id, label: row.site_name })),
+      });
+    if (table === "rates")
+      relationships.push(
+        {
+          name: "product_id",
+          label: "Product",
+          type: "select",
+          section: "Relationships",
+          options: (data?.products ?? []).map((row) => ({
+            value: row.id,
+            label: row.product_name,
+          })),
+        },
+        {
+          name: "lane_id",
+          label: "Lane",
+          type: "select",
+          section: "Relationships",
+          options: (data?.lanes ?? []).map((row) => ({ value: row.id, label: row.lane_name })),
+        },
+      );
+    if (table === "lanes")
+      for (const name of ["origin_site_id", "destination_site_id"])
+        relationships.push({
+          name,
+          label: name === "origin_site_id" ? "Origin site" : "Destination site",
+          type: "select",
+          section: "Relationships",
+          options: (data?.sites ?? []).map((row) => ({ value: row.id, label: row.site_name })),
+        });
+    setCreator({ table, title, fields: [...fields, ...relationships] });
+  };
 
   const addButton = (label: string, table: string, fields: FieldConfig[]) =>
-    canWrite ? (
+    canEdit(table) ? (
       <Button size="sm" variant="outline" onClick={() => create(table, label, fields)}>
         <Plus className="h-4 w-4" aria-hidden />
         {label}
@@ -151,12 +233,17 @@ function CustomerDetail() {
       />
 
       <div className="space-y-6 p-6">
+        {related.error && <ErrorState message={related.error.message} />}
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
           <StatTile label="Sites" value={data?.sites.length ?? "—"} />
           <StatTile label="Contacts" value={data?.contacts.length ?? "—"} />
           <StatTile label="Active rates" value={activeRates.length} />
           <StatTile label="Open opportunities" value={openOpps.length} />
-          <StatTile label="Lost business records" value={data?.lost.length ?? "—"} tone={data?.lost.length ? "warning" : "neutral"} />
+          <StatTile
+            label="Lost business records"
+            value={data?.lost.length ?? "—"}
+            tone={data?.lost.length ? "warning" : "neutral"}
+          />
         </div>
 
         <Tabs defaultValue="overview">
@@ -170,6 +257,9 @@ function CustomerDetail() {
             <TabsTrigger value="commercial">Bids & pipeline</TabsTrigger>
             <TabsTrigger value="contracts">Contracts & documents</TabsTrigger>
             <TabsTrigger value="lost">Lost business</TabsTrigger>
+            <TabsTrigger value="refused">Refused Loads</TabsTrigger>
+            <TabsTrigger value="lanes">Lanes</TabsTrigger>
+            <TabsTrigger value="equipment">Equipment</TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="mt-4 space-y-6">
@@ -195,12 +285,15 @@ function CustomerDetail() {
                 <p className="mt-3 text-sm text-muted-foreground">{orDash(customer.risk_notes)}</p>
               </Panel>
             </div>
-            <Panel title="Where this information came from" description="Provenance is kept so the record can always be traced back">
+            <Panel
+              title="Where this information came from"
+              description="Provenance is kept so the record can always be traced back"
+            >
               <FieldGrid columns={4}>
                 <Field label="Source system">{orDash(customer.source_system)}</Field>
                 <Field label="Source file">{orDash(customer.source_file)}</Field>
                 <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
-                <Field label="Last verified">{formatDate(customer.last_verified_at)}</Field>
+                <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
               </FieldGrid>
             </Panel>
           </TabsContent>
@@ -212,7 +305,9 @@ function CustomerDetail() {
                 rows={data?.sites ?? []}
                 isLoading={related.isLoading}
                 exportName="customer-sites"
-                onRowClick={(row) => navigate({ to: "/sites/$siteId", params: { siteId: row.id as string } })}
+                onRowClick={(row) =>
+                  navigate({ to: "/sites/$siteId", params: { siteId: row.id as string } })
+                }
                 emptyTitle="No sites recorded"
                 emptyDescription="Add the locations HEG picks up from or delivers to for this customer."
               />
@@ -223,7 +318,11 @@ function CustomerDetail() {
             <Panel title="Contacts" actions={addButton("Add contact", "contacts", contactFields)}>
               <DataTable
                 columns={[
-                  { key: "name", header: "Name", value: (row) => `${row.first_name ?? ""} ${row.last_name ?? ""}` },
+                  {
+                    key: "name",
+                    header: "Name",
+                    value: (row) => `${row.first_name ?? ""} ${row.last_name ?? ""}`,
+                  },
                   { key: "title", header: "Title" },
                   { key: "contact_type", header: "Type" },
                   { key: "email", header: "Email" },
@@ -238,13 +337,24 @@ function CustomerDetail() {
           </TabsContent>
 
           <TabsContent value="requirements" className="mt-4">
-            <Panel title="Customer requirements" actions={addButton("Add requirement", "requirements", requirementFields)}>
+            <Panel
+              title="Customer requirements"
+              actions={addButton("Add requirement", "requirements", requirementFields)}
+            >
               <DataTable
                 columns={[
                   { key: "requirement", header: "Requirement" },
                   { key: "category", header: "Category" },
-                  { key: "mandatory", header: "Mandatory", render: (row) => (row.mandatory ? "Yes" : "No") },
-                  { key: "expiration_date", header: "Expires", render: (row) => formatDate(row.expiration_date) },
+                  {
+                    key: "mandatory",
+                    header: "Mandatory",
+                    render: (row) => (row.mandatory ? "Yes" : "No"),
+                  },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
                 ]}
                 rows={data?.requirements ?? []}
                 isLoading={related.isLoading}
@@ -255,7 +365,10 @@ function CustomerDetail() {
           </TabsContent>
 
           <TabsContent value="products" className="mt-4">
-            <Panel title="Products and materials" actions={addButton("Add product", "products", productFields)}>
+            <Panel
+              title="Products and materials"
+              actions={addButton("Add product", "products", productFields)}
+            >
               <DataTable
                 columns={[
                   { key: "product_name", header: "Product" },
@@ -273,17 +386,39 @@ function CustomerDetail() {
           </TabsContent>
 
           <TabsContent value="rates" className="mt-4">
-            <Panel title="Rates" description="Quoted, contracted and historical pricing" actions={addButton("Add rate", "rates", rateFields)}>
+            <Panel
+              title="Rates"
+              description="Quoted, contracted and historical pricing"
+              actions={addButton("Add rate", "rates", rateFields)}
+            >
               <DataTable
                 columns={[
                   { key: "rate_type", header: "Type" },
-                  { key: "amount", header: "Amount", align: "right", render: (row) => formatMoney(row.amount) },
+                  {
+                    key: "amount",
+                    header: "Amount",
+                    align: "right",
+                    render: (row) => formatMoney(row.amount),
+                  },
                   { key: "unit", header: "Unit" },
-                  { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
-                  { key: "effective_date", header: "Effective", render: (row) => formatDate(row.effective_date) },
-                  { key: "expiration_date", header: "Expires", render: (row) => formatDate(row.expiration_date) },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
+                  {
+                    key: "effective_date",
+                    header: "Effective",
+                    render: (row) => formatDate(row.effective_date),
+                  },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
                 ]}
                 rows={data?.rates ?? []}
+                onRowClick={canEdit("rates") ? setEditingRate : undefined}
                 isLoading={related.isLoading}
                 exportName="customer-rates"
                 emptyTitle="No rates recorded"
@@ -293,14 +428,34 @@ function CustomerDetail() {
           </TabsContent>
 
           <TabsContent value="commercial" className="mt-4 space-y-6">
-            <Panel title="Opportunities" actions={addButton("Add opportunity", "opportunities", opportunityFields)}>
+            <Panel
+              title="Opportunities"
+              actions={addButton("Add opportunity", "opportunities", opportunityFields)}
+            >
               <DataTable
                 columns={[
                   { key: "name", header: "Opportunity" },
-                  { key: "stage", header: "Stage", render: (row) => <StatusBadge status={row.stage} /> },
-                  { key: "capacity_status", header: "Can we service it?", render: (row) => <StatusBadge status={row.capacity_status} /> },
-                  { key: "estimated_revenue", header: "Estimated revenue", align: "right", render: (row) => formatMoney(row.estimated_revenue) },
-                  { key: "expected_close_date", header: "Expected close", render: (row) => formatDate(row.expected_close_date) },
+                  {
+                    key: "stage",
+                    header: "Stage",
+                    render: (row) => <StatusBadge status={row.stage} />,
+                  },
+                  {
+                    key: "capacity_status",
+                    header: "Can we service it?",
+                    render: (row) => <StatusBadge status={row.capacity_status} />,
+                  },
+                  {
+                    key: "estimated_revenue",
+                    header: "Estimated revenue",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
+                  {
+                    key: "expected_close_date",
+                    header: "Expected close",
+                    render: (row) => formatDate(row.expected_close_date),
+                  },
                 ]}
                 rows={data?.opportunities ?? []}
                 isLoading={related.isLoading}
@@ -311,9 +466,18 @@ function CustomerDetail() {
               <DataTable
                 columns={[
                   { key: "bid_name", header: "Bid" },
-                  { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
                   { key: "due_date", header: "Due", render: (row) => formatDate(row.due_date) },
-                  { key: "estimated_revenue", header: "Estimated revenue", align: "right", render: (row) => formatMoney(row.estimated_revenue) },
+                  {
+                    key: "estimated_revenue",
+                    header: "Estimated revenue",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
                 ]}
                 rows={data?.bids ?? []}
                 isLoading={related.isLoading}
@@ -329,27 +493,49 @@ function CustomerDetail() {
           </TabsContent>
 
           <TabsContent value="contracts" className="mt-4 space-y-6">
-            <Panel title="Contracts" actions={addButton("Add contract", "contracts", contractFields)}>
+            <Panel
+              title="Contracts"
+              actions={addButton("Add contract", "contracts", contractFields)}
+            >
               <DataTable
                 columns={[
                   { key: "contract_name", header: "Contract" },
                   { key: "contract_number", header: "Number" },
-                  { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
-                  { key: "effective_date", header: "Effective", render: (row) => formatDate(row.effective_date) },
-                  { key: "expiration_date", header: "Expires", render: (row) => formatDate(row.expiration_date) },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
+                  {
+                    key: "effective_date",
+                    header: "Effective",
+                    render: (row) => formatDate(row.effective_date),
+                  },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
                 ]}
                 rows={data?.contracts ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No contracts recorded"
               />
             </Panel>
-            <Panel title="Documents" actions={addButton("Add document", "documents", documentFields)}>
+            <Panel
+              title="Documents"
+              actions={addButton("Add document", "documents", documentFields)}
+            >
               <DataTable
                 columns={[
                   { key: "document_name", header: "Document" },
                   { key: "document_type", header: "Type" },
                   { key: "classification", header: "Sensitivity" },
-                  { key: "expiration_date", header: "Expires", render: (row) => formatDate(row.expiration_date) },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
                 ]}
                 rows={data?.documents ?? []}
                 isLoading={related.isLoading}
@@ -367,11 +553,24 @@ function CustomerDetail() {
             >
               <DataTable
                 columns={[
-                  { key: "occurred_on", header: "Date", render: (row) => formatDate(row.occurred_on) },
+                  {
+                    key: "occurred_on",
+                    header: "Date",
+                    render: (row) => formatDate(row.occurred_on),
+                  },
                   { key: "reason_category", header: "Reason" },
-                  { key: "estimated_revenue", header: "Revenue lost", align: "right", render: (row) => formatMoney(row.estimated_revenue) },
+                  {
+                    key: "estimated_revenue",
+                    header: "Revenue lost",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
                   { key: "competitor", header: "Competitor" },
-                  { key: "recoverable", header: "Recoverable", render: (row) => (row.recoverable ? "Yes" : "No") },
+                  {
+                    key: "recoverable",
+                    header: "Recoverable",
+                    render: (row) => (row.recoverable ? "Yes" : "No"),
+                  },
                 ]}
                 rows={data?.lost ?? []}
                 isLoading={related.isLoading}
@@ -380,9 +579,90 @@ function CustomerDetail() {
               />
             </Panel>
           </TabsContent>
+          <TabsContent value="refused" className="mt-4">
+            <Panel
+              title="Refused Loads"
+              description="Individual requests HEG could not accept. Separate from broader commercial losses."
+            >
+              <DataTable
+                rows={data?.refused ?? []}
+                isLoading={related.isLoading}
+                error={related.error}
+                columns={[
+                  {
+                    key: "call_in_date",
+                    header: "Call in date",
+                    render: (row) => formatDate(row.call_in_date),
+                  },
+                  { key: "equipment_type", header: "Equipment needed" },
+                  { key: "load_count", header: "Loads" },
+                  { key: "loss_reason", header: "Reason" },
+                  {
+                    key: "estimated_lost_revenue",
+                    header: "Lost revenue",
+                    render: (row) => formatMoney(row.estimated_lost_revenue),
+                  },
+                ]}
+                emptyTitle="No refused loads recorded"
+              />
+            </Panel>
+          </TabsContent>
+          <TabsContent value="lanes" className="mt-4">
+            <Panel title="Lanes" actions={addButton("Add lane", "lanes", laneFields)}>
+              <DataTable
+                rows={data?.lanes ?? []}
+                error={related.error}
+                columns={[
+                  { key: "lane_name", header: "Lane" },
+                  { key: "origin_description", header: "Origin" },
+                  { key: "destination_description", header: "Destination" },
+                ]}
+              />
+            </Panel>
+          </TabsContent>
+          <TabsContent value="equipment" className="mt-4">
+            <Panel title="Current equipment assignments">
+              <DataTable
+                rows={data?.equipment ?? []}
+                error={related.error}
+                columns={[
+                  { key: "unit", header: "Unit", value: (row) => row.equipment?.unit_number ?? "" },
+                  { key: "assignment_type", header: "Assignment" },
+                  {
+                    key: "start_date",
+                    header: "Start",
+                    render: (row) => formatDate(row.start_date),
+                  },
+                ]}
+              />
+            </Panel>
+          </TabsContent>
         </Tabs>
       </div>
 
+      {editingRate && (
+        <RecordForm
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditingRate(null);
+          }}
+          title="Revise rate"
+          description="Every change preserves the previous terms, effective date, reason and author."
+          table="rates"
+          recordId={editingRate.id}
+          initialValues={editingRate}
+          fields={[
+            ...rateFields,
+            {
+              name: "change_reason",
+              label: "Reason for change",
+              required: true,
+              type: "textarea",
+              section: "Revision",
+            },
+          ]}
+        />
+      )}
       <RecordForm
         open={editing}
         onOpenChange={setEditing}

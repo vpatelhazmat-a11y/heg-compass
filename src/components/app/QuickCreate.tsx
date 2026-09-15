@@ -10,11 +10,20 @@ import {
   taskFields,
 } from "@/lib/entities";
 
-export type QuickCreateKind = "customer" | "opportunity" | "bid" | "equipment" | "task" | "document";
+export type QuickCreateKind =
+  "customer" | "opportunity" | "bid" | "equipment" | "task" | "document";
 
-const CONFIG: Record<QuickCreateKind, { table: string; title: string; fields: FieldConfig[]; needsCustomer?: boolean }> = {
+const CONFIG: Record<
+  QuickCreateKind,
+  { table: string; title: string; fields: FieldConfig[]; needsCustomer?: boolean }
+> = {
   customer: { table: "customers", title: "New customer", fields: customerFields },
-  opportunity: { table: "opportunities", title: "New opportunity", fields: opportunityFields, needsCustomer: true },
+  opportunity: {
+    table: "opportunities",
+    title: "New opportunity",
+    fields: opportunityFields,
+    needsCustomer: true,
+  },
   bid: { table: "bids", title: "New bid", fields: bidFields, needsCustomer: true },
   equipment: { table: "equipment", title: "New equipment", fields: equipmentFields },
   task: { table: "tasks", title: "New task", fields: taskFields },
@@ -36,7 +45,13 @@ export function useCustomerOptions() {
   });
 }
 
-export function QuickCreate({ kind, onClose }: { kind: QuickCreateKind | null; onClose: () => void }) {
+export function QuickCreate({
+  kind,
+  onClose,
+}: {
+  kind: QuickCreateKind | null;
+  onClose: () => void;
+}) {
   const { data: customerOptions = [] } = useCustomerOptions();
   if (!kind) return null;
 

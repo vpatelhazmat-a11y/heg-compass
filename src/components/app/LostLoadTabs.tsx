@@ -12,9 +12,15 @@ export function LostLoadTabs() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   return (
-    <nav aria-label="Lost loads" className="flex gap-1 overflow-x-auto border-b border-border bg-surface px-4">
+    <nav
+      aria-label="Refused loads"
+      className="flex gap-1 overflow-x-auto border-b border-border bg-surface px-4"
+    >
       {TABS.map((tab) => {
-        const active = tab.to === "/lost-loads" ? pathname === "/lost-loads" || pathname === "/lost-loads/" : pathname.startsWith(tab.to);
+        const active =
+          tab.to === "/lost-loads"
+            ? pathname === "/lost-loads" || pathname === "/lost-loads/"
+            : pathname.startsWith(tab.to);
         return (
           <Link
             key={tab.to}

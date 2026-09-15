@@ -1,3 +1,4 @@
+import { canEditTable } from "@/lib/permissions";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -26,16 +27,16 @@ async function fetchSession(): Promise<SessionInfo> {
   if (!user) return { userId: null, email: null, fullName: null, title: null, roles: [] };
 
   const [{ data: profile }, { data: roleRows }] = await Promise.all([
-    (supabase.from("profiles" as never) as any).select("full_name, title").eq("id", user.id).maybeSingle(),
-    (supabase.from("user_roles" as never) as any).select("role").eq("user_id", user.id),
+    supabase.from("profiles").select("full_name, title, active").eq("id", user.id).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", user.id),
   ]);
 
   return {
     userId: user.id,
     email: user.email ?? null,
-    fullName: (profile as any)?.full_name || user.email || null,
-    title: (profile as any)?.title ?? null,
-    roles: ((roleRows as any[]) ?? []).map((r) => r.role as AppRole),
+    fullName: profile?.full_name || user.email || null,
+    title: profile?.title ?? null,
+    roles: profile?.active ? (roleRows ?? []).map((r) => r.role) : [],
   };
 }
 
@@ -49,7 +50,8 @@ export function useSession() {
     roles,
     hasRole: (role: AppRole) => roles.includes(role),
     hasAnyRole: (wanted: AppRole[]) => wanted.some((r) => roles.includes(r)),
-    canWrite: roles.some((r) => r !== "read_only"),
+    canWrite: roles.some((r) => ["admin", "sales", "operations", "safety"].includes(r)),
+    canEdit: (table: string) => canEditTable(roles, table),
     canViewSafety: roles.some((r) => ["admin", "safety", "management"].includes(r)),
     isAdmin: roles.includes("admin"),
   };

@@ -9,9 +9,15 @@ export const Route = createFileRoute("/_authenticated/sites/")({
   head: () => ({
     meta: [
       { title: "Sites — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Every customer location HEG services, with access, safety and route knowledge." },
+      {
+        name: "description",
+        content: "Every customer location HEG services, with access, safety and route knowledge.",
+      },
       { property: "og:title", content: "Sites — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Site master records for HazMat Environmental Group." },
+      {
+        property: "og:description",
+        content: "Site master records for HazMat Environmental Group.",
+      },
     ],
   }),
   component: SitesPage,
@@ -19,7 +25,11 @@ export const Route = createFileRoute("/_authenticated/sites/")({
 
 function SitesPage() {
   const navigate = useNavigate();
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["sites-all"],
     queryFn: () =>
       listRows("sites", {
@@ -51,7 +61,9 @@ function SitesPage() {
           error={error}
           searchPlaceholder="Search sites, cities, customers"
           exportName="heg-sites"
-          onRowClick={(row) => navigate({ to: "/sites/$siteId", params: { siteId: row.id as string } })}
+          onRowClick={(row) =>
+            navigate({ to: "/sites/$siteId", params: { siteId: row.id as string } })
+          }
           emptyTitle="No sites yet"
           emptyDescription="Sites are added from a customer's record so they always stay linked to the right customer."
         />
