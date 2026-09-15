@@ -13,9 +13,12 @@ import { useSession } from "@/hooks/use-session";
 export const Route = createFileRoute("/_authenticated/lost-loads/")({
   head: () => ({
     meta: [
-      { title: "Lost Loads — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Refused loads, lost revenue and the capacity constraints behind them." },
-      { property: "og:title", content: "Lost Loads — HEG Commercial Intelligence Hub" },
+      { title: "Refused Loads — HEG Commercial Intelligence Hub" },
+      {
+        name: "description",
+        content: "Refused loads, lost revenue and the capacity constraints behind them.",
+      },
+      { property: "og:title", content: "Refused Loads — HEG Commercial Intelligence Hub" },
       { property: "og:description", content: "Where HEG is losing qualified business, and why." },
     ],
   }),
@@ -25,12 +28,16 @@ export const Route = createFileRoute("/_authenticated/lost-loads/")({
 export function useRefusedLoads() {
   return useQuery({
     queryKey: ["refused-loads"],
-    queryFn: () => listRows("refused_loads", { order: { column: "call_in_date", ascending: false } }),
+    queryFn: () =>
+      listRows("refused_loads", { order: { column: "call_in_date", ascending: false } }),
   });
 }
 
 export function customerNames() {
-  return listRows("customers", { select: "id, legal_name, dba_name", order: { column: "legal_name", ascending: true } });
+  return listRows("customers", {
+    select: "id, legal_name, dba_name",
+    order: { column: "legal_name", ascending: true },
+  });
 }
 
 function LostLoadsDashboard() {
@@ -41,7 +48,7 @@ function LostLoadsDashboard() {
   if (rows.isLoading) {
     return (
       <>
-        <PageHeader title="Lost loads" description="Loading." />
+        <PageHeader title="Refused loads" description="Loading." />
         <LostLoadTabs />
         <div className="p-6">
           <LoadingState />
@@ -51,7 +58,12 @@ function LostLoadsDashboard() {
   }
 
   const data: Row[] = rows.data ?? [];
-  const nameById = new Map((customers.data ?? []).map((c: Row) => [c.id, c.legal_name ?? c.dba_name ?? "Unnamed customer"]));
+  const nameById = new Map(
+    (customers.data ?? []).map((c: Row) => [
+      c.id,
+      c.legal_name ?? c.dba_name ?? "Unnamed customer",
+    ]),
+  );
 
   const today = todayISO();
   const weekAgo = isoInDays(-7);
@@ -59,18 +71,25 @@ function LostLoadsDashboard() {
   const yearStart = `${today.slice(0, 4)}-01-01`;
 
   const loadsIn = (from: string) =>
-    data.filter((row) => (row.call_in_date ?? "") >= from).reduce((sum, row) => sum + Number(row.load_count ?? 0), 0);
+    data
+      .filter((row) => (row.call_in_date ?? "") >= from)
+      .reduce((sum, row) => sum + Number(row.load_count ?? 0), 0);
   const revenueIn = (from: string) =>
-    data.filter((row) => (row.call_in_date ?? "") >= from).reduce((sum, row) => sum + Number(row.estimated_lost_revenue ?? 0), 0);
+    data
+      .filter((row) => (row.call_in_date ?? "") >= from)
+      .reduce((sum, row) => sum + Number(row.estimated_lost_revenue ?? 0), 0);
 
   const capacityReasons = ["No capacity", "No driver available", "No equipment available"];
   const byReason = groupCount(data, (row) => row.loss_reason ?? "Not recorded");
-  const byCustomer = groupCount(data, (row) => nameById.get(row.customer_id) ?? "Not linked to a customer");
+  const byCustomer = groupCount(
+    data,
+    (row) => nameById.get(row.customer_id) ?? "Not linked to a customer",
+  );
 
   return (
     <>
       <PageHeader
-        title="Lost loads"
+        title="Refused loads"
         description="Every refused or unserviceable load, and the revenue behind it."
         actions={
           canWrite ? (
@@ -162,8 +181,13 @@ export function groupCount(rows: Row[], key: (row: Row) => string) {
   return [...map.values()].sort((a, b) => b.loads - a.loads);
 }
 
-export function Bars({ rows }: { rows: { label: string; count: number; loads: number; revenue: number }[] }) {
-  if (rows.length === 0) return <p className="text-sm text-muted-foreground">Nothing recorded for this period.</p>;
+export function Bars({
+  rows,
+}: {
+  rows: { label: string; count: number; loads: number; revenue: number }[];
+}) {
+  if (rows.length === 0)
+    return <p className="text-sm text-muted-foreground">Nothing recorded for this period.</p>;
   const max = Math.max(...rows.map((row) => row.loads), 1);
   return (
     <ul className="space-y-2.5">
@@ -176,7 +200,10 @@ export function Bars({ rows }: { rows: { label: string; count: number; loads: nu
             </span>
           </div>
           <div className="mt-1 h-1.5 rounded-full bg-muted">
-            <div className="h-1.5 rounded-full bg-primary" style={{ width: `${(row.loads / max) * 100}%` }} />
+            <div
+              className="h-1.5 rounded-full bg-primary"
+              style={{ width: `${(row.loads / max) * 100}%` }}
+            />
           </div>
         </li>
       ))}

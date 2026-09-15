@@ -17,7 +17,11 @@ export const Route = createFileRoute("/_authenticated/equipment/")({
   head: () => ({
     meta: [
       { title: "Equipment — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Tractors, trailers and specialty equipment with ownership, compliance and assignment." },
+      {
+        name: "description",
+        content:
+          "Tractors, trailers and specialty equipment with ownership, compliance and assignment.",
+      },
       { property: "og:title", content: "Equipment — HEG Commercial Intelligence Hub" },
       { property: "og:description", content: "Equipment records for HazMat Environmental Group." },
     ],
@@ -27,10 +31,15 @@ export const Route = createFileRoute("/_authenticated/equipment/")({
 
 function EquipmentPage() {
   const navigate = useNavigate();
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("equipment");
   const [creating, setCreating] = useState(false);
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["equipment"],
     queryFn: () => listRows("equipment", { order: { column: "unit_number", ascending: true } }),
   });
@@ -69,7 +78,11 @@ function EquipmentPage() {
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatTile label="Units recorded" value={data.length} />
           <StatTile label="Active" value={active} tone="success" />
-          <StatTile label="Out of service" value={outOfService} tone={outOfService ? "warning" : "neutral"} />
+          <StatTile
+            label="Out of service"
+            value={outOfService}
+            tone={outOfService ? "warning" : "neutral"}
+          />
           <StatTile label="Leased" value={leased} />
         </div>
 
@@ -80,10 +93,14 @@ function EquipmentPage() {
           error={error}
           searchPlaceholder="Search unit numbers, makes, VINs"
           exportName="heg-equipment"
-          onRowClick={(row) => navigate({ to: "/equipment/$equipmentId", params: { equipmentId: row.id as string } })}
+          onRowClick={(row) =>
+            navigate({ to: "/equipment/$equipmentId", params: { equipmentId: row.id as string } })
+          }
           emptyTitle="No equipment yet"
           emptyDescription="Add units as you bring fleet information across from spreadsheets and Trimble/TMW."
-          emptyAction={canWrite ? <Button onClick={() => setCreating(true)}>Add equipment</Button> : undefined}
+          emptyAction={
+            canWrite ? <Button onClick={() => setCreating(true)}>Add equipment</Button> : undefined
+          }
         />
       </div>
 

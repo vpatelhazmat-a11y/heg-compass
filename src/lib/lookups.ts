@@ -32,11 +32,17 @@ export function usePeople() {
     queryKey: ["people-options"],
     staleTime: 5 * 60_000,
     queryFn: () =>
-      listRows("profiles", { filters: { active: true }, order: { column: "full_name", ascending: true } }),
+      listRows("profiles", {
+        filters: { active: true },
+        order: { column: "full_name", ascending: true },
+      }),
   });
 
   const options: Option[] = (query.data ?? [])
-    .map((row: Row) => ({ value: String(row.full_name || row.email || row.id), label: String(row.full_name || row.email || "Unnamed user") }))
+    .map((row: Row) => ({
+      value: String(row.full_name || row.email || row.id),
+      label: String(row.full_name || row.email || "Unnamed user"),
+    }))
     .filter((option) => option.value);
 
   return { ...query, options };

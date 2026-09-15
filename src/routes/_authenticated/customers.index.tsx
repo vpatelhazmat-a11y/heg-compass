@@ -16,9 +16,15 @@ export const Route = createFileRoute("/_authenticated/customers/")({
   head: () => ({
     meta: [
       { title: "Customers — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Every HEG customer, their status, qualification and commercial history." },
+      {
+        name: "description",
+        content: "Every HEG customer, their status, qualification and commercial history.",
+      },
       { property: "og:title", content: "Customers — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Customer master records for HazMat Environmental Group." },
+      {
+        property: "og:description",
+        content: "Customer master records for HazMat Environmental Group.",
+      },
     ],
   }),
   component: CustomersPage,
@@ -26,10 +32,15 @@ export const Route = createFileRoute("/_authenticated/customers/")({
 
 function CustomersPage() {
   const navigate = useNavigate();
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("customers");
   const [creating, setCreating] = useState(false);
 
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["customers"],
     queryFn: () => listRows("customers", { order: { column: "legal_name", ascending: true } }),
   });
@@ -44,8 +55,16 @@ function CustomersPage() {
       header: "Qualification",
       render: (row) => <StatusBadge status={row.qualification_status} />,
     },
-    { key: "customer_since", header: "Customer since", render: (row) => formatDate(row.customer_since) },
-    { key: "data_quality_status", header: "Data quality", render: (row) => orDash(row.data_quality_status) },
+    {
+      key: "customer_since",
+      header: "Customer since",
+      render: (row) => formatDate(row.customer_since),
+    },
+    {
+      key: "data_quality_status",
+      header: "Data quality",
+      render: (row) => orDash(row.data_quality_status),
+    },
   ];
 
   return (
@@ -71,10 +90,14 @@ function CustomersPage() {
           error={error}
           searchPlaceholder="Search customers"
           exportName="heg-customers"
-          onRowClick={(row) => navigate({ to: "/customers/$customerId", params: { customerId: row.id as string } })}
+          onRowClick={(row) =>
+            navigate({ to: "/customers/$customerId", params: { customerId: row.id as string } })
+          }
           emptyTitle="No customers yet"
           emptyDescription="Add your first customer, or bring existing customer information in through the Import Center."
-          emptyAction={canWrite ? <Button onClick={() => setCreating(true)}>Add a customer</Button> : undefined}
+          emptyAction={
+            canWrite ? <Button onClick={() => setCreating(true)}>Add a customer</Button> : undefined
+          }
         />
       </div>
 

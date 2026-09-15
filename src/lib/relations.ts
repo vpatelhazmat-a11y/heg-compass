@@ -26,6 +26,7 @@ const TABLE_COLUMNS: Record<string, string[]> = {
   sites: ["customer_id"],
   contacts: ["customer_id", "site_id"],
   products: ["customer_id"],
+  lanes: ["customer_id", "origin_site_id", "destination_site_id"],
   rates: ["customer_id", "site_id", "lane_id", "product_id"],
   bids: ["customer_id", "opportunity_id"],
   opportunities: ["customer_id", "site_id"],
@@ -55,9 +56,10 @@ export function scopeDefaults(
   extra: Record<string, unknown> = {},
 ): Record<string, unknown> {
   const base = scopeFilters(table, kind, id);
+  if (POLYMORPHIC[table]) return base;
   const columns = TABLE_COLUMNS[table];
   const allowed = Object.entries(extra).filter(
-    ([key, value]) => value != null && (!columns || columns.includes(key)),
+    ([key, value]) => value != null && columns?.includes(key),
   );
   return { ...base, ...Object.fromEntries(allowed) };
 }

@@ -16,7 +16,10 @@ export const Route = createFileRoute("/_authenticated/tasks/")({
   head: () => ({
     meta: [
       { title: "Tasks — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Follow-ups and commitments across customers, bids and safety." },
+      {
+        name: "description",
+        content: "Follow-ups and commitments across customers, bids and safety.",
+      },
       { property: "og:title", content: "Tasks — HEG Commercial Intelligence Hub" },
       { property: "og:description", content: "Task tracking for HazMat Environmental Group." },
     ],
@@ -25,9 +28,14 @@ export const Route = createFileRoute("/_authenticated/tasks/")({
 });
 
 function TasksPage() {
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("tasks");
   const [creating, setCreating] = useState(false);
-  const { data = [], isLoading, error } = useQuery({
+  const {
+    data = [],
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["tasks"],
     queryFn: () => listRows("tasks", { order: { column: "due_date", ascending: true } }),
   });
@@ -50,14 +58,26 @@ function TasksPage() {
         <DataTable
           columns={[
             { key: "title", header: "Task" },
-            { key: "priority", header: "Priority", render: (row) => <StatusBadge status={row.priority} /> },
-            { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+            {
+              key: "priority",
+              header: "Priority",
+              render: (row) => <StatusBadge status={row.priority} />,
+            },
+            {
+              key: "status",
+              header: "Status",
+              render: (row) => <StatusBadge status={row.status} />,
+            },
             {
               key: "due_date",
               header: "Due",
               render: (row) => {
                 const due = dueLabel(row.due_date);
-                return due.tone === "neutral" ? formatDate(row.due_date) : <StatusBadge status={due.label} tone={due.tone} />;
+                return due.tone === "neutral" ? (
+                  formatDate(row.due_date)
+                ) : (
+                  <StatusBadge status={due.label} tone={due.tone} />
+                );
               },
             },
           ]}
@@ -67,7 +87,9 @@ function TasksPage() {
           exportName="heg-tasks"
           emptyTitle="No tasks yet"
           emptyDescription="Create a task, or add one from a customer, bid or incident."
-          emptyAction={canWrite ? <Button onClick={() => setCreating(true)}>Add a task</Button> : undefined}
+          emptyAction={
+            canWrite ? <Button onClick={() => setCreating(true)}>Add a task</Button> : undefined
+          }
         />
       </div>
       <RecordForm

@@ -9,7 +9,11 @@ export function formatMoney(value?: number | string | null): string {
   if (value === null || value === undefined || value === "") return "—";
   const num = Number(value);
   if (Number.isNaN(num)) return "—";
-  return num.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+  return num.toLocaleString("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  });
 }
 
 export function formatNumber(value?: number | string | null): string {
@@ -33,10 +37,17 @@ export function daysUntil(value?: string | null): number | null {
   return Math.round((date.getTime() - today.getTime()) / 86_400_000);
 }
 
-export function dueLabel(value?: string | null): { label: string; tone: "danger" | "warning" | "neutral" | "success" } {
+export function dueLabel(value?: string | null): {
+  label: string;
+  tone: "danger" | "warning" | "neutral" | "success";
+} {
   const days = daysUntil(value);
   if (days === null) return { label: "No date", tone: "neutral" };
-  if (days < 0) return { label: `Overdue by ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"}`, tone: "danger" };
+  if (days < 0)
+    return {
+      label: `Overdue by ${Math.abs(days)} day${Math.abs(days) === 1 ? "" : "s"}`,
+      tone: "danger",
+    };
   if (days === 0) return { label: "Due today", tone: "danger" };
   if (days <= 7) return { label: `Due in ${days} day${days === 1 ? "" : "s"}`, tone: "warning" };
   return { label: formatDate(value), tone: "neutral" };

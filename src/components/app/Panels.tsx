@@ -52,7 +52,15 @@ export function FieldGrid({ children, columns = 3 }: { children: ReactNode; colu
   );
 }
 
-export function Field({ label, children, full }: { label: string; children: ReactNode; full?: boolean }) {
+export function Field({
+  label,
+  children,
+  full,
+}: {
+  label: string;
+  children: ReactNode;
+  full?: boolean;
+}) {
   return (
     <div className={full ? "sm:col-span-2 lg:col-span-3" : undefined}>
       <dt className="field-label">{label}</dt>
@@ -104,7 +112,11 @@ export function StatTile({
   return <div className="rounded-lg border border-border bg-surface px-4 py-3">{content}</div>;
 }
 
-export function Timeline({ items }: { items: { date?: string | null; title: string; detail?: string | null }[] }) {
+export function Timeline({
+  items,
+}: {
+  items: { date?: string | null; title: string; detail?: string | null }[];
+}) {
   if (items.length === 0) {
     return <p className="text-sm text-muted-foreground">No history recorded yet.</p>;
   }
@@ -112,7 +124,10 @@ export function Timeline({ items }: { items: { date?: string | null; title: stri
     <ol className="relative space-y-5 border-l border-border pl-5">
       {items.map((item, index) => (
         <li key={index} className="relative">
-          <span className="absolute -left-[1.4rem] top-1.5 h-2 w-2 rounded-full bg-border-strong" aria-hidden />
+          <span
+            className="absolute -left-[1.4rem] top-1.5 h-2 w-2 rounded-full bg-border-strong"
+            aria-hidden
+          />
           <p className="text-xs text-muted-foreground">{item.date ?? "Date unknown"}</p>
           <p className="text-sm font-medium text-foreground">{item.title}</p>
           {item.detail && <p className="text-sm text-muted-foreground">{item.detail}</p>}

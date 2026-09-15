@@ -19,27 +19,41 @@ export const Route = createFileRoute("/_authenticated/sales/")({
   head: () => ({
     meta: [
       { title: "Sales Center — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Pipeline, opportunities and the business HEG could not serve." },
+      {
+        name: "description",
+        content: "Pipeline, opportunities and the business HEG could not serve.",
+      },
       { property: "og:title", content: "Sales Center — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Commercial pipeline for HazMat Environmental Group." },
+      {
+        property: "og:description",
+        content: "Commercial pipeline for HazMat Environmental Group.",
+      },
     ],
   }),
   component: SalesPage,
 });
 
 function SalesPage() {
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("opportunities");
   const [creating, setCreating] = useState<"opportunity" | "lost" | null>(null);
   const { data: customerOptions = [] } = useCustomerOptions();
 
   const opportunities = useQuery({
     queryKey: ["opportunities"],
     queryFn: () =>
-      listRows("opportunities", { select: "*, customers(legal_name)", order: { column: "expected_close_date", ascending: true } }),
+      listRows("opportunities", {
+        select: "*, customers(legal_name)",
+        order: { column: "expected_close_date", ascending: true },
+      }),
   });
   const lost = useQuery({
     queryKey: ["lost-business"],
-    queryFn: () => listRows("lost_business", { select: "*, customers(legal_name)", order: { column: "occurred_on", ascending: false } }),
+    queryFn: () =>
+      listRows("lost_business", {
+        select: "*, customers(legal_name)",
+        order: { column: "occurred_on", ascending: false },
+      }),
   });
 
   const rows = opportunities.data ?? [];
@@ -69,10 +83,15 @@ function SalesPage() {
       <div className="space-y-6 p-6">
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatTile label="Open opportunities" value={open.length} />
-          <StatTile label="Open pipeline" value={formatMoney(open.reduce((s, r) => s + Number(r.estimated_revenue ?? 0), 0))} />
+          <StatTile
+            label="Open pipeline"
+            value={formatMoney(open.reduce((s, r) => s + Number(r.estimated_revenue ?? 0), 0))}
+          />
           <StatTile
             label="Blocked by capacity"
-            value={open.filter((r) => r.capacity_status && r.capacity_status !== "Serviceable").length}
+            value={
+              open.filter((r) => r.capacity_status && r.capacity_status !== "Serviceable").length
+            }
             tone="warning"
           />
           <StatTile
@@ -93,11 +112,32 @@ function SalesPage() {
               <DataTable
                 columns={[
                   { key: "name", header: "Opportunity" },
-                  { key: "customer", header: "Customer", value: (row) => row.customers?.legal_name ?? "" },
-                  { key: "stage", header: "Stage", render: (row) => <StatusBadge status={row.stage} /> },
-                  { key: "capacity_status", header: "Can we service it?", render: (row) => <StatusBadge status={row.capacity_status} /> },
-                  { key: "estimated_revenue", header: "Estimated revenue", align: "right", render: (row) => formatMoney(row.estimated_revenue) },
-                  { key: "expected_close_date", header: "Expected close", render: (row) => formatDate(row.expected_close_date) },
+                  {
+                    key: "customer",
+                    header: "Customer",
+                    value: (row) => row.customers?.legal_name ?? "",
+                  },
+                  {
+                    key: "stage",
+                    header: "Stage",
+                    render: (row) => <StatusBadge status={row.stage} />,
+                  },
+                  {
+                    key: "capacity_status",
+                    header: "Can we service it?",
+                    render: (row) => <StatusBadge status={row.capacity_status} />,
+                  },
+                  {
+                    key: "estimated_revenue",
+                    header: "Estimated revenue",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
+                  {
+                    key: "expected_close_date",
+                    header: "Expected close",
+                    render: (row) => formatDate(row.expected_close_date),
+                  },
                 ]}
                 rows={rows}
                 isLoading={opportunities.isLoading}
@@ -110,14 +150,34 @@ function SalesPage() {
           </TabsContent>
 
           <TabsContent value="lost" className="mt-4">
-            <Panel title="Business we could not serve" description="The record that turns anecdotes into capacity decisions">
+            <Panel
+              title="Business we could not serve"
+              description="The record that turns anecdotes into capacity decisions"
+            >
               <DataTable
                 columns={[
-                  { key: "occurred_on", header: "Date", render: (row) => formatDate(row.occurred_on) },
-                  { key: "customer", header: "Customer", value: (row) => row.customers?.legal_name ?? "" },
+                  {
+                    key: "occurred_on",
+                    header: "Date",
+                    render: (row) => formatDate(row.occurred_on),
+                  },
+                  {
+                    key: "customer",
+                    header: "Customer",
+                    value: (row) => row.customers?.legal_name ?? "",
+                  },
                   { key: "reason_category", header: "Reason" },
-                  { key: "estimated_revenue", header: "Revenue lost", align: "right", render: (row) => formatMoney(row.estimated_revenue) },
-                  { key: "recoverable", header: "Recoverable", render: (row) => (row.recoverable ? "Yes" : "No") },
+                  {
+                    key: "estimated_revenue",
+                    header: "Revenue lost",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
+                  {
+                    key: "recoverable",
+                    header: "Recoverable",
+                    render: (row) => (row.recoverable ? "Yes" : "No"),
+                  },
                 ]}
                 rows={lostRows}
                 isLoading={lost.isLoading}
@@ -140,7 +200,13 @@ function SalesPage() {
           title={creating === "opportunity" ? "New opportunity" : "Record lost business"}
           table={creating === "opportunity" ? "opportunities" : "lost_business"}
           fields={[
-            { name: "customer_id", label: "Customer", type: "select", options: customerOptions, section: "Basic information" },
+            {
+              name: "customer_id",
+              label: "Customer",
+              type: "select",
+              options: customerOptions,
+              section: "Basic information",
+            },
             ...(creating === "opportunity" ? opportunityFields : lostBusinessFields),
           ]}
           invalidateKeys={[["opportunities"], ["lost-business"]]}

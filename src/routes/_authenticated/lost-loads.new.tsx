@@ -10,21 +10,34 @@ export const Route = createFileRoute("/_authenticated/lost-loads/new")({
   head: () => ({
     meta: [
       { title: "Refused Load Data Entry — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Record a refused load so lost revenue and capacity constraints are measured." },
-      { property: "og:title", content: "Refused Load Data Entry — HEG Commercial Intelligence Hub" },
-      { property: "og:description", content: "Fast entry of refused loads for lost revenue analysis." },
+      {
+        name: "description",
+        content: "Record a refused load so lost revenue and capacity constraints are measured.",
+      },
+      {
+        property: "og:title",
+        content: "Refused Load Data Entry — HEG Commercial Intelligence Hub",
+      },
+      {
+        property: "og:description",
+        content: "Fast entry of refused loads for lost revenue analysis.",
+      },
     ],
   }),
   component: RefusedLoadEntry,
 });
 
 function RefusedLoadEntry() {
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("refused_loads");
   const navigate = useNavigate();
 
   return (
     <>
-      <PageHeader title="Refused load data entry" description="Enter refused load details for tracking and revenue analysis." />
+      <PageHeader
+        title="Refused load data entry"
+        description="Enter refused load details for tracking and revenue analysis."
+      />
       <LostLoadTabs />
       <div className="p-6">
         {canWrite ? (

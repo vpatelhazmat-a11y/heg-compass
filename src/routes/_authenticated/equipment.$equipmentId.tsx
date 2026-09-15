@@ -10,7 +10,7 @@ import { DataTable } from "@/components/app/DataTable";
 import { RecordForm, type FieldConfig } from "@/components/app/RecordForm";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { getRow, listRows } from "@/lib/data";
+import { getRow, listRows, type Row } from "@/lib/data";
 import { scopeDefaults } from "@/lib/relations";
 
 import {
@@ -26,7 +26,10 @@ export const Route = createFileRoute("/_authenticated/equipment/$equipmentId")({
   head: () => ({
     meta: [
       { title: "Equipment unit — HEG Commercial Intelligence Hub" },
-      { name: "description", content: "Specification, compliance, technology and assignment history for this unit." },
+      {
+        name: "description",
+        content: "Specification, compliance, technology and assignment history for this unit.",
+      },
       { property: "og:title", content: "Equipment unit — HEG Commercial Intelligence Hub" },
       { property: "og:description", content: "Equipment 360 view for HazMat Environmental Group." },
     ],
@@ -38,9 +41,44 @@ type Creator = { table: string; title: string; fields: FieldConfig[] } | null;
 
 function EquipmentDetail() {
   const { equipmentId } = Route.useParams();
-  const { canWrite } = useSession();
+  const { canEdit } = useSession();
+  const canWrite = canEdit("equipment");
   const [editing, setEditing] = useState(false);
+  const [editingAssignment, setEditingAssignment] = useState<Row | null>(null);
   const [creator, setCreator] = useState<Creator>(null);
+  const assignmentParents = useQuery({
+    queryKey: ["assignment-parent-options"],
+    queryFn: async () => {
+      const [customers, sites] = await Promise.all([listRows("customers"), listRows("sites")]);
+      return { customers, sites };
+    },
+    enabled: canWrite,
+  });
+  const assignmentFields: FieldConfig[] = [
+    {
+      name: "customer_id",
+      label: "Customer",
+      type: "select",
+      section: "Assignment",
+      options: (assignmentParents.data?.customers ?? []).map((row) => ({
+        value: row.id,
+        label: row.legal_name,
+      })),
+    },
+    {
+      name: "site_id",
+      label: "Site",
+      type: "select",
+      section: "Assignment",
+      dependsOn: "customer_id",
+      options: (assignmentParents.data?.sites ?? []).map((row) => ({
+        value: row.id,
+        label: row.site_name,
+        parentValue: row.customer_id,
+      })),
+    },
+    ...equipmentAssignmentFields,
+  ];
 
   const unitQuery = useQuery({
     queryKey: ["equipment-unit", equipmentId],
@@ -51,13 +89,20 @@ function EquipmentDetail() {
     queryKey: ["equipment-related", equipmentId],
     queryFn: async () => {
       const filters = { equipment_id: equipmentId };
-      const [assignments, compliance, technology, leases] = await Promise.all([
-        listRows("equipment_assignments", { filters, order: { column: "start_date", ascending: false } }),
-        listRows("equipment_compliance", { filters, order: { column: "expiration_date", ascending: true } }),
+      const [assignments, compliance, technology, leases, incidents] = await Promise.all([
+        listRows("equipment_assignments", {
+          filters,
+          order: { column: "start_date", ascending: false },
+        }),
+        listRows("equipment_compliance", {
+          filters,
+          order: { column: "expiration_date", ascending: true },
+        }),
         listRows("equipment_technology", { filters }),
-        listRows("equipment_leases", { filters }).catch(() => []),
+        listRows("equipment_leases", { filters }),
+        listRows("incidents", { filters }),
       ]);
-      return { assignments, compliance, technology, leases };
+      return { assignments, compliance, technology, leases, incidents };
     },
   });
 
@@ -86,8 +131,12 @@ function EquipmentDetail() {
 
   const data = related.data;
   const addButton = (label: string, table: string, fields: FieldConfig[]) =>
-    canWrite ? (
-      <Button size="sm" variant="outline" onClick={() => setCreator({ table, title: label, fields })}>
+    canEdit(table) ? (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => setCreator({ table, title: label, fields })}
+      >
         <Plus className="h-4 w-4" aria-hidden />
         {label}
       </Button>
@@ -97,8 +146,13 @@ function EquipmentDetail() {
     <>
       <PageHeader
         title={`Unit ${unit.unit_number}`}
-        description={[unit.model_year, unit.make, unit.equipment_type].filter(Boolean).join(" ") || undefined}
-        breadcrumbs={[{ label: "Equipment", to: "/equipment" }, { label: `Unit ${unit.unit_number}` }]}
+        description={
+          [unit.model_year, unit.make, unit.equipment_type].filter(Boolean).join(" ") || undefined
+        }
+        breadcrumbs={[
+          { label: "Equipment", to: "/equipment" },
+          { label: `Unit ${unit.unit_number}` },
+        ]}
         meta={
           <>
             <MetaItem label="Status">
@@ -120,12 +174,14 @@ function EquipmentDetail() {
       />
 
       <div className="space-y-6 p-6">
+        {related.error && <ErrorState message={related.error.message} />}
         <Tabs defaultValue="specification">
           <TabsList className="flex w-full flex-wrap justify-start">
             <TabsTrigger value="specification">Specification</TabsTrigger>
             <TabsTrigger value="assignments">Assignments</TabsTrigger>
             <TabsTrigger value="compliance">Compliance</TabsTrigger>
             <TabsTrigger value="technology">Technology</TabsTrigger>
+            <TabsTrigger value="incidents">Incidents</TabsTrigger>
           </TabsList>
 
           <TabsContent value="specification" className="mt-4 space-y-6">
@@ -150,15 +206,27 @@ function EquipmentDetail() {
           </TabsContent>
 
           <TabsContent value="assignments" className="mt-4">
-            <Panel title="Assignment history" actions={addButton("Add assignment", "equipment_assignments", equipmentAssignmentFields)}>
+            <Panel
+              title="Assignment history"
+              actions={addButton("Add assignment", "equipment_assignments", assignmentFields)}
+            >
               <DataTable
                 columns={[
                   { key: "assignment_type", header: "Assignment" },
-                  { key: "start_date", header: "Start", render: (row) => formatDate(row.start_date) },
+                  {
+                    key: "start_date",
+                    header: "Start",
+                    render: (row) => formatDate(row.start_date),
+                  },
                   { key: "end_date", header: "End", render: (row) => formatDate(row.end_date) },
-                  { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
                 ]}
                 rows={data?.assignments ?? []}
+                onRowClick={canWrite ? setEditingAssignment : undefined}
                 isLoading={related.isLoading}
                 emptyTitle="No assignments recorded"
                 emptyDescription="Record where this unit has been assigned so history isn't lost."
@@ -167,14 +235,29 @@ function EquipmentDetail() {
           </TabsContent>
 
           <TabsContent value="compliance" className="mt-4">
-            <Panel title="Registration and compliance" actions={addButton("Add compliance record", "equipment_compliance", equipmentComplianceFields)}>
+            <Panel
+              title="Registration and compliance"
+              actions={addButton(
+                "Add compliance record",
+                "equipment_compliance",
+                equipmentComplianceFields,
+              )}
+            >
               <DataTable
                 columns={[
                   { key: "jurisdiction", header: "Jurisdiction" },
                   { key: "requirement", header: "Requirement" },
                   { key: "plate_number", header: "Plate / permit" },
-                  { key: "expiration_date", header: "Expires", render: (row) => formatDate(row.expiration_date) },
-                  { key: "required", header: "Required", render: (row) => (row.required ? "Yes" : "No") },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
+                  {
+                    key: "required",
+                    header: "Required",
+                    render: (row) => (row.required ? "Yes" : "No"),
+                  },
                 ]}
                 rows={data?.compliance ?? []}
                 isLoading={related.isLoading}
@@ -185,14 +268,29 @@ function EquipmentDetail() {
           </TabsContent>
 
           <TabsContent value="technology" className="mt-4">
-            <Panel title="Installed technology" actions={addButton("Add technology", "equipment_technology", equipmentTechnologyFields)}>
+            <Panel
+              title="Installed technology"
+              actions={addButton(
+                "Add technology",
+                "equipment_technology",
+                equipmentTechnologyFields,
+              )}
+            >
               <DataTable
                 columns={[
                   { key: "technology_type", header: "Technology" },
                   { key: "device_id", header: "Device ID" },
                   { key: "cable_id", header: "Cable ID" },
-                  { key: "installation_date", header: "Installed", render: (row) => formatDate(row.installation_date) },
-                  { key: "removal_date", header: "Removed", render: (row) => formatDate(row.removal_date) },
+                  {
+                    key: "installation_date",
+                    header: "Installed",
+                    render: (row) => formatDate(row.installation_date),
+                  },
+                  {
+                    key: "removal_date",
+                    header: "Removed",
+                    render: (row) => formatDate(row.removal_date),
+                  },
                 ]}
                 rows={data?.technology ?? []}
                 isLoading={related.isLoading}
@@ -200,9 +298,40 @@ function EquipmentDetail() {
               />
             </Panel>
           </TabsContent>
+          <TabsContent value="incidents" className="mt-4">
+            <Panel title="Equipment incidents">
+              <DataTable
+                rows={data?.incidents ?? []}
+                error={related.error}
+                columns={[
+                  {
+                    key: "incident_date",
+                    header: "Date",
+                    render: (row) => formatDate(row.incident_date),
+                  },
+                  { key: "incident_type", header: "Type" },
+                  { key: "status", header: "Status" },
+                ]}
+              />
+            </Panel>
+          </TabsContent>
         </Tabs>
       </div>
 
+      {editingAssignment && (
+        <RecordForm
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditingAssignment(null);
+          }}
+          title="Update assignment"
+          description="Close the assignment with an end date before assigning the unit elsewhere."
+          table="equipment_assignments"
+          recordId={editingAssignment.id}
+          initialValues={editingAssignment}
+          fields={equipmentAssignmentFields}
+        />
+      )}
       <RecordForm
         open={editing}
         onOpenChange={setEditing}
