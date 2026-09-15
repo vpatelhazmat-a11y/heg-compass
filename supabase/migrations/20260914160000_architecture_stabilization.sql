@@ -2,18 +2,40 @@
 -- never silently discard or invent HEG records to make a constraint pass.
 begin;
 
+-- The hosted September 10 migration shipped a wider table than the original
+-- repository migration. Preserve those fields and converge both upgrade paths.
 alter table public.refused_loads
-  add column product_id uuid references public.products(id) on delete restrict,
-  add column site_id uuid references public.sites(id) on delete restrict,
-  add column lane_id uuid references public.lanes(id) on delete restrict,
-  add column internal_notes text,
-  add column estimated_lost_revenue numeric check (estimated_lost_revenue >= 0 and estimated_lost_revenue <> 'NaN'::numeric),
-  add column updated_by uuid references auth.users(id) on delete set null,
+  drop constraint if exists refused_loads_customer_id_fkey,
+  drop constraint if exists refused_loads_contact_id_fkey,
+  drop constraint if exists refused_loads_equipment_id_fkey,
+  drop constraint if exists refused_loads_created_by_fkey;
+
+alter table public.refused_loads
+  add column if not exists product_id uuid references public.products(id) on delete restrict,
+  add column if not exists site_id uuid references public.sites(id) on delete restrict,
+  add column if not exists lane_id uuid references public.lanes(id) on delete restrict,
+  add column if not exists internal_notes text,
+  add column if not exists estimated_lost_revenue numeric,
+  add column if not exists updated_by uuid references auth.users(id) on delete set null,
   add constraint refused_loads_customer_id_fkey foreign key (customer_id) references public.customers(id) on delete restrict,
   add constraint refused_loads_contact_id_fkey foreign key (contact_id) references public.contacts(id) on delete restrict,
   add constraint refused_loads_equipment_id_fkey foreign key (equipment_id) references public.equipment(id) on delete restrict,
   add constraint refused_loads_created_by_fkey foreign key (created_by) references auth.users(id) on delete set null;
 alter table public.refused_loads alter column customer_id set not null;
+alter table public.refused_loads
+  add column if not exists currency text not null default 'USD',
+  add column if not exists opportunity_id uuid references public.opportunities(id),
+  add column if not exists bid_id uuid references public.bids(id),
+  add column if not exists rate_id uuid references public.rates(id),
+  add column if not exists record_status text not null default 'Active',
+  add column if not exists review_status text not null default 'Not reviewed',
+  add constraint refused_load_revenue_valid check (estimated_lost_revenue >= 0 and estimated_lost_revenue <> 'NaN'::numeric),
+  add constraint refused_load_count_valid check (load_count > 0 and load_count = trunc(load_count) and load_count <= 2147483647);
+-- Validate before conversion: PostgreSQL would otherwise round fractional loads.
+alter table public.refused_loads alter column load_count set not null;
+alter table public.refused_loads alter column load_count type integer using load_count::integer;
+alter table public.refused_loads alter column load_count set default 1;
+alter table public.refused_loads alter column call_in_date set default current_date;
 alter table public.sites alter column customer_id set not null;
 create index refused_loads_site_idx on public.refused_loads(site_id);
 create index refused_loads_lane_idx on public.refused_loads(lane_id);

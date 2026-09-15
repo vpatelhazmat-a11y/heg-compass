@@ -1,7 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import { readdir, readFile } from "node:fs/promises";
 
-export async function createDatabase() {
+export async function createDatabase({ hostedRefusedLoads = false, beforeStabilization } = {}) {
   const db = new PGlite();
   await db.exec(`
     create role anon; create role authenticated; create role service_role bypassrls;
@@ -15,7 +15,9 @@ export async function createDatabase() {
   for (const name of (await readdir("supabase/migrations"))
     .filter((n) => n.endsWith(".sql"))
     .sort()) {
+    if (hostedRefusedLoads && name === "20260909202500_refused_loads.sql") continue;
     try {
+      if (name === "20260914160000_architecture_stabilization.sql") await beforeStabilization?.(db);
       await db.exec(await readFile(`supabase/migrations/${name}`, "utf8"));
     } catch (error) {
       await db.close();

@@ -556,20 +556,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "documents_linked_customer_fk_fkey";
-            columns: ["linked_customer_fk"];
-            isOneToOne: false;
-            referencedRelation: "customers";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "documents_linked_site_fk_fkey";
-            columns: ["linked_site_fk"];
-            isOneToOne: false;
-            referencedRelation: "sites";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "documents_linked_equipment_fk_fkey";
             columns: ["linked_equipment_fk"];
             isOneToOne: false;
@@ -602,6 +588,20 @@ export type Database = {
             columns: ["linked_bid_fk"];
             isOneToOne: false;
             referencedRelation: "bids";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "documents_linked_customer_fk_fkey";
+            columns: ["linked_customer_fk"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "documents_linked_site_fk_fkey";
+            columns: ["linked_site_fk"];
+            isOneToOne: false;
+            referencedRelation: "sites";
             referencedColumns: ["id"];
           },
           {
@@ -2340,10 +2340,16 @@ export type Database = {
           internal_notes: string | null;
           estimated_lost_revenue: number | null;
           updated_by: string | null;
+          currency: string;
+          opportunity_id: string | null;
+          bid_id: string | null;
+          rate_id: string | null;
+          record_status: string;
+          review_status: string;
         };
         Insert: {
           id?: string;
-          call_in_date: string;
+          call_in_date?: string;
           customer_id: string;
           contact_id?: string | null;
           equipment_id?: string | null;
@@ -2370,6 +2376,12 @@ export type Database = {
           internal_notes?: string | null;
           estimated_lost_revenue?: number | null;
           updated_by?: string | null;
+          currency?: string;
+          opportunity_id?: string | null;
+          bid_id?: string | null;
+          rate_id?: string | null;
+          record_status?: string;
+          review_status?: string;
         };
         Update: {
           id?: string;
@@ -2400,6 +2412,12 @@ export type Database = {
           internal_notes?: string | null;
           estimated_lost_revenue?: number | null;
           updated_by?: string | null;
+          currency?: string;
+          opportunity_id?: string | null;
+          bid_id?: string | null;
+          rate_id?: string | null;
+          record_status?: string;
+          review_status?: string;
         };
         Relationships: [
           {
@@ -2456,6 +2474,27 @@ export type Database = {
             columns: ["created_by"];
             isOneToOne: false;
             referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refused_loads_opportunity_id_fkey";
+            columns: ["opportunity_id"];
+            isOneToOne: false;
+            referencedRelation: "opportunities";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refused_loads_bid_id_fkey";
+            columns: ["bid_id"];
+            isOneToOne: false;
+            referencedRelation: "bids";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "refused_loads_rate_id_fkey";
+            columns: ["rate_id"];
+            isOneToOne: false;
+            referencedRelation: "rates";
             referencedColumns: ["id"];
           },
           {
@@ -2558,20 +2597,6 @@ export type Database = {
             referencedColumns: ["id"];
           },
           {
-            foreignKeyName: "requirements_linked_opportunity_fk_fkey";
-            columns: ["linked_opportunity_fk"];
-            isOneToOne: false;
-            referencedRelation: "opportunities";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "requirements_linked_contract_fk_fkey";
-            columns: ["linked_contract_fk"];
-            isOneToOne: false;
-            referencedRelation: "contracts";
-            referencedColumns: ["id"];
-          },
-          {
             foreignKeyName: "requirements_linked_customer_fk_fkey";
             columns: ["linked_customer_fk"];
             isOneToOne: false;
@@ -2618,6 +2643,20 @@ export type Database = {
             columns: ["linked_bid_fk"];
             isOneToOne: false;
             referencedRelation: "bids";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "requirements_linked_opportunity_fk_fkey";
+            columns: ["linked_opportunity_fk"];
+            isOneToOne: false;
+            referencedRelation: "opportunities";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "requirements_linked_contract_fk_fkey";
+            columns: ["linked_contract_fk"];
+            isOneToOne: false;
+            referencedRelation: "contracts";
             referencedColumns: ["id"];
           },
         ];

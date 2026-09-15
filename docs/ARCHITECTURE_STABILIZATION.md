@@ -48,11 +48,27 @@ The test database runs every committed migration on PGlite (PostgreSQL in-proces
 
 Generated TypeScript types come from replaying committed migrations (`pnpm db:types`), not from a manually edited approximation. `db:check` fails on drift. The generic multi-table table/form presentation layer retains a documented dynamic Row boundary; critical Refused Load payloads, auth queries and rate RPCs use schema types.
 
-## Deployment gate — still required
+## Deployment verification
+
+The September 15 deployment preparation inspected the hosted schema and found
+the September 10 Refused Loads migration missing from Git. That migration is now
+recorded here. The stabilization migration preserves its extra fields and accepts
+both the original repository schema and hosted schema. Upgrade regression tests
+cover both paths and reject fractional loads before integer conversion.
+
+All pending migrations were trial-applied against the hosted database in one
+transaction and rolled back successfully. Existing relationship constraints and
+load counts passed; an active administrator is present. The user explicitly
+declined copying production records, so no data export or recovery-copy backup
+was taken. Atomic migration rollback protects against migration failure; it does
+not replace a tested backup after a committed deployment. Hosted authentication,
+email delivery and user acceptance testing still need verification.
+
+The following checklist remains the standard for future imports and rollout:
 
 1. Export a schema-only snapshot and take a restorable backup of the target database. Keep operational exports outside GitHub. Record the recovery point and responsible administrator.
 2. Run `supabase/preflight.sql` against staging/production as a read-only administrative inspection. Compare migration history, columns, constraints, policies and existing conflicts. Check **all** relationships added by the migrations, not only the highlighted examples. No live database was inspected by this sprint.
-3. Investigate any orphan IDs, missing customer links, conflicting equipment placements, duplicate open assignments, incompatible polymorphic entity values, or existing undocumented columns. Do not delete rows or fabricate replacements to pass migration. The migrations deliberately abort on conflicts and existing duplicate columns.
+3. Investigate any orphan IDs, missing customer links, conflicting equipment placements, duplicate open assignments, incompatible polymorphic entity values, or existing undocumented columns. Do not delete rows or fabricate replacements to pass migration. The migrations abort on invalid relationships; known hosted Refused Loads columns are preserved.
 4. Restore the backup into an isolated staging database, apply migrations in timestamp order, regenerate hosted Supabase types and compare with the committed contract. Verify PostgREST embedded relationships (including composite-key disambiguation and assignment views) with each role.
 5. Exercise Customer/Site/Equipment 360, Refused Load create/edit, rate revision/history, assignment close/reassign, disabled accounts, invitations, and admin deletion using separate real sessions. Verify customer changes cannot leave stale dependent selections.
 6. Test backup restoration and export access. Retain the pre-migration backup and read-only schema export through rollout. Roll back application code only if it remains compatible; database rollback is a reviewed restore or corrective migration, never an automatic DROP of history/constraints.
