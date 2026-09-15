@@ -37,4 +37,17 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  // Lovable rewrites these generated files on backend refresh. Keep semantic
+  // checks, but do not make its formatter or timer declaration break releases.
+  {
+    files: [
+      "src/integrations/supabase/types.ts",
+      "src/integrations/supabase/previewAuthStorage.ts",
+    ],
+    rules: { "prettier/prettier": "off" },
+  },
+  {
+    files: ["src/integrations/supabase/previewAuthStorage.ts"],
+    rules: { "prefer-const": "off" },
+  },
 );

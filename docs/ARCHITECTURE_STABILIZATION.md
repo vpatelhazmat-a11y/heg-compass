@@ -46,7 +46,7 @@ CI runs these checks. Original direct dependency versions are pinned from the re
 
 The test database runs every committed migration on PGlite (PostgreSQL in-process) with minimal Supabase auth roles/UID fixtures. Tests cover database constraints, RLS, historical changes, schema/form agreement, archive handling, authentication decisions, Refused Load form submission, and empty/paginated queries. This is not a substitute for PostgREST, hosted Auth/Storage, email delivery, concurrent independent database sessions, or a live-schema comparison.
 
-Generated TypeScript types come from replaying committed migrations (`pnpm db:types`), not from a manually edited approximation. `db:check` fails on drift. The generic multi-table table/form presentation layer retains a documented dynamic Row boundary; critical Refused Load payloads, auth queries and rate RPCs use schema types.
+Generated TypeScript types come from replaying committed migrations (`pnpm db:types`) or Lovable's hosted Supabase generator. `db:check` compares table fields, nullability, required inputs and public-table foreign keys against replayed migrations, independent of formatting and helper aliases. Stored generated columns are checked for reads; their write shapes are ignored because the hosted generator exposes them even though PostgreSQL forbids writing them. Formatting rules are disabled only for the two integration files Lovable automatically rewrites. The generic multi-table table/form presentation layer retains a documented dynamic Row boundary; critical Refused Load payloads, auth queries and rate RPCs use schema types.
 
 ## Deployment verification
 
