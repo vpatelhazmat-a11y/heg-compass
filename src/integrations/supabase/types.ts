@@ -2744,6 +2744,35 @@ export type Database = {
           },
         ]
       }
+      staff_directory: {
+        Row: {
+          active: boolean
+          full_name: string | null
+          id: string
+          title: string | null
+        }
+        Insert: {
+          active?: boolean
+          full_name?: string | null
+          id: string
+          title?: string | null
+        }
+        Update: {
+          active?: boolean
+          full_name?: string | null
+          id?: string
+          title?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_directory_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           completed_date: string | null
@@ -3055,27 +3084,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      staff_directory: {
-        Row: {
-          active: boolean | null
-          full_name: string | null
-          id: string | null
-          title: string | null
-        }
-        Insert: {
-          active?: boolean | null
-          full_name?: string | null
-          id?: string | null
-          title?: string | null
-        }
-        Update: {
-          active?: boolean | null
-          full_name?: string | null
-          id?: string | null
-          title?: string | null
-        }
-        Relationships: []
       }
     }
     Functions: {
