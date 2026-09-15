@@ -1,4 +1,6 @@
-import type { AppRole } from "@/integrations/supabase/types";
+import type { Database } from "@/integrations/supabase/types";
+
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 /** Mirrors database policy for controls; Postgres remains the authority. */
 export function canEditTable(roles: AppRole[], table: string): boolean {
