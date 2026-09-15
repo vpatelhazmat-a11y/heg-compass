@@ -3,6 +3,7 @@
 import { createDatabase } from "../tests/database.mjs";
 import { readFile, writeFile } from "node:fs/promises";
 import { format } from "prettier";
+import { schemaContract } from "./schema-contract.mjs";
 const db = await createDatabase();
 try {
   const columns = (
@@ -87,8 +88,30 @@ export type Enums<T extends keyof Database['public']['Enums']> = Database['publi
   );
   const path = "src/integrations/supabase/types.ts";
   if (process.argv.includes("--check")) {
-    if ((await readFile(path, "utf8")).replaceAll("\r\n", "\n") !== output)
-      throw new Error("Database types differ from migrations. Run pnpm db:types.");
+    const generatedColumns = columns
+      .filter((c) => c.is_generated !== "NEVER")
+      .map((c) => `${c.table_name}.${c.column_name}`);
+    const actual = schemaContract(await readFile(path, "utf8"), generatedColumns);
+    const expected = schemaContract(output, generatedColumns);
+    if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+      const differences = [];
+      for (const table of new Set([...Object.keys(actual), ...Object.keys(expected)]))
+        for (const mode of ["Row", "Insert", "Update"])
+          for (const column of new Set([
+            ...Object.keys(actual[table]?.[mode] ?? {}),
+            ...Object.keys(expected[table]?.[mode] ?? {}),
+          ]))
+            if (
+              JSON.stringify(actual[table]?.[mode]?.[column]) !==
+              JSON.stringify(expected[table]?.[mode]?.[column])
+            )
+              differences.push(
+                `${table}.${mode}.${column}: ${JSON.stringify(actual[table]?.[mode]?.[column])} expected ${JSON.stringify(expected[table]?.[mode]?.[column])}`,
+              );
+      throw new Error(
+        `Database types differ from migrations. Run pnpm db:types.\n${differences.join("\n")}`,
+      );
+    }
   } else await writeFile(path, output);
 } finally {
   await db.close();
