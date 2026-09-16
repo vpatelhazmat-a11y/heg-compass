@@ -21,7 +21,7 @@ function fromDotEnv(key: string): string | undefined {
     if (!fs.existsSync(full)) continue;
     for (const line of fs.readFileSync(full, "utf8").split("\n")) {
       const match = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
-      if (match && match[1] === key) return match[2].replace(/^["']|["']$/g, "");
+      if (match && match[1] === key) return match[2]?.replace(/^["']|["']$/g, "");
     }
   }
   return undefined;
@@ -57,3 +57,4 @@ export default defineConfig({
     server: { entry: "server" },
   },
 });
+
