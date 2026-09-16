@@ -189,6 +189,8 @@ test("signup does not bootstrap admin or business access", async () => {
     (await db.query("select * from user_roles where user_id=$1", [users.unassigned])).rows,
   ).toHaveLength(0);
   expect((await asRole("unassigned", "select * from customers")).rows).toHaveLength(0);
+  expect((await asRole("unassigned", "select * from staff_directory")).rows).toHaveLength(0);
+  expect((await asRole("admin", "select * from staff_directory")).rows.length).toBeGreaterThan(0);
 });
 test("sales creates customers; read-only and management cannot", async () => {
   expect(
