@@ -16,6 +16,25 @@ test("blank optional fields use database defaults during customer creation", () 
   expect(payload).toEqual({ legal_name: "Test Customer" });
   expect(validateFields(customerFields, { legal_name: "  " })).toHaveProperty("legal_name");
 });
+
+test("whitespace-only optional fields are omitted on create and cleared on edit", () => {
+  const values = {
+    amount: "100",
+    effective_date: "2026-09-14",
+    minimum_charge: "   ",
+    expiration_date: "  ",
+    notes: "  ",
+  };
+  expect(formPayload(rateFields, values, false)).toEqual({
+    amount: 100,
+    effective_date: "2026-09-14",
+  });
+  expect(formPayload(rateFields, values, true)).toMatchObject({
+    minimum_charge: null,
+    expiration_date: null,
+    notes: null,
+  });
+});
 test("invalid dates and non-finite or negative money cannot be submitted", () => {
   expect(isValidDate("2026-02-30")).toBe(false);
   expect(isValidDate("2024-02-29")).toBe(true);

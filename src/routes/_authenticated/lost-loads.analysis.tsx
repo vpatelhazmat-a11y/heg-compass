@@ -3,7 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel, StatTile } from "@/components/app/Panels";
-import { EmptyState } from "@/components/app/EmptyState";
+import { EmptyState, LoadingState, ErrorState } from "@/components/app/EmptyState";
 import { LostLoadTabs } from "@/components/app/LostLoadTabs";
 import { Bars, groupCount } from "./lost-loads.index";
 import { Input } from "@/components/ui/input";
@@ -67,6 +67,28 @@ function LostRevenueAnalysis() {
       }),
     [rows.data, range],
   );
+
+  if (rows.isError || customers.isError || rows.isPending || customers.isPending) {
+    return (
+      <>
+        <PageHeader title="Lost revenue analysis" />
+        <LostLoadTabs />
+        <div className="p-6">
+          {rows.isError || customers.isError ? (
+            <ErrorState
+              message={(rows.error ?? customers.error)?.message}
+              onRetry={() => {
+                void rows.refetch();
+                void customers.refetch();
+              }}
+            />
+          ) : (
+            <LoadingState />
+          )}
+        </div>
+      </>
+    );
+  }
 
   const totalLoads = data.reduce((sum: number, row: Row) => sum + Number(row.load_count ?? 0), 0);
   const knownRevenue = data.reduce(

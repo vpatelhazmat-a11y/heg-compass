@@ -288,6 +288,60 @@ test("rate RPC rejects stale editors", async () => {
     ),
   ).rejects.toThrow(/Refresh/);
 });
+
+test("reason-only rate updates cannot authorize a later silent revision", async () => {
+  const row = (
+    await asRole(
+      "sales",
+      "insert into rates(customer_id,amount,effective_date) values($1,100,current_date) returning id",
+      [customer],
+    )
+  ).rows[0];
+  await asRole("sales", "update rates set change_reason='Unused reason' where id=$1", [row.id]);
+  expect(
+    (await asRole("sales", "select change_reason from rates where id=$1", [row.id])).rows[0]
+      .change_reason,
+  ).toBeNull();
+  await expect(
+    asRole("sales", "update rates set amount=120 where id=$1", [row.id]),
+  ).rejects.toThrow(/reason/);
+  expect(
+    (await asRole("sales", "select * from rate_history where rate_id=$1", [row.id])).rows,
+  ).toHaveLength(0);
+});
+
+test("hosted Refused Load commercial links must match the customer in both directions", async () => {
+  const opportunity = (
+    await db.query(
+      "insert into opportunities(customer_id,name) values($1,'Linked opportunity') returning id",
+      [customer],
+    )
+  ).rows[0].id;
+  const bid = (
+    await db.query("insert into bids(customer_id,bid_name) values($1,'Linked bid') returning id", [
+      customer,
+    ])
+  ).rows[0].id;
+  for (const [column, table, id] of [
+    ["opportunity_id", "opportunities", opportunity],
+    ["bid_id", "bids", bid],
+    ["rate_id", "rates", rate],
+  ]) {
+    await expect(
+      asRole("sales", `insert into refused_loads(customer_id,${column}) values($1,$2)`, [
+        other,
+        id,
+      ]),
+    ).rejects.toThrow();
+    await asRole("sales", `insert into refused_loads(customer_id,${column}) values($1,$2)`, [
+      customer,
+      id,
+    ]);
+    await expect(
+      db.query(`update ${table} set customer_id=$1 where id=$2`, [other, id]),
+    ).rejects.toThrow();
+  }
+});
 test("rates and driver safety are restricted", async () => {
   for (const role of ["safety", "read_only", "unassigned"])
     expect((await asRole(role, "select * from rates")).rows).toHaveLength(0);
@@ -301,6 +355,41 @@ test("rates and driver safety are restricted", async () => {
   expect(
     (await asRole("safety", "select * from drivers where employee_reference='TEST'")).rows,
   ).toHaveLength(1);
+});
+
+test("rate RPC enforces role access and failed revisions leave no history", async () => {
+  const row = (
+    await asRole(
+      "sales",
+      "insert into rates(customer_id,amount,effective_date) values($1,100,current_date) returning *",
+      [customer],
+    )
+  ).rows[0];
+  const version = (
+    await db.query("select updated_at::text as version from rates where id=$1", [row.id])
+  ).rows[0].version;
+  for (const role of ["operations", "management", "safety", "read_only", "unassigned"]) {
+    await expect(
+      asRole(role, "select revise_rate($1,$2,$3::jsonb)", [
+        row.id,
+        version,
+        JSON.stringify({ amount: 120, change_reason: "Not permitted" }),
+      ]),
+    ).rejects.toThrow(/restricted/);
+  }
+  await expect(
+    asRole("sales", "select revise_rate($1,$2,$3::jsonb)", [
+      row.id,
+      version,
+      JSON.stringify({ amount: -1, change_reason: "Invalid amount" }),
+    ]),
+  ).rejects.toThrow();
+  expect(
+    (await asRole("sales", "select amount from rates where id=$1", [row.id])).rows[0].amount,
+  ).toBe("100");
+  expect(
+    (await asRole("sales", "select * from rate_history where rate_id=$1", [row.id])).rows,
+  ).toHaveLength(0);
 });
 test("role management is admin-only; disabled users cannot reactivate", async () => {
   await expect(
