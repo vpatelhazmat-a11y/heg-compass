@@ -1,6 +1,47 @@
 import { expect, test } from "vitest";
 import { createDatabase } from "./database.mjs";
 
+test("follow-up upgrade removes unused reasons without inventing rate history", async () => {
+  const db = await createDatabase({
+    beforeMigration: async (db, name) => {
+      if (name !== "20260918130000_stabilization_followup.sql") return;
+      await db.exec(
+        "insert into rates(amount,effective_date) values(100,current_date); update rates set change_reason='Left by old trigger'",
+      );
+      expect((await db.query("select change_reason from rates")).rows[0].change_reason).toBe(
+        "Left by old trigger",
+      );
+    },
+  });
+  try {
+    expect((await db.query("select amount,change_reason from rates")).rows).toEqual([
+      { amount: "100", change_reason: null },
+    ]);
+    expect((await db.query("select * from rate_history")).rows).toHaveLength(0);
+  } finally {
+    await db.close();
+  }
+});
+
+test("follow-up upgrade rejects existing cross-customer commercial links", async () => {
+  await expect(
+    createDatabase({
+      beforeMigration: async (db, name) => {
+        if (name !== "20260918130000_stabilization_followup.sql") return;
+        await db.exec(`
+        insert into customers(id,legal_name) values
+        ('10000000-0000-0000-0000-000000000001','First'),
+        ('10000000-0000-0000-0000-000000000002','Second');
+        insert into bids(id,customer_id,bid_name) values
+        ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','Bid');
+        insert into refused_loads(customer_id,bid_id) values
+        ('10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001');
+      `);
+      },
+    }),
+  ).rejects.toThrow(/refused_loads_bid_id_customer_fk/);
+});
+
 test("hosted Refused Loads upgrade preserves legacy fields and matches fresh schema", async () => {
   const fresh = await createDatabase();
   const hosted = await createDatabase({

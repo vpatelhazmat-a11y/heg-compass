@@ -67,7 +67,7 @@ email delivery and user acceptance testing still need verification.
 The following checklist remains the standard for future imports and rollout:
 
 1. Export a schema-only snapshot and take a restorable backup of the target database. Keep operational exports outside GitHub. Record the recovery point and responsible administrator.
-2. Run `supabase/preflight.sql` against staging/production as a read-only administrative inspection. Compare migration history, columns, constraints, policies and existing conflicts. Check **all** relationships added by the migrations, not only the highlighted examples. No live database was inspected by this sprint.
+2. Run `supabase/preflight.sql` against staging/production as a read-only administrative inspection. Compare migration history, columns, constraints, policies and existing conflicts. Check **all** relationships added by the migrations, not only the highlighted examples. The original code-only sprint did not inspect a live database; the September 15 preparation described above did. Repeat inspection for each rollout.
 3. Investigate any orphan IDs, missing customer links, conflicting equipment placements, duplicate open assignments, incompatible polymorphic entity values, or existing undocumented columns. Do not delete rows or fabricate replacements to pass migration. The migrations abort on invalid relationships; known hosted Refused Loads columns are preserved.
 4. Restore the backup into an isolated staging database, apply migrations in timestamp order, regenerate hosted Supabase types and compare with the committed contract. Verify PostgREST embedded relationships (including composite-key disambiguation and assignment views) with each role.
 5. Exercise Customer/Site/Equipment 360, Refused Load create/edit, rate revision/history, assignment close/reassign, disabled accounts, invitations, and admin deletion using separate real sessions. Verify customer changes cannot leave stale dependent selections.
@@ -77,3 +77,33 @@ The following checklist remains the standard for future imports and rollout:
 ## Deliberately deferred
 
 Global material normalization, new dashboards, new import workflows, new integrations, personnel-management features and navigation redesign. Missing production evidence is not marked as passing. No synthetic HEG business records are created by the migrations; test fixtures live only in disposable databases.
+
+## September 18 stabilization follow-up
+
+The current GitHub baseline already contains the original sprint. This follow-up
+preserves its domain and role decisions, without continuing the later navigation
+feature work found in the previous local task.
+
+- Refused Loads now enforce customer consistency for the hosted opportunity,
+  bid and rate links, including changes to the linked parent's customer.
+- A reason-only rate save consumes the unused reason. Later edits must supply
+  a fresh reason. The migration clears reasons left by the old trigger without
+  changing rate terms or deleting history; normal audit and update timestamps
+  record that cleanup, so open editors must refresh after migration.
+- Optional whitespace-only form values are omitted on creation or set to null
+  on editing, rather than becoming zero amounts or invalid blank dates.
+- Refused Load dashboard and analysis totals wait for successful data and
+  customer queries; failed queries show an error and retry control.
+
+The follow-up migration is transactional and aborts on existing inconsistent
+commercial links. Run the expanded preflight before applying it; reconcile any
+conflict with its business owner, without deleting records or inventing links.
+The added composite keys may require explicit foreign-key names in external
+PostgREST embedded queries. Existing application queries do not embed those
+three relationships.
+
+Local regression coverage includes upgrade cleanup, invalid existing links,
+rate RPC role restrictions and rollback, and pending/failed dashboard queries.
+Hosted schema comparison, real authenticated sessions, invitations, Storage,
+and independent-session concurrency remain deployment verification gates.
+No hosted migrations or production data writes were performed in this follow-up.

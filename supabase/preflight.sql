@@ -21,4 +21,14 @@ from public.equipment e join public.equipment_assignments a on a.equipment_id=e.
 where (e.current_customer_id is not null or e.current_site_id is not null)
 and (e.current_customer_id is distinct from a.customer_id or e.current_site_id is distinct from a.site_id);
 select id,entity_type,entity_id from public.requirements where entity_id is null or entity_type not in ('customer','site','equipment','incident','driver','rate','bid','opportunity','contract');
+-- Hosted commercial links added after the original Refused Loads schema.
+select r.id as refused_load_id,r.customer_id,r.opportunity_id,r.bid_id,r.rate_id
+from public.refused_loads r
+left join public.opportunities o on o.id=r.opportunity_id
+left join public.bids b on b.id=r.bid_id
+left join public.rates rt on rt.id=r.rate_id
+where (r.opportunity_id is not null and (o.id is null or o.customer_id is distinct from r.customer_id))
+or (r.bid_id is not null and (b.id is null or b.customer_id is distinct from r.customer_id))
+or (r.rate_id is not null and (rt.id is null or rt.customer_id is distinct from r.customer_id));
+select id from public.rates where change_reason is not null;
 rollback;

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel, StatTile } from "@/components/app/Panels";
-import { EmptyState, LoadingState } from "@/components/app/EmptyState";
+import { EmptyState, LoadingState, ErrorState } from "@/components/app/EmptyState";
 import { LostLoadTabs } from "@/components/app/LostLoadTabs";
 import { Button } from "@/components/ui/button";
 import { listRows, type Row } from "@/lib/data";
@@ -45,13 +45,23 @@ function LostLoadsDashboard() {
   const rows = useRefusedLoads();
   const customers = useQuery({ queryKey: ["customer-names"], queryFn: customerNames });
 
-  if (rows.isLoading) {
+  if (rows.isError || customers.isError || rows.isPending || customers.isPending) {
     return (
       <>
-        <PageHeader title="Refused loads" description="Loading." />
+        <PageHeader title="Refused loads" />
         <LostLoadTabs />
         <div className="p-6">
-          <LoadingState />
+          {rows.isError || customers.isError ? (
+            <ErrorState
+              message={(rows.error ?? customers.error)?.message}
+              onRetry={() => {
+                void rows.refetch();
+                void customers.refetch();
+              }}
+            />
+          ) : (
+            <LoadingState />
+          )}
         </div>
       </>
     );

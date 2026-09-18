@@ -33,7 +33,7 @@ export function formPayload(
   for (const field of fields) {
     const raw = values[field.name];
     if (field.type === "checkbox") payload[field.name] = Boolean(raw);
-    else if (raw === "" || raw === undefined || raw === null) {
+    else if (raw === undefined || raw === null || (typeof raw === "string" && !raw.trim())) {
       // Omitting blank optional values on INSERT lets database defaults apply.
       if (editing) payload[field.name] = null;
     } else

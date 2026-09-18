@@ -2304,6 +2304,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "refused_loads_bid_id_customer_fk"
+            columns: ["bid_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "bids"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
             foreignKeyName: "refused_loads_bid_id_fkey"
             columns: ["bid_id"]
             isOneToOne: false
@@ -2353,6 +2360,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "refused_loads_opportunity_id_customer_fk"
+            columns: ["opportunity_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id", "customer_id"]
+          },
+          {
             foreignKeyName: "refused_loads_opportunity_id_fkey"
             columns: ["opportunity_id"]
             isOneToOne: false
@@ -2372,6 +2386,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "refused_loads_rate_id_customer_fk"
+            columns: ["rate_id", "customer_id"]
+            isOneToOne: false
+            referencedRelation: "rates"
+            referencedColumns: ["id", "customer_id"]
           },
           {
             foreignKeyName: "refused_loads_rate_id_fkey"
