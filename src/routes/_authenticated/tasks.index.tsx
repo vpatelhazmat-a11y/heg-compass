@@ -81,6 +81,7 @@ function TasksPage() {
               },
             },
           ]}
+          recordTable="tasks"
           rows={data}
           isLoading={isLoading}
           error={error}

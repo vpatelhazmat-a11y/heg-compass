@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CalendarClock, ClipboardCheck, ShieldAlert } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
+import { AppLauncher } from "@/components/app/AppLauncher";
 import { Panel, StatTile } from "@/components/app/Panels";
 import { EmptyState, ErrorState, LoadingState } from "@/components/app/EmptyState";
 import { StatusBadge } from "@/components/app/StatusBadge";
@@ -82,7 +83,8 @@ function CommandCenter() {
   if (isLoading || !data) {
     return (
       <>
-        <PageHeader title="Command Center" description="What needs your attention today." />
+        <AppLauncher />
+        <PageHeader title="Today's overview" description="What needs your attention today." />
         <div className="p-6">
           <LoadingState />
         </div>
@@ -146,6 +148,7 @@ function CommandCenter() {
 
   return (
     <>
+      <AppLauncher />
       <PageHeader
         title={firstName ? `Good day, ${firstName}` : "Command Center"}
         description="Exceptions first: what is overdue, due soon, or blocked."
@@ -209,7 +212,8 @@ function CommandCenter() {
                     <li key={bid.id} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
                         <Link
-                          to="/bids"
+                          to="/records/$entityType/$recordId"
+                          params={{ entityType: "bids", recordId: bid.id }}
                           className="truncate text-sm font-medium text-foreground hover:underline"
                         >
                           {bid.bid_name}
@@ -240,7 +244,13 @@ function CommandCenter() {
                   return (
                     <li key={task.id} className="flex items-center justify-between gap-3 py-2.5">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">{task.title}</p>
+                        <Link
+                          to="/records/$entityType/$recordId"
+                          params={{ entityType: "tasks", recordId: task.id }}
+                          className="truncate text-sm font-medium text-foreground hover:underline"
+                        >
+                          {task.title}
+                        </Link>
                         <p className="text-xs text-muted-foreground">{task.priority} priority</p>
                       </div>
                       <StatusBadge
@@ -341,9 +351,13 @@ function CommandCenter() {
               <ul className="space-y-2.5">
                 {renewals.slice(0, 5).map((contract) => (
                   <li key={contract.id} className="flex items-center justify-between gap-2 text-sm">
-                    <span className="truncate">
+                    <Link
+                      to="/records/$entityType/$recordId"
+                      params={{ entityType: "contracts", recordId: contract.id }}
+                      className="truncate hover:underline"
+                    >
                       {contract.contract_name ?? contract.contract_number}
-                    </span>
+                    </Link>
                     <span className="whitespace-nowrap text-xs text-muted-foreground">
                       {formatDate(contract.expiration_date)}
                     </span>
@@ -365,9 +379,13 @@ function CommandCenter() {
                     key={assessment.id}
                     className="flex items-center justify-between gap-2 text-sm"
                   >
-                    <span className="truncate">
+                    <Link
+                      to="/records/$entityType/$recordId"
+                      params={{ entityType: "site_assessments", recordId: assessment.id }}
+                      className="truncate hover:underline"
+                    >
                       {assessment.assessment_type ?? "Site assessment"}
-                    </span>
+                    </Link>
                     <span className="whitespace-nowrap text-xs text-muted-foreground">
                       {formatDate(assessment.next_review_date)}
                     </span>

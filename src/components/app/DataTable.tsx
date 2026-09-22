@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import type { Row } from "@/lib/data";
+import { recordHref, recordLabel, RELATION_TARGETS } from "@/lib/record-registry";
+import { RecordLink } from "./RecordLink";
 
 export type Column = {
   key: string;
@@ -22,6 +24,7 @@ export function DataTable({
   isLoading,
   error,
   onRowClick,
+  recordTable,
   emptyTitle = "Nothing here yet",
   emptyDescription,
   emptyAction,
@@ -35,6 +38,7 @@ export function DataTable({
   isLoading?: boolean;
   error?: unknown;
   onRowClick?: ((row: Row) => void) | undefined;
+  recordTable?: string | undefined;
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: ReactNode;
@@ -46,6 +50,9 @@ export function DataTable({
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; asc: boolean } | null>(null);
   const [page, setPage] = useState(0);
+  const openRow = recordTable
+    ? (row: Row) => window.location.assign(recordHref(recordTable, row.id))
+    : onRowClick;
 
   const cellValue = (row: Row, column: Column) => {
     const raw = column.value ? column.value(row) : row[column.key];
@@ -177,6 +184,11 @@ export function DataTable({
                       )}
                     </th>
                   ))}
+                  {recordTable && (
+                    <th scope="col" className="px-4 py-2.5">
+                      <span className="sr-only">Open record</span>
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -185,14 +197,26 @@ export function DataTable({
                     key={(row.id as string) ?? index}
                     className={cn(
                       "border-b border-border last:border-0",
-                      onRowClick && "cursor-pointer hover:bg-accent/60 focus-within:bg-accent/60",
+                      openRow && "cursor-pointer hover:bg-accent/60 focus-within:bg-accent/60",
                     )}
-                    onClick={onRowClick ? () => onRowClick(row) : undefined}
-                    tabIndex={onRowClick ? 0 : undefined}
-                    onKeyDown={
-                      onRowClick
+                    onClick={
+                      openRow
                         ? (event) => {
-                            if (event.key === "Enter") onRowClick(row);
+                            if (
+                              !(event.target as HTMLElement).closest(
+                                "a,button,input,select,textarea",
+                              )
+                            )
+                              openRow(row);
+                          }
+                        : undefined
+                    }
+                    tabIndex={openRow ? 0 : undefined}
+                    onKeyDown={
+                      openRow
+                        ? (event) => {
+                            if (event.key === "Enter" && event.target === event.currentTarget)
+                              openRow(row);
                           }
                         : undefined
                     }
@@ -206,13 +230,41 @@ export function DataTable({
                           column.className,
                         )}
                       >
-                        {column.render
-                          ? column.render(row)
-                          : cellValue(row, column) || (
-                              <span className="text-muted-foreground">—</span>
-                            )}
+                        {RELATION_TARGETS[
+                          column.key.endsWith("_id") ? column.key : `${column.key}_id`
+                        ] && row[column.key.endsWith("_id") ? column.key : `${column.key}_id`] ? (
+                          <RecordLink
+                            table={
+                              RELATION_TARGETS[
+                                column.key.endsWith("_id") ? column.key : `${column.key}_id`
+                              ]!
+                            }
+                            id={row[column.key.endsWith("_id") ? column.key : `${column.key}_id`]}
+                            label={
+                              column.value
+                                ? String(column.value(row) ?? "") || undefined
+                                : undefined
+                            }
+                          />
+                        ) : column.render ? (
+                          column.render(row)
+                        ) : (
+                          cellValue(row, column) || <span className="text-muted-foreground">—</span>
+                        )}
                       </td>
                     ))}
+                    {recordTable && (
+                      <td className="px-4 py-2.5 text-right">
+                        <a
+                          href={recordHref(recordTable, row.id)}
+                          aria-label={`Open record: ${recordLabel(recordTable, row)}`}
+                          onClick={(event) => event.stopPropagation()}
+                          className="text-sm font-medium text-primary hover:underline"
+                        >
+                          Open<span className="sr-only"> record</span> ↗
+                        </a>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

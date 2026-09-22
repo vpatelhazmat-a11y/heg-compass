@@ -1,3 +1,5 @@
+import { SmartButtons } from "@/components/app/SmartButtons";
+import { RecordRelations } from "@/components/app/RecordLink";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -161,6 +163,8 @@ function SiteDetail() {
           ) : null
         }
       />
+      <SmartButtons table="sites" id={siteId} />
+      <RecordRelations row={site} />
 
       <div className="space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}
@@ -236,6 +240,7 @@ function SiteDetail() {
                       render: (row) => <StatusBadge status={row.status} />,
                     },
                   ]}
+                  recordTable="incidents"
                   rows={data?.incidents ?? []}
                   isLoading={related.isLoading}
                   emptyTitle="No incidents recorded at this site"
@@ -264,6 +269,7 @@ function SiteDetail() {
                     render: (row) => formatDate(row.expiration_date),
                   },
                 ]}
+                recordTable="requirements"
                 rows={data?.requirements ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No site requirements recorded"
@@ -296,6 +302,7 @@ function SiteDetail() {
                   },
                   { key: "assessor", header: "Assessed by" },
                 ]}
+                recordTable="site_assessments"
                 rows={data?.assessments ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No assessments on file"
@@ -319,6 +326,7 @@ function SiteDetail() {
                     render: (row) => formatDate(row.expiration_date),
                   },
                 ]}
+                recordTable="documents"
                 rows={data?.documents ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No documents recorded"
@@ -328,6 +336,7 @@ function SiteDetail() {
           <TabsContent value="related" className="mt-4 space-y-6">
             <Panel title="Products linked through site rates">
               <DataTable
+                recordTable="products"
                 rows={data?.products ?? []}
                 error={related.error}
                 columns={[{ key: "product_name", header: "Product" }]}
@@ -336,6 +345,7 @@ function SiteDetail() {
             </Panel>
             <Panel title="Origin and destination lanes">
               <DataTable
+                recordTable="lanes"
                 rows={data?.lanes ?? []}
                 error={related.error}
                 columns={[
@@ -347,6 +357,7 @@ function SiteDetail() {
             </Panel>
             <Panel title="Current equipment assignments">
               <DataTable
+                recordTable="equipment_assignments"
                 rows={data?.equipment ?? []}
                 error={related.error}
                 columns={[

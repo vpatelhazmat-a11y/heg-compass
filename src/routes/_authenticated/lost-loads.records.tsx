@@ -151,6 +151,7 @@ function LostLoadRecords() {
         </Panel>
 
         <DataTable
+          recordTable="refused_loads"
           rows={filtered}
           isLoading={rows.isLoading}
           error={rows.error}

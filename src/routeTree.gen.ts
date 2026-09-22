@@ -33,6 +33,8 @@ import { Route as AuthenticatedSalesIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSitesIndexRouteImport } from './routes/_authenticated/sites.index'
 import { Route as AuthenticatedSitesSiteIdRouteImport } from './routes/_authenticated/sites.$siteId'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks.index'
+import { Route as AuthenticatedRecordsEntityTypeIndexRouteImport } from './routes/_authenticated/records.$entityType.index'
+import { Route as AuthenticatedRecordsEntityTypeRecordIdRouteImport } from './routes/_authenticated/records.$entityType.$recordId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -167,6 +169,18 @@ const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   path: '/tasks/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRecordsEntityTypeIndexRoute =
+  AuthenticatedRecordsEntityTypeIndexRouteImport.update({
+    id: '/records/$entityType/',
+    path: '/records/$entityType/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedRecordsEntityTypeRecordIdRoute =
+  AuthenticatedRecordsEntityTypeRecordIdRouteImport.update({
+    id: '/records/$entityType/$recordId',
+    path: '/records/$entityType/$recordId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -192,6 +206,8 @@ export interface FileRoutesByFullPath {
   '/sales/': typeof AuthenticatedSalesIndexRoute
   '/sites/': typeof AuthenticatedSitesIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/records/$entityType/$recordId': typeof AuthenticatedRecordsEntityTypeRecordIdRoute
+  '/records/$entityType/': typeof AuthenticatedRecordsEntityTypeIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -217,6 +233,8 @@ export interface FileRoutesByTo {
   '/sales': typeof AuthenticatedSalesIndexRoute
   '/sites': typeof AuthenticatedSitesIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
+  '/records/$entityType/$recordId': typeof AuthenticatedRecordsEntityTypeRecordIdRoute
+  '/records/$entityType': typeof AuthenticatedRecordsEntityTypeIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -244,6 +262,8 @@ export interface FileRoutesById {
   '/_authenticated/sales/': typeof AuthenticatedSalesIndexRoute
   '/_authenticated/sites/': typeof AuthenticatedSitesIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
+  '/_authenticated/records/$entityType/$recordId': typeof AuthenticatedRecordsEntityTypeRecordIdRoute
+  '/_authenticated/records/$entityType/': typeof AuthenticatedRecordsEntityTypeIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -271,6 +291,8 @@ export interface FileRouteTypes {
     | '/sales/'
     | '/sites/'
     | '/tasks/'
+    | '/records/$entityType/$recordId'
+    | '/records/$entityType/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -296,6 +318,8 @@ export interface FileRouteTypes {
     | '/sales'
     | '/sites'
     | '/tasks'
+    | '/records/$entityType/$recordId'
+    | '/records/$entityType'
   id:
     | '__root__'
     | '/'
@@ -322,6 +346,8 @@ export interface FileRouteTypes {
     | '/_authenticated/sales/'
     | '/_authenticated/sites/'
     | '/_authenticated/tasks/'
+    | '/_authenticated/records/$entityType/$recordId'
+    | '/_authenticated/records/$entityType/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -500,6 +526,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/records/$entityType/': {
+      id: '/_authenticated/records/$entityType/'
+      path: '/records/$entityType'
+      fullPath: '/records/$entityType/'
+      preLoaderRoute: typeof AuthenticatedRecordsEntityTypeIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/records/$entityType/$recordId': {
+      id: '/_authenticated/records/$entityType/$recordId'
+      path: '/records/$entityType/$recordId'
+      fullPath: '/records/$entityType/$recordId'
+      preLoaderRoute: typeof AuthenticatedRecordsEntityTypeRecordIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -525,6 +565,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSalesIndexRoute: typeof AuthenticatedSalesIndexRoute
   AuthenticatedSitesIndexRoute: typeof AuthenticatedSitesIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
+  AuthenticatedRecordsEntityTypeRecordIdRoute: typeof AuthenticatedRecordsEntityTypeRecordIdRoute
+  AuthenticatedRecordsEntityTypeIndexRoute: typeof AuthenticatedRecordsEntityTypeIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -550,6 +592,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSalesIndexRoute: AuthenticatedSalesIndexRoute,
   AuthenticatedSitesIndexRoute: AuthenticatedSitesIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
+  AuthenticatedRecordsEntityTypeRecordIdRoute:
+    AuthenticatedRecordsEntityTypeRecordIdRoute,
+  AuthenticatedRecordsEntityTypeIndexRoute:
+    AuthenticatedRecordsEntityTypeIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

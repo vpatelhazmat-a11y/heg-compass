@@ -1,3 +1,5 @@
+import { SmartButtons } from "@/components/app/SmartButtons";
+import { RecordRelations } from "@/components/app/RecordLink";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -172,6 +174,8 @@ function EquipmentDetail() {
           ) : null
         }
       />
+      <SmartButtons table="equipment" id={equipmentId} />
+      <RecordRelations row={unit} />
 
       <div className="space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}
@@ -225,6 +229,7 @@ function EquipmentDetail() {
                     render: (row) => <StatusBadge status={row.status} />,
                   },
                 ]}
+                recordTable="equipment_assignments"
                 rows={data?.assignments ?? []}
                 onRowClick={canWrite ? setEditingAssignment : undefined}
                 isLoading={related.isLoading}
@@ -259,6 +264,7 @@ function EquipmentDetail() {
                     render: (row) => (row.required ? "Yes" : "No"),
                   },
                 ]}
+                recordTable="equipment_compliance"
                 rows={data?.compliance ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No compliance records"
@@ -292,6 +298,7 @@ function EquipmentDetail() {
                     render: (row) => formatDate(row.removal_date),
                   },
                 ]}
+                recordTable="equipment_technology"
                 rows={data?.technology ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No technology recorded"
@@ -301,6 +308,7 @@ function EquipmentDetail() {
           <TabsContent value="incidents" className="mt-4">
             <Panel title="Equipment incidents">
               <DataTable
+                recordTable="incidents"
                 rows={data?.incidents ?? []}
                 error={related.error}
                 columns={[

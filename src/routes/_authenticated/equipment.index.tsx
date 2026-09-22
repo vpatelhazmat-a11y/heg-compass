@@ -88,6 +88,7 @@ function EquipmentPage() {
 
         <DataTable
           columns={columns}
+          recordTable="equipment"
           rows={data}
           isLoading={isLoading}
           error={error}

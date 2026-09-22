@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/safety/")({
       { title: "Safety Center — HEG Commercial Intelligence Hub" },
       {
         name: "description",
-        content: "Incidents, corrective actions and site assessments in one place.",
+        content: "Incidents and corrective actions in one place.",
       },
       { property: "og:title", content: "Safety Center — HEG Commercial Intelligence Hub" },
       {
@@ -54,14 +54,6 @@ function SafetyPage() {
       listRows("corrective_actions", { order: { column: "due_date", ascending: true } }),
     enabled: canSeeIncidents,
   });
-  const assessments = useQuery({
-    queryKey: ["assessments"],
-    queryFn: () =>
-      listRows("site_assessments", {
-        select: "*, sites(site_name)",
-        order: { column: "next_review_date", ascending: true },
-      }),
-  });
 
   if (!canSeeIncidents) {
     return (
@@ -90,7 +82,7 @@ function SafetyPage() {
     <>
       <PageHeader
         title="Safety Center"
-        description="Incidents, corrective actions and site assessments — visible to the people responsible for them."
+        description="Incidents and corrective actions — visible to the people responsible for them."
         actions={
           canWrite ? (
             <Button onClick={() => setCreating(true)}>
@@ -114,14 +106,13 @@ function SafetyPage() {
             tone={overdueActions.length ? "danger" : "neutral"}
           />
           <StatTile label="Incidents recorded" value={incidentRows.length} />
-          <StatTile label="Assessments on file" value={assessments.data?.length ?? 0} />
+          <StatTile label="Corrective actions" value={actionRows.length} />
         </div>
 
         <Tabs defaultValue="incidents">
           <TabsList>
             <TabsTrigger value="incidents">Incidents</TabsTrigger>
             <TabsTrigger value="actions">Corrective actions</TabsTrigger>
-            <TabsTrigger value="assessments">Site assessments</TabsTrigger>
           </TabsList>
 
           <TabsContent value="incidents" className="mt-4">
@@ -155,6 +146,7 @@ function SafetyPage() {
                     render: (row) => formatDate(row.due_date),
                   },
                 ]}
+                recordTable="incidents"
                 rows={incidentRows}
                 isLoading={incidents.isLoading}
                 error={incidents.error}
@@ -181,39 +173,10 @@ function SafetyPage() {
                     render: (row) => formatDate(row.completion_date),
                   },
                 ]}
+                recordTable="corrective_actions"
                 rows={actionRows}
                 isLoading={actions.isLoading}
                 emptyTitle="No corrective actions recorded"
-              />
-            </Panel>
-          </TabsContent>
-
-          <TabsContent value="assessments" className="mt-4">
-            <Panel title="Site assessments">
-              <DataTable
-                columns={[
-                  { key: "site", header: "Site", value: (row) => row.sites?.site_name ?? "" },
-                  { key: "assessment_type", header: "Type" },
-                  {
-                    key: "assessment_date",
-                    header: "Assessed",
-                    render: (row) => formatDate(row.assessment_date),
-                  },
-                  {
-                    key: "next_review_date",
-                    header: "Next review",
-                    render: (row) => formatDate(row.next_review_date),
-                  },
-                  {
-                    key: "status",
-                    header: "Status",
-                    render: (row) => <StatusBadge status={row.status} />,
-                  },
-                ]}
-                rows={assessments.data ?? []}
-                isLoading={assessments.isLoading}
-                emptyTitle="No assessments on file"
-                emptyDescription="Assessments are added from each site's record."
               />
             </Panel>
           </TabsContent>

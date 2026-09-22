@@ -3,11 +3,14 @@ import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Route as Dashboard } from "../src/routes/_authenticated/lost-loads.index";
-import { Route as Analysis } from "../src/routes/_authenticated/lost-loads.analysis";
+import { LostRevenueAnalysis } from "../src/components/app/LostRevenueAnalysis";
+const Analysis = { options: { component: LostRevenueAnalysis } };
 
 const mocks = vi.hoisted(() => ({ listRows: vi.fn() }));
 vi.mock("../src/lib/data", () => ({ listRows: mocks.listRows }));
-vi.mock("../src/hooks/use-session", () => ({ useSession: () => ({ canWrite: false }) }));
+vi.mock("../src/hooks/use-session", () => ({
+  useSession: () => ({ canWrite: false, canEdit: () => false }),
+}));
 vi.mock("../src/components/app/LostLoadTabs", () => ({ LostLoadTabs: () => null }));
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => ({ options }),

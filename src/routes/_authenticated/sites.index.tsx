@@ -56,6 +56,7 @@ function SitesPage() {
       <div className="p-6">
         <DataTable
           columns={columns}
+          recordTable="sites"
           rows={data}
           isLoading={isLoading}
           error={error}

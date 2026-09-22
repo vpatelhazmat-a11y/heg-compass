@@ -139,6 +139,7 @@ function SalesPage() {
                     render: (row) => formatDate(row.expected_close_date),
                   },
                 ]}
+                recordTable="opportunities"
                 rows={rows}
                 isLoading={opportunities.isLoading}
                 error={opportunities.error}
@@ -179,6 +180,7 @@ function SalesPage() {
                     render: (row) => (row.recoverable ? "Yes" : "No"),
                   },
                 ]}
+                recordTable="lost_business"
                 rows={lostRows}
                 isLoading={lost.isLoading}
                 error={lost.error}
