@@ -12,12 +12,12 @@ import { useSession } from "@/hooks/use-session";
 export const Route = createFileRoute("/_authenticated/overview")({
   head: () => ({
     meta: [
-      { title: "Command Center — HEG Commercial Intelligence Hub" },
+      { title: "Daily overview — HEG Compass" },
       {
         name: "description",
         content: "What needs attention today across customers, bids, capacity and safety.",
       },
-      { property: "og:title", content: "Command Center — HEG Commercial Intelligence Hub" },
+      { property: "og:title", content: "Daily overview — HEG Compass" },
       {
         property: "og:description",
         content: "Today's exceptions across commercial and safety activity.",
