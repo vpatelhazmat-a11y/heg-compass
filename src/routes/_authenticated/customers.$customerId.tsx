@@ -236,19 +236,8 @@ function CustomerDetail() {
       <SmartButtons table="customers" id={customerId} />
       <RecordRelations row={customer} />
 
-      <div className="space-y-6 p-6">
+      <div className="master-record space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <StatTile label="Sites" value={data?.sites.length ?? "—"} />
-          <StatTile label="Contacts" value={data?.contacts.length ?? "—"} />
-          <StatTile label="Active rates" value={activeRates.length} />
-          <StatTile label="Open opportunities" value={openOpps.length} />
-          <StatTile
-            label="Lost business records"
-            value={data?.lost.length ?? "—"}
-            tone={data?.lost.length ? "warning" : "neutral"}
-          />
-        </div>
 
         <Tabs defaultValue="overview">
           <TabsList className="flex w-full flex-wrap justify-start">
@@ -267,6 +256,17 @@ function CustomerDetail() {
           </TabsList>
 
           <TabsContent value="overview" className="mt-4 space-y-6">
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+              <StatTile label="Sites" value={data?.sites.length ?? "—"} />
+              <StatTile label="Contacts" value={data?.contacts.length ?? "—"} />
+              <StatTile label="Active rates" value={activeRates.length} />
+              <StatTile label="Open opportunities" value={openOpps.length} />
+              <StatTile
+                label="Lost business records"
+                value={data?.lost.length ?? "—"}
+                tone={data?.lost.length ? "warning" : "neutral"}
+              />
+            </div>
             <Panel title="Customer profile">
               <FieldGrid>
                 <Field label="Legal name">{customer.legal_name}</Field>

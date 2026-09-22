@@ -18,7 +18,7 @@ export function PageHeader({
   actions?: ReactNode | undefined;
 }) {
   return (
-    <header className="border-b border-border bg-surface px-6 py-5">
+    <header className="workspace-control border-b border-border bg-surface">
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav
           aria-label="Breadcrumb"

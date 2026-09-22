@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel } from "@/components/app/Panels";
 import { EmptyState } from "@/components/app/EmptyState";
-import { LostLoadTabs } from "@/components/app/LostLoadTabs";
 import { RefusedLoadForm } from "@/components/app/RefusedLoadForm";
 import { useSession } from "@/hooks/use-session";
 
@@ -38,7 +37,6 @@ function RefusedLoadEntry() {
         title="Refused load data entry"
         description="Enter refused load details for tracking and revenue analysis."
       />
-      <LostLoadTabs />
       <div className="p-6">
         {canWrite ? (
           <Panel title="Refused load" description="Required fields are marked with an asterisk.">

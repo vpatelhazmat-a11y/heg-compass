@@ -76,17 +76,19 @@ export function LostRevenueAnalysis() {
         <Panel title="Period">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div className="space-y-1.5">
-              <Label>From</Label>
+              <Label htmlFor="analysis-from">From</Label>
               <Input
                 type="date"
+                id="analysis-from"
                 value={range.from}
                 onChange={(e) => setRange((p) => ({ ...p, from: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label>To</Label>
+              <Label htmlFor="analysis-to">To</Label>
               <Input
                 type="date"
+                id="analysis-to"
                 value={range.to}
                 onChange={(e) => setRange((p) => ({ ...p, to: e.target.value }))}
               />
