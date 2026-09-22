@@ -5,7 +5,6 @@ const TABS = [
   { to: "/lost-loads", label: "Dashboard" },
   { to: "/lost-loads/new", label: "Refused load entry" },
   { to: "/lost-loads/records", label: "Records" },
-  { to: "/lost-loads/analysis", label: "Lost revenue analysis" },
 ] as const;
 
 export function LostLoadTabs() {

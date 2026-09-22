@@ -67,6 +67,7 @@ function KnowledgePage() {
               render: (row) => formatDate(row.updated_at),
             },
           ]}
+          recordTable="knowledge_articles"
           rows={data}
           isLoading={isLoading}
           error={error}
@@ -87,8 +88,7 @@ function KnowledgePage() {
         fields={[
           { name: "title", label: "Title", required: true, section: "Article" },
           { name: "category", label: "Category", section: "Article" },
-          { name: "summary", label: "Summary", type: "textarea", section: "Article" },
-          { name: "body", label: "Article", type: "textarea", section: "Article", full: true },
+          { name: "content", label: "Article", type: "textarea", section: "Article", full: true },
         ]}
         invalidateKeys={[["knowledge"]]}
       />

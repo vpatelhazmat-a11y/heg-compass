@@ -125,6 +125,7 @@ function BidsPage() {
               render: (row) => formatMoney(row.estimated_revenue),
             },
           ]}
+          recordTable="bids"
           rows={data}
           isLoading={isLoading}
           error={error}

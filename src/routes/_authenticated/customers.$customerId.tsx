@@ -1,3 +1,5 @@
+import { SmartButtons } from "@/components/app/SmartButtons";
+import { RecordRelations } from "@/components/app/RecordLink";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -231,6 +233,8 @@ function CustomerDetail() {
           ) : null
         }
       />
+      <SmartButtons table="customers" id={customerId} />
+      <RecordRelations row={customer} />
 
       <div className="space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}
@@ -302,6 +306,7 @@ function CustomerDetail() {
             <Panel title="Sites" actions={addButton("Add site", "sites", siteFields)}>
               <DataTable
                 columns={siteColumns}
+                recordTable="sites"
                 rows={data?.sites ?? []}
                 isLoading={related.isLoading}
                 exportName="customer-sites"
@@ -328,6 +333,7 @@ function CustomerDetail() {
                   { key: "email", header: "Email" },
                   { key: "phone", header: "Phone" },
                 ]}
+                recordTable="contacts"
                 rows={data?.contacts ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No contacts recorded"
@@ -356,6 +362,7 @@ function CustomerDetail() {
                     render: (row) => formatDate(row.expiration_date),
                   },
                 ]}
+                recordTable="requirements"
                 rows={data?.requirements ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No requirements recorded"
@@ -377,6 +384,7 @@ function CustomerDetail() {
                   { key: "physical_state", header: "State" },
                   { key: "data_quality_status", header: "Data quality" },
                 ]}
+                recordTable="products"
                 rows={data?.products ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No products recorded"
@@ -417,6 +425,7 @@ function CustomerDetail() {
                     render: (row) => formatDate(row.expiration_date),
                   },
                 ]}
+                recordTable="rates"
                 rows={data?.rates ?? []}
                 onRowClick={canEdit("rates") ? setEditingRate : undefined}
                 isLoading={related.isLoading}
@@ -457,6 +466,7 @@ function CustomerDetail() {
                     render: (row) => formatDate(row.expected_close_date),
                   },
                 ]}
+                recordTable="opportunities"
                 rows={data?.opportunities ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No opportunities recorded"
@@ -479,6 +489,7 @@ function CustomerDetail() {
                     render: (row) => formatMoney(row.estimated_revenue),
                   },
                 ]}
+                recordTable="bids"
                 rows={data?.bids ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No bids recorded"
@@ -517,6 +528,7 @@ function CustomerDetail() {
                     render: (row) => formatDate(row.expiration_date),
                   },
                 ]}
+                recordTable="contracts"
                 rows={data?.contracts ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No contracts recorded"
@@ -537,6 +549,7 @@ function CustomerDetail() {
                     render: (row) => formatDate(row.expiration_date),
                   },
                 ]}
+                recordTable="documents"
                 rows={data?.documents ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="No documents recorded"
@@ -572,6 +585,7 @@ function CustomerDetail() {
                     render: (row) => (row.recoverable ? "Yes" : "No"),
                   },
                 ]}
+                recordTable="lost_business"
                 rows={data?.lost ?? []}
                 isLoading={related.isLoading}
                 emptyTitle="Nothing recorded"
@@ -585,6 +599,7 @@ function CustomerDetail() {
               description="Individual requests HEG could not accept. Separate from broader commercial losses."
             >
               <DataTable
+                recordTable="refused_loads"
                 rows={data?.refused ?? []}
                 isLoading={related.isLoading}
                 error={related.error}
@@ -610,6 +625,7 @@ function CustomerDetail() {
           <TabsContent value="lanes" className="mt-4">
             <Panel title="Lanes" actions={addButton("Add lane", "lanes", laneFields)}>
               <DataTable
+                recordTable="lanes"
                 rows={data?.lanes ?? []}
                 error={related.error}
                 columns={[
@@ -623,6 +639,7 @@ function CustomerDetail() {
           <TabsContent value="equipment" className="mt-4">
             <Panel title="Current equipment assignments">
               <DataTable
+                recordTable="equipment_assignments"
                 rows={data?.equipment ?? []}
                 error={related.error}
                 columns={[

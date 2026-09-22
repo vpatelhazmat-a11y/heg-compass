@@ -102,21 +102,23 @@ export function CommandPalette({
           group: "Bids",
           label: r.bid_name,
           sublabel: r.status ?? "",
-          to: "/bids",
+          to: "/records/$entityType/$recordId",
+          params: { entityType: "bids", recordId: r.id },
         })),
         ...(contacts.data ?? []).map((r) => ({
           id: r.id,
           group: "Contacts",
           label: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim(),
-          to: "/customers/$customerId",
-          params: { customerId: r.customer_id ?? "" },
+          to: "/records/$entityType/$recordId",
+          params: { entityType: "contacts", recordId: r.id },
         })),
         ...(incidents.data ?? []).map((r) => ({
           id: r.id,
           group: "Incidents",
           label: r.incident_type ?? "Incident",
           sublabel: r.status ?? "",
-          to: "/safety",
+          to: "/records/$entityType/$recordId",
+          params: { entityType: "incidents", recordId: r.id },
         })),
       ];
       setHits(next);

@@ -85,6 +85,7 @@ function CustomersPage() {
       <div className="p-6">
         <DataTable
           columns={columns}
+          recordTable="customers"
           rows={data}
           isLoading={isLoading}
           error={error}

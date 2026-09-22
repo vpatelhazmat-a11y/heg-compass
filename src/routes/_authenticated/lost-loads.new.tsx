@@ -43,8 +43,12 @@ function RefusedLoadEntry() {
         {canWrite ? (
           <Panel title="Refused load" description="Required fields are marked with an asterisk.">
             <RefusedLoadForm
-              onSaved={(_row, mode) => {
-                if (mode === "view") navigate({ to: "/lost-loads/records" });
+              onSaved={(row, mode) => {
+                if (mode === "view")
+                  navigate({
+                    to: "/records/$entityType/$recordId",
+                    params: { entityType: "refused_loads", recordId: row.id },
+                  });
               }}
               onCancel={() => navigate({ to: "/lost-loads" })}
             />
