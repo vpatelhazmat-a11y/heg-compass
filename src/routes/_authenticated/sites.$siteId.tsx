@@ -166,7 +166,7 @@ function SiteDetail() {
       <SmartButtons table="sites" id={siteId} />
       <RecordRelations row={site} />
 
-      <div className="space-y-6 p-6">
+      <div className="master-record space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}
         <Tabs defaultValue="operations">
           <TabsList className="flex w-full flex-wrap justify-start">

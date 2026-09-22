@@ -1,3 +1,4 @@
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Bars, groupCount } from "@/components/app/RefusedLoadSummary";
 import { LostRevenueAnalysis } from "@/components/app/LostRevenueAnalysis";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -6,7 +7,6 @@ import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel, StatTile } from "@/components/app/Panels";
 import { EmptyState, LoadingState, ErrorState } from "@/components/app/EmptyState";
-import { LostLoadTabs } from "@/components/app/LostLoadTabs";
 import { Button } from "@/components/ui/button";
 import { listRows, type Row } from "@/lib/data";
 import { formatMoney, formatNumber, isoInDays, todayISO } from "@/lib/format";
@@ -52,7 +52,6 @@ function LostLoadsDashboard() {
     return (
       <>
         <PageHeader title="Refused loads" />
-        <LostLoadTabs />
         <div className="p-6">
           {rows.isError || customers.isError ? (
             <ErrorState
@@ -114,70 +113,84 @@ function LostLoadsDashboard() {
           ) : undefined
         }
       />
-      <LostLoadTabs />
 
-      <div className="space-y-6 p-6">
-        {data.length === 0 ? (
-          <EmptyState
-            title="No lost loads recorded yet"
-            description="Record a refused load whenever HEG cannot accept or service requested business. Once entries exist, this page shows the volume, the revenue and the reasons behind it."
-            action={
-              canWrite ? (
-                <Button asChild>
-                  <Link to="/lost-loads/new">Enter the first refused load</Link>
-                </Button>
-              ) : undefined
-            }
-          />
-        ) : (
-          <>
-            <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <StatTile label="Loads lost this week" value={formatNumber(loadsIn(weekAgo))} />
-              <StatTile label="Loads lost this month" value={formatNumber(loadsIn(monthStart))} />
-              <StatTile label="Loads lost this year" value={formatNumber(loadsIn(yearStart))} />
-              <StatTile
-                label="Estimated lost revenue this year"
-                value={formatMoney(revenueIn(yearStart))}
-                hint="Only entries with a known rate"
+      <Tabs defaultValue="summary" className="dashboard-tabs">
+        <TabsList className="mx-6 mt-4">
+          <TabsTrigger value="summary">Summary</TabsTrigger>
+          <TabsTrigger value="analysis">Revenue analysis</TabsTrigger>
+        </TabsList>
+        <TabsContent value="summary">
+          <div className="space-y-6 p-6">
+            {data.length === 0 ? (
+              <EmptyState
+                title="No lost loads recorded yet"
+                description="Record a refused load whenever HEG cannot accept or service requested business. Once entries exist, this page shows the volume, the revenue and the reasons behind it."
+                action={
+                  canWrite ? (
+                    <Button asChild>
+                      <Link to="/lost-loads/new">Enter the first refused load</Link>
+                    </Button>
+                  ) : undefined
+                }
               />
-            </section>
+            ) : (
+              <>
+                <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <StatTile label="Loads lost this week" value={formatNumber(loadsIn(weekAgo))} />
+                  <StatTile
+                    label="Loads lost this month"
+                    value={formatNumber(loadsIn(monthStart))}
+                  />
+                  <StatTile label="Loads lost this year" value={formatNumber(loadsIn(yearStart))} />
+                  <StatTile
+                    label="Estimated lost revenue this year"
+                    value={formatMoney(revenueIn(yearStart))}
+                    hint="Only entries with a known rate"
+                  />
+                </section>
 
-            <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-              <StatTile
-                label="Lost to capacity"
-                value={data.filter((row) => row.loss_reason === "No capacity").length}
-                tone="warning"
-              />
-              <StatTile
-                label="Lost to driver availability"
-                value={data.filter((row) => row.loss_reason === "No driver available").length}
-                tone="warning"
-              />
-              <StatTile
-                label="Lost to equipment availability"
-                value={data.filter((row) => row.loss_reason === "No equipment available").length}
-                tone="warning"
-              />
-              <StatTile
-                label="Lost to constraints we control"
-                value={data.filter((row) => capacityReasons.includes(row.loss_reason)).length}
-                tone="danger"
-                hint="Capacity, drivers or equipment"
-              />
-            </section>
+                <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                  <StatTile
+                    label="Lost to capacity"
+                    value={data.filter((row) => row.loss_reason === "No capacity").length}
+                    tone="warning"
+                  />
+                  <StatTile
+                    label="Lost to driver availability"
+                    value={data.filter((row) => row.loss_reason === "No driver available").length}
+                    tone="warning"
+                  />
+                  <StatTile
+                    label="Lost to equipment availability"
+                    value={
+                      data.filter((row) => row.loss_reason === "No equipment available").length
+                    }
+                    tone="warning"
+                  />
+                  <StatTile
+                    label="Lost to constraints we control"
+                    value={data.filter((row) => capacityReasons.includes(row.loss_reason)).length}
+                    tone="danger"
+                    hint="Capacity, drivers or equipment"
+                  />
+                </section>
 
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Panel title="Reasons we lost business" description="Records by reason">
-                <Bars rows={byReason} />
-              </Panel>
-              <Panel title="Customers we turned away most" description="Records by customer">
-                <Bars rows={byCustomer.slice(0, 8)} />
-              </Panel>
-            </div>
-          </>
-        )}
-      </div>
-      <LostRevenueAnalysis />
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <Panel title="Reasons we lost business" description="Records by reason">
+                    <Bars rows={byReason} />
+                  </Panel>
+                  <Panel title="Customers we turned away most" description="Records by customer">
+                    <Bars rows={byCustomer.slice(0, 8)} />
+                  </Panel>
+                </div>
+              </>
+            )}
+          </div>
+        </TabsContent>
+        <TabsContent value="analysis">
+          <LostRevenueAnalysis />
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

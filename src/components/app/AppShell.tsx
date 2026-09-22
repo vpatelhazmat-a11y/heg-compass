@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { ROLE_LABELS, useSession } from "@/hooks/use-session";
+import { CompassIcon } from "./CompassIcon";
+import { ModuleNavigation } from "./ModuleNavigation";
 import { activeModule } from "@/lib/modules";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreate, type QuickCreateKind } from "./QuickCreate";
@@ -51,20 +53,20 @@ export function AppShell({ children }: { children: ReactNode }) {
     .join("");
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-20 flex min-h-14 items-center gap-3 border-b border-border bg-surface px-3 sm:px-5">
+    <div className="compass-shell flex min-h-screen flex-col bg-background">
+      <a href="#main-content" className="skip-link">
+        Skip to content
+      </a>
+      <header className="compass-topbar sticky top-0 z-20 flex min-h-14 items-center gap-3 px-3 sm:px-5">
         <Link
           to="/command-center"
           aria-label="Open app launcher"
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground hover:opacity-90"
+          className="compass-home flex h-9 w-9 shrink-0 items-center justify-center rounded-md"
         >
-          <LayoutGrid className="h-5 w-5" aria-hidden />
+          <CompassIcon name="Compass" className="h-7 w-7" />
         </Link>
         <nav aria-label="Workspace breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-          <Link
-            to="/command-center"
-            className="hidden font-semibold text-foreground hover:underline sm:inline"
-          >
+          <Link to="/command-center" className="hidden font-semibold hover:underline sm:inline">
             HEG Compass
           </Link>
           {module && (
@@ -73,15 +75,19 @@ export function AppShell({ children }: { children: ReactNode }) {
                 className="hidden h-3.5 w-3.5 text-muted-foreground sm:block"
                 aria-hidden
               />
-              <span className="truncate font-medium text-foreground">{module.label}</span>
+              <span className="truncate font-medium">{module.label}</span>
             </>
           )}
-          {!module && <span className="font-semibold text-foreground sm:hidden">Apps</span>}
+          {!module && (
+            <span className="font-semibold sm:hidden">
+              {pathname === "/overview" ? "Overview" : "Apps"}
+            </span>
+          )}
         </nav>
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="ml-auto flex h-9 w-9 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent sm:w-full sm:max-w-xs sm:justify-start sm:gap-2 sm:px-3"
+          className="global-search ml-auto flex h-9 w-9 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent sm:w-full sm:max-w-xs sm:justify-start sm:gap-2 sm:px-3"
           aria-label="Search everything"
         >
           <Search className="h-4 w-4 shrink-0" aria-hidden />
@@ -101,7 +107,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <DropdownMenuItem onSelect={() => navigate({ to: "/tasks" })}>
               Tasks and follow-ups
             </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/command-center" })}>
+            <DropdownMenuItem onSelect={() => navigate({ to: "/overview" })}>
               Deadlines and today's overview
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -109,7 +115,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {canWrite && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button size="sm" className="hidden sm:inline-flex">
+              <Button size="sm" className="header-create inline-flex">
                 <Plus className="h-4 w-4" aria-hidden /> New
                 <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
               </Button>
@@ -179,7 +185,10 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      <main className="min-w-0 flex-1">{children}</main>
+      <ModuleNavigation pathname={pathname} />
+      <main id="main-content" className="min-w-0 flex-1">
+        {children}
+      </main>
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       <QuickCreate kind={quickCreate} onClose={() => setQuickCreate(null)} />
     </div>

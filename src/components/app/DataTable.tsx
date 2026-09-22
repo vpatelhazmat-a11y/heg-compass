@@ -106,9 +106,9 @@ export function DataTable({
   if (error) return <ErrorState message={error instanceof Error ? error.message : undefined} />;
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[200px] flex-1">
+    <div className="workspace-table">
+      <div className="table-tools flex flex-wrap items-center gap-2">
+        <div className="relative min-w-[180px] max-w-lg flex-1">
           <Search
             className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
             aria-hidden
@@ -124,6 +124,9 @@ export function DataTable({
             className="pl-9"
           />
         </div>
+        <span className="table-count" aria-live="polite">
+          {filtered.length} {filtered.length === 1 ? "record" : "records"}
+        </span>
         {toolbar}
         {exportName && rows.length > 0 && (
           <Button variant="outline" size="sm" onClick={exportCsv}>
@@ -141,7 +144,7 @@ export function DataTable({
           description={`Nothing matches "${search}". Try a different search.`}
         />
       ) : (
-        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="table-frame overflow-hidden rounded-lg border border-border bg-surface">
           <div className="max-h-[70vh] overflow-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 z-10 bg-secondary">
@@ -274,7 +277,7 @@ export function DataTable({
       )}
 
       {sorted.length > pageSize && (
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <div className="flex items-center justify-between border-t border-border p-3 text-sm text-muted-foreground">
           <span>
             Showing {current * pageSize + 1}–{Math.min(sorted.length, (current + 1) * pageSize)} of{" "}
             {sorted.length}

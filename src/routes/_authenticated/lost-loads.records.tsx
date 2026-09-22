@@ -5,7 +5,6 @@ import { Plus } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel } from "@/components/app/Panels";
 import { DataTable } from "@/components/app/DataTable";
-import { LostLoadTabs } from "@/components/app/LostLoadTabs";
 import { RefusedLoadForm, toFormState } from "@/components/app/RefusedLoadForm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,7 +104,6 @@ function LostLoadRecords() {
           ) : undefined
         }
       />
-      <LostLoadTabs />
 
       <div className="space-y-6 p-6">
         <Panel title="Filters">

@@ -15,7 +15,7 @@ export function SmartButtons({ table, id }: { table: string; id: string }) {
   return (
     <nav
       aria-label="Related records"
-      className="flex flex-wrap gap-2 border-b border-border bg-surface px-6 py-3"
+      className="related-buttons flex flex-wrap border-b border-border bg-surface"
     >
       {relations.map((relation, index) => (
         <a

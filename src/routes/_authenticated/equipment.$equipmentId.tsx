@@ -177,7 +177,7 @@ function EquipmentDetail() {
       <SmartButtons table="equipment" id={equipmentId} />
       <RecordRelations row={unit} />
 
-      <div className="space-y-6 p-6">
+      <div className="master-record space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}
         <Tabs defaultValue="specification">
           <TabsList className="flex w-full flex-wrap justify-start">

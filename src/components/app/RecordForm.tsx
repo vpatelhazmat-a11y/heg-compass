@@ -127,7 +127,7 @@ export function RecordForm({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-xl">
+      <SheetContent className="record-editor flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
         <SheetHeader className="border-b border-border px-6 py-4">
           <SheetTitle>{title}</SheetTitle>
           {description && <SheetDescription>{description}</SheetDescription>}

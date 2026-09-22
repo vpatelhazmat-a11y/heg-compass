@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
+import { StatusBadge } from "./StatusBadge";
+import { formatDate } from "@/lib/format";
 import { Pencil } from "lucide-react";
 import { getRow, listRows, type Row } from "@/lib/data";
 import {
@@ -139,10 +141,34 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
       !RELATION_TARGETS[key] &&
       (value === null || typeof value !== "object"),
   );
+  const grouped = new Map<string, typeof entries>();
+  for (const entry of entries) {
+    const field = definition.fields.find((field) => field.name === entry[0]);
+    const section = ["created_at", "updated_at"].includes(entry[0])
+      ? "Record information"
+      : (field?.section ?? "Details");
+    grouped.set(section, [...(grouped.get(section) ?? []), entry]);
+  }
+  const displayValue = (key: string, value: unknown) => {
+    if (value === null || value === "") return "—";
+    if (typeof value === "boolean") return value ? "Yes" : "No";
+    const field = definition.fields.find((field) => field.name === key);
+    if (field?.type === "money")
+      return Number(value).toLocaleString("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 4,
+      });
+    if (field?.type === "date" || key === "created_at" || key === "updated_at")
+      return formatDate(String(value));
+    return String(value);
+  };
   return (
     <>
       <PageHeader
         title={recordLabel(table, row)}
+        meta={row.status ? <StatusBadge status={row.status} /> : undefined}
         breadcrumbs={[
           { label: "Apps", to: "/command-center" },
           { label: definition.label, to: "/records/$entityType", params: { entityType: table } },
@@ -159,7 +185,7 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
       />
       <SmartButtons table={table} id={id} />
       <RecordRelations row={row} />
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 px-3 pb-6 sm:px-6">
         {editing && table === "refused_loads" ? (
           <RefusedLoadForm
             recordId={id}
@@ -171,29 +197,24 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
             }}
           />
         ) : (
-          <dl className="grid gap-x-8 gap-y-5 rounded-lg border border-border bg-surface p-6 sm:grid-cols-2 lg:grid-cols-3">
-            {entries.map(([key, value]) => (
-              <div
-                key={key}
-                className={
-                  typeof value === "string" && value.length > 150
-                    ? "sm:col-span-2 lg:col-span-3"
-                    : ""
-                }
-              >
-                <dt className="field-label">{labels.get(key) ?? fieldLabel(key)}</dt>
-                <dd className="mt-1 whitespace-pre-wrap break-words text-sm">
-                  {value === null || value === ""
-                    ? "—"
-                    : typeof value === "boolean"
-                      ? value
-                        ? "Yes"
-                        : "No"
-                      : String(value)}
-                </dd>
-              </div>
+          <article className="record-sheet" aria-label="Record details">
+            {[...grouped].map(([section, fields]) => (
+              <section className="record-section" key={section}>
+                <h2>{section}</h2>
+                <dl className="grid gap-x-12 md:grid-cols-2">
+                  {fields.map(([key, value]) => (
+                    <div
+                      key={key}
+                      className={`record-field ${typeof value === "string" && value.length > 150 ? "md:col-span-2" : ""}`}
+                    >
+                      <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
+                      <dd>{displayValue(key, value)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </section>
             ))}
-          </dl>
+          </article>
         )}
         {table === "rates" && (
           <section aria-label="Rate history">
