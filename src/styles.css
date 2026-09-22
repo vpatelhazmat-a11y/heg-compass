@@ -714,3 +714,8 @@
     padding: 9px;
   }
 }
+.compass-topbar button[aria-label="Activity menu"]:hover,
+.compass-topbar button[aria-label="Account menu"]:hover {
+  background: #ffffff22;
+  color: #fff;
+}
