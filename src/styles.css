@@ -293,11 +293,11 @@
   top: 8px;
 }
 .app-desktop {
-  min-height: calc(100vh - 100px);
+  min-height: calc(100vh - 90px);
   background:
-    radial-gradient(ellipse at 10% 0%, #ecdde8 0%, transparent 50%),
-    radial-gradient(ellipse at 100% 85%, #e0e9ec 0%, transparent 55%), #f5f1f5;
-  padding: 44px 32px 24px;
+    radial-gradient(ellipse at 10% 0%, #e9dce8 0%, transparent 60%),
+    radial-gradient(ellipse at 100% 85%, #e3e7f0 0%, transparent 55%), #f4eff5;
+  padding: 28px 24px;
 }
 .launcher-intro {
   text-align: center;
@@ -309,11 +309,11 @@
   letter-spacing: 0.18em;
 }
 .launcher-intro h1 {
-  margin-top: 10px;
-  font-size: clamp(26px, 3vw, 36px);
-  font-weight: 550;
-  letter-spacing: -0.035em;
-  color: #463341;
+  margin-top: 0;
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: #5a4056;
 }
 .launcher-intro > p:last-child {
   font-size: 14px;
@@ -352,8 +352,8 @@
 .app-grid {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 22px 18px;
-  max-width: 1040px;
+  gap: 22px 24px;
+  max-width: 900px;
   margin: 0 auto;
 }
 .app-tile {
@@ -369,34 +369,31 @@
   background: #ffffff85;
 }
 .app-icon {
-  --glyph-bg: #fff;
+  --glyph-bg: #786c87;
   display: grid;
   place-items: center;
-  width: 76px;
-  height: 76px;
-  background: #fff;
-  color: #714b67;
-  border-radius: 19px;
+  width: 68px;
+  height: 68px;
+  color: #fff;
+  border-radius: 14px;
   box-shadow:
-    0 4px 0 #cbbfc83d,
-    0 7px 16px #44253c0b;
-  border: 1px solid #ffffff;
-  transform: rotate(-2deg);
+    0 3px 0 #44253c18,
+    inset 0 1px 0 #ffffff55;
+  border: 1px solid #ffffff40;
   transition: transform 0.15s;
 }
 .app-icon svg {
-  width: 49px;
-  height: 49px;
-  transform: rotate(2deg);
+  width: 44px;
+  height: 44px;
 }
 .app-tile:hover .app-icon {
-  transform: translateY(-3px) rotate(0);
+  transform: translateY(-2px);
 }
 .app-label {
-  margin-top: 14px;
+  margin-top: 12px;
   color: #493749;
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
 }
 .app-description {
   margin-top: 4px;
@@ -407,53 +404,64 @@
   line-height: 1.5;
 }
 .app-icon[data-app="Customers"] {
-  background: #e0eff4;
-  color: #327790;
+  --glyph-bg: #478ba3;
+  background: #478ba3;
+  color: #fff;
 }
 .app-icon[data-app="Sites"] {
-  background: #e5eee0;
-  color: #567c46;
+  --glyph-bg: #72945c;
+  background: #72945c;
+  color: #fff;
 }
 .app-icon[data-app="Site Assessments"] {
-  background: #e0efeb;
-  color: #397f6c;
+  --glyph-bg: #4b9a87;
+  background: #4b9a87;
+  color: #fff;
 }
 .app-icon[data-app="Equipment"] {
-  background: #f9e9d4;
-  color: #ac722a;
+  --glyph-bg: #be8a40;
+  background: #be8a40;
+  color: #fff;
 }
 .app-icon[data-app="Bids / RFPs"] {
-  background: #e9e2f4;
-  color: #7858a0;
+  --glyph-bg: #8b65aa;
+  background: #8b65aa;
+  color: #fff;
 }
 .app-icon[data-app="Refused Loads"] {
-  background: #f7e2dc;
-  color: #b5654c;
+  --glyph-bg: #bd725c;
+  background: #bd725c;
+  color: #fff;
 }
 .app-icon[data-app="Safety"] {
-  background: #dcefeb;
-  color: #328077;
+  --glyph-bg: #438d88;
+  background: #438d88;
+  color: #fff;
 }
 .app-icon[data-app="Documents"] {
-  background: #e1e8f6;
-  color: #5275aa;
+  --glyph-bg: #6083b9;
+  background: #6083b9;
+  color: #fff;
 }
 .app-icon[data-app="Knowledge"] {
-  background: #f9edce;
-  color: #987523;
+  --glyph-bg: #b39a43;
+  background: #b39a43;
+  color: #fff;
 }
 .app-icon[data-app="Tasks"] {
-  background: #f1dfe9;
-  color: #a55680;
+  --glyph-bg: #b56993;
+  background: #b56993;
+  color: #fff;
 }
 .app-icon[data-app="Reporting"] {
-  background: #e1e5f4;
-  color: #5b65a0;
+  --glyph-bg: #717cac;
+  background: #717cac;
+  color: #fff;
 }
 .app-icon[data-app="Settings"] {
-  --glyph-bg: #e6e3ea;
-  background: #e6e3ea;
-  color: #706078;
+  --glyph-bg: #786c87;
+  background: #786c87;
+  color: #fff;
 }
 .launcher-footer {
   display: flex;
@@ -488,12 +496,12 @@
   background: #ffffff0b;
 }
 .workspace-control {
-  padding: 20px 28px 18px;
+  padding: 12px 24px;
 }
 .workspace-control .page-title {
-  font-size: 24px;
-  font-weight: 550;
-  letter-spacing: -0.025em;
+  font-size: 20px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
 }
 .workspace-control p {
   font-size: 12px;
@@ -505,7 +513,7 @@
   overflow: hidden;
 }
 .workspace-table .table-tools {
-  padding: 12px 14px;
+  padding: 8px 12px;
   border-bottom: 1px solid var(--border);
 }
 .workspace-table .table-tools input {
@@ -526,8 +534,8 @@
 }
 .workspace-table td {
   font-size: 13px;
-  padding-top: 13px;
-  padding-bottom: 13px;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 .workspace-table tbody tr:nth-child(even) {
   background: color-mix(in srgb, var(--muted) 45%, var(--surface));
@@ -546,30 +554,37 @@
   padding: 0 8px;
 }
 .record-sheet {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 40px;
   max-width: 1180px;
-  margin: 24px auto;
+  margin: 16px auto;
+  padding: 28px 32px;
   border: 1px solid var(--border);
   background: var(--surface);
-  box-shadow: 0 3px 14px #30203506;
+  box-shadow: 0 1px 3px #30203508;
 }
 .record-section {
-  padding: 24px 30px;
-  border-bottom: 1px solid var(--border);
+  padding: 0;
+  border: 0;
+  min-width: 0;
 }
 .record-section:last-child {
   border-bottom: 0;
 }
 .record-section h2 {
   font-size: 13px;
-  font-weight: 650;
-  color: var(--primary);
-  margin-bottom: 20px;
+  font-weight: 600;
+  color: var(--foreground);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
 }
 .record-field {
   display: grid;
-  grid-template-columns: minmax(105px, 0.8fr) minmax(0, 1.5fr);
+  grid-template-columns: minmax(100px, 0.75fr) minmax(0, 1.25fr);
   gap: 14px;
-  padding-bottom: 12px;
+  padding-bottom: 9px;
   align-items: baseline;
 }
 .record-field dt {
@@ -718,4 +733,119 @@
 .compass-topbar button[aria-label="Account menu"]:hover {
   background: #ffffff22;
   color: #fff;
+}
+
+/* Compact Odoo-style working views. */
+.record-section-wide {
+  grid-column: 1 / -1;
+}
+.record-section-wide dl {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.record-section-wide:has(dd:not(:empty)) .record-field:only-child {
+  grid-column: 1 / -1;
+}
+.desktop-module-menu {
+  flex: 1;
+  min-width: 0;
+}
+.mobile-module-menu {
+  display: none;
+}
+.desktop-module-menu .module-navigation {
+  padding: 0;
+  gap: 18px;
+  min-height: 48px;
+  background: transparent;
+  border: 0;
+}
+.desktop-module-menu .module-navigation a {
+  color: #f0e4ed;
+  font-size: 12px;
+  border: 0;
+  padding: 0 2px;
+}
+.desktop-module-menu .module-navigation a[aria-current="page"] {
+  color: #fff;
+  box-shadow: inset 0 -3px #d5b5cb;
+}
+.desktop-module-menu .module-navigation .overview-link {
+  display: none;
+}
+.compass-topbar .module-search {
+  width: 32px;
+  max-width: 32px;
+  min-width: 32px;
+  padding: 0;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+}
+.compass-topbar .module-search span,
+.compass-topbar .module-search kbd {
+  display: none;
+}
+.table-pager {
+  display: flex;
+  gap: 0;
+}
+.table-pager button {
+  width: 28px;
+  height: 30px;
+}
+.inline-record-editor {
+  max-width: 1180px;
+  margin: 16px auto;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.inline-form-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px 36px;
+}
+.inline-form-sections section {
+  min-width: 0;
+}
+.inline-record-editor .form-savebar {
+  position: sticky;
+  bottom: 0;
+  background: var(--surface);
+  z-index: 10;
+}
+.inline-record-editor input,
+.inline-record-editor select,
+.inline-record-editor textarea {
+  border-radius: 2px;
+}
+@media (max-width: 1100px) {
+  .desktop-module-menu {
+    display: none;
+  }
+  .mobile-module-menu {
+    display: block;
+  }
+}
+@media (max-width: 700px) {
+  .record-sheet {
+    grid-template-columns: 1fr;
+    padding: 20px 16px;
+    gap: 20px;
+  }
+  .record-section {
+    padding: 0;
+  }
+  .record-section-wide dl,
+  .inline-form-sections {
+    grid-template-columns: 1fr;
+  }
+  .workspace-control {
+    padding: 12px 16px;
+  }
+  .workspace-control .page-title {
+    font-size: 19px;
+  }
+  .table-tools .table-count {
+    margin-left: 0;
+  }
 }

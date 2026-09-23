@@ -1,5 +1,21 @@
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { useMemo, useState, type ReactNode } from "react";
-import { ArrowDown, ArrowUp, ChevronsUpDown, Download, Search } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronsUpDown,
+  Download,
+  Search,
+  Columns3,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -50,6 +66,9 @@ export function DataTable({
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; asc: boolean } | null>(null);
   const [page, setPage] = useState(0);
+  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  const selectedColumns = columns.filter((column) => !hiddenColumns.includes(column.key));
+  const visibleColumns = selectedColumns.length ? selectedColumns : columns;
   const openRow = recordTable
     ? (row: Row) => window.location.assign(recordHref(recordTable, row.id))
     : onRowClick;
@@ -89,9 +108,11 @@ export function DataTable({
   const visible = sorted.slice(current * pageSize, current * pageSize + pageSize);
 
   const exportCsv = () => {
-    const header = columns.map((c) => `"${c.header}"`).join(",");
+    const header = visibleColumns.map((c) => `"${c.header}"`).join(",");
     const body = sorted
-      .map((row) => columns.map((c) => `"${cellValue(row, c).replace(/"/g, '""')}"`).join(","))
+      .map((row) =>
+        visibleColumns.map((c) => `"${cellValue(row, c).replace(/"/g, '""')}"`).join(","),
+      )
       .join("\n");
     const blob = new Blob([`${header}\n${body}`], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -125,8 +146,58 @@ export function DataTable({
           />
         </div>
         <span className="table-count" aria-live="polite">
-          {filtered.length} {filtered.length === 1 ? "record" : "records"}
+          {sorted.length
+            ? `${current * pageSize + 1}–${Math.min(sorted.length, (current + 1) * pageSize)} of ${sorted.length}`
+            : "0 records"}
         </span>
+        <div className="table-pager">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Previous page"
+            disabled={current === 0}
+            onClick={() => setPage(current - 1)}
+          >
+            <ChevronLeft />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Next page"
+            disabled={current >= pageCount - 1}
+            onClick={() => setPage(current + 1)}
+          >
+            <ChevronRight />
+          </Button>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" aria-label="Choose columns">
+              <Columns3 />
+              <span className="hidden sm:inline">Columns</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+            {columns.map((column) => (
+              <DropdownMenuCheckboxItem
+                key={column.key}
+                checked={visibleColumns.some((visible) => visible.key === column.key)}
+                disabled={visibleColumns.length === 1 && visibleColumns[0]?.key === column.key}
+                onSelect={(event) => event.preventDefault()}
+                onCheckedChange={(checked) =>
+                  setHiddenColumns((previous) =>
+                    checked
+                      ? previous.filter((key) => key !== column.key)
+                      : [...previous, column.key],
+                  )
+                }
+              >
+                {column.header}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
         {toolbar}
         {exportName && rows.length > 0 && (
           <Button variant="outline" size="sm" onClick={exportCsv}>
@@ -149,7 +220,7 @@ export function DataTable({
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 z-10 bg-secondary">
                 <tr>
-                  {columns.map((column) => (
+                  {visibleColumns.map((column) => (
                     <th
                       key={column.key}
                       scope="col"
@@ -224,7 +295,7 @@ export function DataTable({
                         : undefined
                     }
                   >
-                    {columns.map((column) => (
+                    {visibleColumns.map((column) => (
                       <td
                         key={column.key}
                         className={cn(
@@ -272,33 +343,6 @@ export function DataTable({
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      )}
-
-      {sorted.length > pageSize && (
-        <div className="flex items-center justify-between border-t border-border p-3 text-sm text-muted-foreground">
-          <span>
-            Showing {current * pageSize + 1}–{Math.min(sorted.length, (current + 1) * pageSize)} of{" "}
-            {sorted.length}
-          </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={current === 0}
-              onClick={() => setPage(current - 1)}
-            >
-              Previous
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={current >= pageCount - 1}
-              onClick={() => setPage(current + 1)}
-            >
-              Next
-            </Button>
           </div>
         </div>
       )}

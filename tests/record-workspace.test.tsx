@@ -188,3 +188,62 @@ test("unknown record routes cannot read arbitrary database tables", () => {
   expect(screen.getByText("Record not found")).toBeTruthy();
   expect(mocks.getRow).not.toHaveBeenCalled();
 });
+
+test("inline record editing cancels without changing the stored rate", async () => {
+  mount(<RecordDetailPage table="rates" id={id} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
+  expect(screen.getByRole("region", { name: "Edit rate" })).toBeTruthy();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "999" } });
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(screen.queryByRole("region", { name: "Edit rate" })).toBeNull();
+  expect(screen.getByRole("article", { name: "Record details" })).toBeTruthy();
+  expect(mocks.rpc).not.toHaveBeenCalled();
+  expect(mocks.update).not.toHaveBeenCalled();
+});
+
+test("toolbar pagination resets to the first matching record after a search", () => {
+  mount(
+    <DataTable
+      rows={[
+        { id: 1, name: "Alpha" },
+        { id: 2, name: "Beta" },
+        { id: 3, name: "Gamma" },
+      ]}
+      columns={[{ key: "name", header: "Name" }]}
+      pageSize={1}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+  expect(screen.getByRole("cell", { name: "Beta" })).toBeTruthy();
+  fireEvent.change(screen.getByRole("textbox", { name: "Search" }), { target: { value: "Gamma" } });
+  expect(screen.getByRole("cell", { name: "Gamma" })).toBeTruthy();
+  expect((screen.getByRole("button", { name: "Next page" }) as HTMLButtonElement).disabled).toBe(
+    true,
+  );
+  expect(
+    (screen.getByRole("button", { name: "Previous page" }) as HTMLButtonElement).disabled,
+  ).toBe(true);
+});
+
+test("column picker hides a column while keeping at least one visible", async () => {
+  mount(
+    <DataTable
+      rows={[{ id: 1, name: "Alpha", status: "Active" }]}
+      columns={[
+        { key: "name", header: "Name" },
+        { key: "status", header: "Status" },
+      ]}
+    />,
+  );
+  fireEvent.keyDown(screen.getByRole("button", { name: "Choose columns" }), { key: "Enter" });
+  const status = await screen.findByRole("menuitemcheckbox", { name: "Status" });
+  fireEvent.click(status);
+  expect(screen.getByRole("menuitemcheckbox", { name: "Name" }).getAttribute("aria-disabled")).toBe(
+    "true",
+  );
+  fireEvent.keyDown(status, { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  expect(screen.queryByRole("columnheader", { name: "Status" })).toBeNull();
+  expect(screen.getByRole("columnheader", { name: "Name" })).toBeTruthy();
+});
