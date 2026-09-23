@@ -3,7 +3,7 @@ import { RecordRelations } from "@/components/app/RecordLink";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PageHeader, MetaItem } from "@/components/app/PageHeader";
 import { Panel, Field, FieldGrid } from "@/components/app/Panels";
 import { EmptyState, ErrorState, LoadingState } from "@/components/app/EmptyState";
@@ -40,7 +40,6 @@ function SiteDetail() {
   const { siteId } = Route.useParams();
   const { canEdit, canViewSafety } = useSession();
   const canWrite = canEdit("sites");
-  const [editing, setEditing] = useState(false);
   const [creator, setCreator] = useState<Creator>(null);
 
   const siteQuery = useQuery({
@@ -154,16 +153,8 @@ function SiteDetail() {
             <MetaItem label="Data quality">{orDash(site.data_quality_status)}</MetaItem>
           </>
         }
-        actions={
-          canWrite ? (
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              <Pencil className="h-4 w-4" aria-hidden />
-              Edit
-            </Button>
-          ) : null
-        }
+        related={<SmartButtons table="sites" id={siteId} />}
       />
-      <SmartButtons table="sites" id={siteId} />
       <RecordRelations row={site} />
 
       <div className="master-record space-y-6 p-6">
@@ -178,35 +169,53 @@ function SiteDetail() {
             <TabsTrigger value="related">Products, lanes & equipment</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="operations" className="mt-4 space-y-6">
-            <Panel title="Getting in and out">
-              <FieldGrid>
-                <Field label="Operating hours">{orDash(site.operating_hours)}</Field>
-                <Field label="Emergency contact">{orDash(site.emergency_contact)}</Field>
-                <Field label="Appointment required">
-                  {site.appointment_required ? "Yes" : "No"}
-                </Field>
-                <Field label="Access requirements" full>
-                  {orDash(site.access_requirements)}
-                </Field>
-                <Field label="Security requirements" full>
-                  {orDash(site.security_requirements)}
-                </Field>
-                <Field label="Parking notes" full>
-                  {orDash(site.parking_notes)}
-                </Field>
-                <Field label="Route notes" full>
-                  {orDash(site.route_notes)}
-                </Field>
-              </FieldGrid>
-            </Panel>
-            <Panel title="Loading and unloading">
-              <FieldGrid columns={2}>
-                <Field label="Loading instructions">{orDash(site.loading_requirements)}</Field>
-                <Field label="Unloading instructions">{orDash(site.unloading_requirements)}</Field>
-                <Field label="Special instructions">{orDash(site.special_instructions)}</Field>
-              </FieldGrid>
-            </Panel>
+          <TabsContent forceMount value="operations" className="mt-4 space-y-6">
+            {canWrite ? (
+              <RecordForm
+                presentation="record"
+                open
+                onOpenChange={() => undefined}
+                title="Site details"
+                table="sites"
+                recordId={siteId}
+                initialValues={site}
+                fields={siteFields}
+                invalidateKeys={[["site", siteId]]}
+              />
+            ) : (
+              <>
+                <Panel title="Getting in and out">
+                  <FieldGrid>
+                    <Field label="Operating hours">{orDash(site.operating_hours)}</Field>
+                    <Field label="Emergency contact">{orDash(site.emergency_contact)}</Field>
+                    <Field label="Appointment required">
+                      {site.appointment_required ? "Yes" : "No"}
+                    </Field>
+                    <Field label="Access requirements" full>
+                      {orDash(site.access_requirements)}
+                    </Field>
+                    <Field label="Security requirements" full>
+                      {orDash(site.security_requirements)}
+                    </Field>
+                    <Field label="Parking notes" full>
+                      {orDash(site.parking_notes)}
+                    </Field>
+                    <Field label="Route notes" full>
+                      {orDash(site.route_notes)}
+                    </Field>
+                  </FieldGrid>
+                </Panel>
+                <Panel title="Loading and unloading">
+                  <FieldGrid columns={2}>
+                    <Field label="Loading instructions">{orDash(site.loading_requirements)}</Field>
+                    <Field label="Unloading instructions">
+                      {orDash(site.unloading_requirements)}
+                    </Field>
+                    <Field label="Special instructions">{orDash(site.special_instructions)}</Field>
+                  </FieldGrid>
+                </Panel>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="safety" className="mt-4 space-y-6">
@@ -373,17 +382,6 @@ function SiteDetail() {
           </TabsContent>
         </Tabs>
       </div>
-
-      <RecordForm
-        open={editing}
-        onOpenChange={setEditing}
-        title="Edit site"
-        table="sites"
-        recordId={siteId}
-        initialValues={site}
-        fields={siteFields}
-        invalidateKeys={[["site", siteId]]}
-      />
 
       {creator && (
         <RecordForm

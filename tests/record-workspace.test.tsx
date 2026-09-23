@@ -83,6 +83,8 @@ afterEach(() => {
 
 test("launcher exposes all twelve workspaces with usable destinations", () => {
   mount(<AppLauncher />);
+  expect(screen.queryByRole("textbox", { name: "Find an app" })).toBeNull();
+  expect(screen.getByText("Start typing to find an app or record")).toBeTruthy();
   const links = screen.getAllByRole("link");
   expect(links).toHaveLength(12);
   expect(screen.getByRole("link", { name: /Site Assessments/ }).getAttribute("href")).toBe(
@@ -129,7 +131,8 @@ test("read-only rate detail offers navigation and history without edit controls"
 test("rate editor requires a fresh reason and uses the versioned RPC without identity fields", async () => {
   mocks.rpc.mockResolvedValue({ data: { id }, error: null });
   mount(<RecordDetailPage table="rates" id={id} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
+  expect(await screen.findByRole("region", { name: "Edit rate" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "125" } });
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   expect(await screen.findByText("Reason for change is required")).toBeTruthy();
@@ -158,7 +161,8 @@ test("stale rate save keeps the editor open and displays the refresh error", asy
     error: { message: "This rate changed. Refresh before saving." },
   });
   mount(<RecordDetailPage table="rates" id={id} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
+  expect(await screen.findByRole("region", { name: "Edit rate" })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "125" } });
   fireEvent.change(screen.getByLabelText(/Reason for change/), { target: { value: "Review" } });
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   await waitFor(() =>
@@ -189,15 +193,15 @@ test("unknown record routes cannot read arbitrary database tables", () => {
   expect(mocks.getRow).not.toHaveBeenCalled();
 });
 
-test("inline record editing cancels without changing the stored rate", async () => {
+test("direct record editing discards changes without changing the stored rate", async () => {
   mount(<RecordDetailPage table="rates" id={id} />);
-  fireEvent.click(await screen.findByRole("button", { name: "Edit" }));
-  expect(screen.getByRole("region", { name: "Edit rate" })).toBeTruthy();
+  expect(await screen.findByRole("region", { name: "Edit rate" })).toBeTruthy();
   expect(screen.queryByRole("dialog")).toBeNull();
   fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "999" } });
-  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
-  expect(screen.queryByRole("region", { name: "Edit rate" })).toBeNull();
-  expect(screen.getByRole("article", { name: "Record details" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+  expect(screen.getByRole("region", { name: "Edit rate" })).toBeTruthy();
+  expect((screen.getByLabelText(/Amount/) as HTMLInputElement).value).toBe("100");
+  expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
   expect(mocks.rpc).not.toHaveBeenCalled();
   expect(mocks.update).not.toHaveBeenCalled();
 });

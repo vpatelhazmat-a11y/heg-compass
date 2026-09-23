@@ -57,3 +57,11 @@ Cross-cutting saved views, tags, comprehensive related panels, and consistent ar
 - Table column selection, visible-column CSV export, and compact toolbar paging. Column choices last for the current mounted table only.
 - Regression coverage for inline cancel, required rate reasons, filtered paging, and keeping at least one column visible.
 - This refinement does not complete phases 3–10 above.
+
+## Interaction refinement — September 23
+
+- Odoo interface research and HEG-specific decisions are recorded in [ODOO_UI_RESEARCH.md](ODOO_UI_RESEARCH.md).
+- Supporting records open with directly editable fields. Save and Discard appear only after a change; rates still require a fresh reason and use the revision operation.
+- The launcher has no visible search box. Typing on the page opens combined app and primary-record search, with Ctrl/Command+K as an alternative.
+- Smart buttons sit in the record header; breadcrumbs include a direct back control.
+- Customer, site, and equipment records have directly editable fields in their primary tab. Further related tabs, saved searches, grouping, and remaining original phases are still pending.

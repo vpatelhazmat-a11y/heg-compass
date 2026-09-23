@@ -3,7 +3,7 @@ import { RecordRelations } from "@/components/app/RecordLink";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PageHeader, MetaItem } from "@/components/app/PageHeader";
 import { Panel, Field, FieldGrid, StatTile } from "@/components/app/Panels";
 import { EmptyState, ErrorState, LoadingState } from "@/components/app/EmptyState";
@@ -53,7 +53,6 @@ function CustomerDetail() {
   const navigate = useNavigate();
   const { canEdit } = useSession();
   const canWrite = canEdit("customers");
-  const [editing, setEditing] = useState(false);
   const [editingRate, setEditingRate] = useState<Row | null>(null);
   const [creator, setCreator] = useState<Creator>(null);
 
@@ -224,16 +223,8 @@ function CustomerDetail() {
             <MetaItem label="Data quality">{orDash(customer.data_quality_status)}</MetaItem>
           </>
         }
-        actions={
-          canWrite ? (
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              <Pencil className="h-4 w-4" aria-hidden />
-              Edit
-            </Button>
-          ) : null
-        }
+        related={<SmartButtons table="customers" id={customerId} />}
       />
-      <SmartButtons table="customers" id={customerId} />
       <RecordRelations row={customer} />
 
       <div className="master-record space-y-6 p-6">
@@ -255,51 +246,84 @@ function CustomerDetail() {
             <TabsTrigger value="equipment">Equipment</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-4 space-y-6">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-              <StatTile label="Sites" value={data?.sites.length ?? "—"} />
-              <StatTile label="Contacts" value={data?.contacts.length ?? "—"} />
-              <StatTile label="Active rates" value={activeRates.length} />
-              <StatTile label="Open opportunities" value={openOpps.length} />
-              <StatTile
-                label="Lost business records"
-                value={data?.lost.length ?? "—"}
-                tone={data?.lost.length ? "warning" : "neutral"}
+          <TabsContent forceMount value="overview" className="mt-4 space-y-6">
+            {canWrite ? (
+              <RecordForm
+                presentation="record"
+                open
+                onOpenChange={() => undefined}
+                title="Customer details"
+                table="customers"
+                recordId={customerId}
+                initialValues={customer}
+                fields={customerFields}
+                invalidateKeys={[["customer", customerId], ["customers"]]}
               />
-            </div>
-            <Panel title="Customer profile">
-              <FieldGrid>
-                <Field label="Legal name">{customer.legal_name}</Field>
-                <Field label="Doing business as">{orDash(customer.dba_name)}</Field>
-                <Field label="Customer type">{orDash(customer.customer_type)}</Field>
-                <Field label="Industry">{orDash(customer.industry)}</Field>
-                <Field label="Website">{orDash(customer.website)}</Field>
-                <Field label="Strategic priority">{orDash(customer.strategic_priority)}</Field>
-                <Field label="Headquarters" full>
-                  {orDash(customer.headquarters_address)}
-                </Field>
-              </FieldGrid>
-            </Panel>
-            <div className="grid gap-6 lg:grid-cols-2">
-              <Panel title="Qualification">
-                <p className="text-sm text-foreground">{orDash(customer.qualification_notes)}</p>
-              </Panel>
-              <Panel title="Commercial & risk notes">
-                <p className="text-sm text-foreground">{orDash(customer.commercial_notes)}</p>
-                <p className="mt-3 text-sm text-muted-foreground">{orDash(customer.risk_notes)}</p>
-              </Panel>
-            </div>
-            <Panel
-              title="Where this information came from"
-              description="Provenance is kept so the record can always be traced back"
-            >
-              <FieldGrid columns={4}>
-                <Field label="Source system">{orDash(customer.source_system)}</Field>
-                <Field label="Source file">{orDash(customer.source_file)}</Field>
-                <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
-                <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
-              </FieldGrid>
-            </Panel>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+                  <StatTile label="Sites" value={data?.sites.length ?? "—"} />
+                  <StatTile label="Contacts" value={data?.contacts.length ?? "—"} />
+                  <StatTile label="Active rates" value={activeRates.length} />
+                  <StatTile label="Open opportunities" value={openOpps.length} />
+                  <StatTile
+                    label="Lost business records"
+                    value={data?.lost.length ?? "—"}
+                    tone={data?.lost.length ? "warning" : "neutral"}
+                  />
+                </div>
+                <Panel title="Customer profile">
+                  <FieldGrid>
+                    <Field label="Legal name">{customer.legal_name}</Field>
+                    <Field label="Doing business as">{orDash(customer.dba_name)}</Field>
+                    <Field label="Customer type">{orDash(customer.customer_type)}</Field>
+                    <Field label="Industry">{orDash(customer.industry)}</Field>
+                    <Field label="Website">{orDash(customer.website)}</Field>
+                    <Field label="Strategic priority">{orDash(customer.strategic_priority)}</Field>
+                    <Field label="Headquarters" full>
+                      {orDash(customer.headquarters_address)}
+                    </Field>
+                  </FieldGrid>
+                </Panel>
+                <div className="grid gap-6 lg:grid-cols-2">
+                  <Panel title="Qualification">
+                    <p className="text-sm text-foreground">
+                      {orDash(customer.qualification_notes)}
+                    </p>
+                  </Panel>
+                  <Panel title="Commercial & risk notes">
+                    <p className="text-sm text-foreground">{orDash(customer.commercial_notes)}</p>
+                    <p className="mt-3 text-sm text-muted-foreground">
+                      {orDash(customer.risk_notes)}
+                    </p>
+                  </Panel>
+                </div>
+                <Panel
+                  title="Where this information came from"
+                  description="Provenance is kept so the record can always be traced back"
+                >
+                  <FieldGrid columns={4}>
+                    <Field label="Source system">{orDash(customer.source_system)}</Field>
+                    <Field label="Source file">{orDash(customer.source_file)}</Field>
+                    <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
+                    <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
+                  </FieldGrid>
+                </Panel>
+              </>
+            )}
+            {canWrite && (
+              <details className="rounded border border-border bg-surface px-4 py-3 text-sm">
+                <summary className="cursor-pointer font-medium">Source information</summary>
+                <div className="mt-4">
+                  <FieldGrid columns={4}>
+                    <Field label="Source system">{orDash(customer.source_system)}</Field>
+                    <Field label="Source file">{orDash(customer.source_file)}</Field>
+                    <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
+                    <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
+                  </FieldGrid>
+                </div>
+              </details>
+            )}
           </TabsContent>
 
           <TabsContent value="sites" className="mt-4">
@@ -643,7 +667,11 @@ function CustomerDetail() {
                 rows={data?.equipment ?? []}
                 error={related.error}
                 columns={[
-                  { key: "unit", header: "Unit", value: (row) => row.equipment?.unit_number ?? "" },
+                  {
+                    key: "unit",
+                    header: "Unit",
+                    value: (row) => row.equipment?.unit_number ?? "",
+                  },
                   { key: "assignment_type", header: "Assignment" },
                   {
                     key: "start_date",
@@ -680,16 +708,6 @@ function CustomerDetail() {
           ]}
         />
       )}
-      <RecordForm
-        open={editing}
-        onOpenChange={setEditing}
-        title="Edit customer"
-        table="customers"
-        recordId={customerId}
-        initialValues={customer}
-        fields={customerFields}
-        invalidateKeys={[["customer", customerId], ["customers"]]}
-      />
 
       {creator && (
         <RecordForm

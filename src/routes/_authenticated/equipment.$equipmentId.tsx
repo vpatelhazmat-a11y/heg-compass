@@ -3,7 +3,7 @@ import { RecordRelations } from "@/components/app/RecordLink";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 import { PageHeader, MetaItem } from "@/components/app/PageHeader";
 import { Panel, Field, FieldGrid } from "@/components/app/Panels";
 import { EmptyState, ErrorState, LoadingState } from "@/components/app/EmptyState";
@@ -45,7 +45,6 @@ function EquipmentDetail() {
   const { equipmentId } = Route.useParams();
   const { canEdit } = useSession();
   const canWrite = canEdit("equipment");
-  const [editing, setEditing] = useState(false);
   const [editingAssignment, setEditingAssignment] = useState<Row | null>(null);
   const [creator, setCreator] = useState<Creator>(null);
   const assignmentParents = useQuery({
@@ -165,16 +164,8 @@ function EquipmentDetail() {
             <MetaItem label="Data quality">{orDash(unit.data_quality_status)}</MetaItem>
           </>
         }
-        actions={
-          canWrite ? (
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              <Pencil className="h-4 w-4" aria-hidden />
-              Edit
-            </Button>
-          ) : null
-        }
+        related={<SmartButtons table="equipment" id={equipmentId} />}
       />
-      <SmartButtons table="equipment" id={equipmentId} />
       <RecordRelations row={unit} />
 
       <div className="master-record space-y-6 p-6">
@@ -188,25 +179,41 @@ function EquipmentDetail() {
             <TabsTrigger value="incidents">Incidents</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="specification" className="mt-4 space-y-6">
-            <Panel title="Unit details">
-              <FieldGrid>
-                <Field label="Unit number">{unit.unit_number}</Field>
-                <Field label="Category">{orDash(unit.category)}</Field>
-                <Field label="Type">{orDash(unit.equipment_type)}</Field>
-                <Field label="Year">{orDash(unit.model_year)}</Field>
-                <Field label="Make">{orDash(unit.make)}</Field>
-                <Field label="Color">{orDash(unit.color)}</Field>
-                <Field label="Capacity">{orDash(unit.capacity)}</Field>
-                <Field label="Certified weight">{orDash(unit.certified_weight)}</Field>
-                <Field label="VIN">{orDash(unit.vin)}</Field>
-                <Field label="Serial number">{orDash(unit.serial_number)}</Field>
-                <Field label="Plate number">{orDash(unit.plate_number)}</Field>
-              </FieldGrid>
-            </Panel>
-            <Panel title="Notes">
-              <p className="text-sm text-foreground">{orDash(unit.notes)}</p>
-            </Panel>
+          <TabsContent forceMount value="specification" className="mt-4 space-y-6">
+            {canWrite ? (
+              <RecordForm
+                presentation="record"
+                open
+                onOpenChange={() => undefined}
+                title="Equipment details"
+                table="equipment"
+                recordId={equipmentId}
+                initialValues={unit}
+                fields={equipmentFields}
+                invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
+              />
+            ) : (
+              <>
+                <Panel title="Unit details">
+                  <FieldGrid>
+                    <Field label="Unit number">{unit.unit_number}</Field>
+                    <Field label="Category">{orDash(unit.category)}</Field>
+                    <Field label="Type">{orDash(unit.equipment_type)}</Field>
+                    <Field label="Year">{orDash(unit.model_year)}</Field>
+                    <Field label="Make">{orDash(unit.make)}</Field>
+                    <Field label="Color">{orDash(unit.color)}</Field>
+                    <Field label="Capacity">{orDash(unit.capacity)}</Field>
+                    <Field label="Certified weight">{orDash(unit.certified_weight)}</Field>
+                    <Field label="VIN">{orDash(unit.vin)}</Field>
+                    <Field label="Serial number">{orDash(unit.serial_number)}</Field>
+                    <Field label="Plate number">{orDash(unit.plate_number)}</Field>
+                  </FieldGrid>
+                </Panel>
+                <Panel title="Notes">
+                  <p className="text-sm text-foreground">{orDash(unit.notes)}</p>
+                </Panel>
+              </>
+            )}
           </TabsContent>
 
           <TabsContent value="assignments" className="mt-4">
@@ -340,16 +347,6 @@ function EquipmentDetail() {
           fields={equipmentAssignmentFields}
         />
       )}
-      <RecordForm
-        open={editing}
-        onOpenChange={setEditing}
-        title="Edit equipment"
-        table="equipment"
-        recordId={equipmentId}
-        initialValues={unit}
-        fields={equipmentFields}
-        invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
-      />
 
       {creator && (
         <RecordForm

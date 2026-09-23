@@ -279,6 +279,20 @@ export function recordHref(table: string, id: string): string {
     : `/records/${encodeURIComponent(table)}/${encodeURIComponent(id)}`;
 }
 
+export function recordListHref(table: string): string {
+  const workspaces: Record<string, string> = {
+    customers: "/customers",
+    sites: "/sites",
+    equipment: "/equipment",
+    bids: "/bids",
+    refused_loads: "/lost-loads/records",
+    incidents: "/safety",
+    tasks: "/tasks",
+    knowledge_articles: "/knowledge",
+  };
+  return workspaces[table] ?? `/records/${encodeURIComponent(table)}`;
+}
+
 export type RelatedList = {
   table: string;
   label: string;

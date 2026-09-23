@@ -25,6 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [paletteQuery, setPaletteQuery] = useState("");
   const [quickCreate, setQuickCreate] = useState<QuickCreateKind | null>(null);
   const module = activeModule(pathname);
 
@@ -32,12 +33,32 @@ export function AppShell({ children }: { children: ReactNode }) {
     const handler = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
+        setPaletteQuery("");
         setPaletteOpen((open) => !open);
+      } else if (
+        !paletteOpen &&
+        !event.metaKey &&
+        !event.ctrlKey &&
+        !event.altKey &&
+        event.key.length === 1 &&
+        event.key.trim().length === 1 &&
+        !event.isComposing &&
+        !(
+          event.target instanceof HTMLElement &&
+          (event.target.isContentEditable ||
+            event.target.closest(
+              'input, textarea, select, button, a, [role="combobox"], [role="dialog"]',
+            ))
+        )
+      ) {
+        setPaletteQuery(event.key);
+        setPaletteOpen(true);
+        event.preventDefault();
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, []);
+  }, [paletteOpen]);
 
   const signOut = async () => {
     await queryClient.cancelQueries();
@@ -91,7 +112,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
         <button
           type="button"
-          onClick={() => setPaletteOpen(true)}
+          onClick={() => {
+            setPaletteQuery("");
+            setPaletteOpen(true);
+          }}
           className={`global-search ${module ? "module-search" : ""} ml-auto flex h-9 w-9 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent sm:w-full sm:max-w-xs sm:justify-start sm:gap-2 sm:px-3`}
           aria-label="Search everything"
         >
@@ -196,7 +220,11 @@ export function AppShell({ children }: { children: ReactNode }) {
       <main id="main-content" className="min-w-0 flex-1">
         {children}
       </main>
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
+      <CommandPalette
+        open={paletteOpen}
+        onOpenChange={setPaletteOpen}
+        initialQuery={paletteQuery}
+      />
       <QuickCreate kind={quickCreate} onClose={() => setQuickCreate(null)} />
     </div>
   );

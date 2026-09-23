@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import {
   CommandDialog,
@@ -9,140 +9,116 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, MapPin, Truck, FileText, Gauge, ShieldAlert, Users } from "lucide-react";
+import { HUB_MODULES } from "@/lib/modules";
+import { recordDefinition, recordHref, recordLabel } from "@/lib/record-registry";
+import { CompassIcon } from "./CompassIcon";
+import { ArrowUpRight, FileText } from "lucide-react";
 
-type Hit = {
-  id: string;
-  label: string;
-  sublabel?: string;
-  group: string;
-  to: string;
-  params?: Record<string, string>;
+type Hit = { id: string; table: string; label: string; to: string };
+
+// Only searchable, public-facing record labels are queried. RLS still governs each result.
+const SEARCH_FIELDS: Record<string, string> = {
+  customers: "legal_name",
+  sites: "site_name",
+  equipment: "unit_number",
+  bids: "bid_name",
+  contacts: "last_name",
+  products: "product_name",
+  lanes: "lane_name",
+  rates: "quote_reference",
+  contracts: "contract_name",
+  opportunities: "name",
+  refused_loads: "product",
+  incidents: "incident_type",
+  site_assessments: "assessment_type",
+  tasks: "title",
+  documents: "document_name",
+  requirements: "requirement",
+  lost_business: "reason_category",
+  corrective_actions: "action",
+  equipment_assignments: "assignment_type",
+  equipment_compliance: "requirement",
+  equipment_technology: "technology_type",
+  knowledge_articles: "title",
 };
 
 export function CommandPalette({
   open,
   onOpenChange,
+  initialQuery = "",
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialQuery?: string;
 }) {
   const navigate = useNavigate();
   const [term, setTerm] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    if (open) setTerm(initialQuery);
+    else {
+      setTerm("");
+      setHits([]);
+    }
+  }, [open, initialQuery]);
+
+  const apps = useMemo(
+    () =>
+      HUB_MODULES.filter((module) =>
+        `${module.label} ${module.description}`.toLowerCase().includes(term.trim().toLowerCase()),
+      ),
+    [term],
+  );
 
   useEffect(() => {
     const q = term.trim();
-    if (q.length < 2) {
+    if (!open || q.length < 2) {
       setHits([]);
+      setSearching(false);
       return;
     }
     let cancelled = false;
+    const controller = new AbortController();
+    setSearching(true);
     const timer = setTimeout(async () => {
-      const like = `%${q}%`;
-      const [customers, sites, equipment, bids, contacts, incidents] = await Promise.all([
-        supabase
-          .from("customers")
-          .select("id, legal_name, status")
-          .is("archived_at", null)
-          .ilike("legal_name", like)
-          .limit(5),
-        supabase
-          .from("sites")
-          .select("id, site_name, city, state")
-          .is("archived_at", null)
-          .ilike("site_name", like)
-          .limit(5),
-        supabase
-          .from("equipment")
-          .select("id, unit_number, category")
-          .is("archived_at", null)
-          .ilike("unit_number", like)
-          .limit(5),
-        supabase.from("bids").select("id, bid_name, status").ilike("bid_name", like).limit(5),
-        supabase
-          .from("contacts")
-          .select("id, first_name, last_name, customer_id")
-          .or(`first_name.ilike.${like},last_name.ilike.${like}`)
-          .limit(5),
-        supabase
-          .from("incidents")
-          .select("id, incident_type, status")
-          .ilike("incident_type", like)
-          .limit(5),
-      ]);
-      if (cancelled) return;
-      const next: Hit[] = [
-        ...(customers.data ?? []).map((r) => ({
-          id: r.id,
-          group: "Customers",
-          label: r.legal_name,
-          sublabel: r.status ?? "",
-          to: "/customers/$customerId",
-          params: { customerId: r.id },
-        })),
-        ...(sites.data ?? []).map((r) => ({
-          id: r.id,
-          group: "Sites",
-          label: r.site_name,
-          sublabel: [r.city, r.state].filter(Boolean).join(", "),
-          to: "/sites/$siteId",
-          params: { siteId: r.id },
-        })),
-        ...(equipment.data ?? []).map((r) => ({
-          id: r.id,
-          group: "Equipment",
-          label: `Unit ${r.unit_number}`,
-          sublabel: r.category ?? "",
-          to: "/equipment/$equipmentId",
-          params: { equipmentId: r.id },
-        })),
-        ...(bids.data ?? []).map((r) => ({
-          id: r.id,
-          group: "Bids",
-          label: r.bid_name,
-          sublabel: r.status ?? "",
-          to: "/records/$entityType/$recordId",
-          params: { entityType: "bids", recordId: r.id },
-        })),
-        ...(contacts.data ?? []).map((r) => ({
-          id: r.id,
-          group: "Contacts",
-          label: `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim(),
-          to: "/records/$entityType/$recordId",
-          params: { entityType: "contacts", recordId: r.id },
-        })),
-        ...(incidents.data ?? []).map((r) => ({
-          id: r.id,
-          group: "Incidents",
-          label: r.incident_type ?? "Incident",
-          sublabel: r.status ?? "",
-          to: "/records/$entityType/$recordId",
-          params: { entityType: "incidents", recordId: r.id },
-        })),
-      ];
-      setHits(next);
-    }, 220);
+      const result = await Promise.allSettled(
+        Object.entries(SEARCH_FIELDS).map(async ([table, field]) => {
+          // The table and column names come only from the allowlist above.
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          let query = (supabase.from(table as never) as any)
+            .select(`id,${recordDefinition(table)?.title.join(",") ?? field}`)
+            .ilike(field, `%${q}%`)
+            .abortSignal(controller.signal)
+            .limit(3);
+          if (["customers", "sites", "equipment"].includes(table))
+            query = query.is("archived_at", null);
+          const { data, error } = await query;
+          if (error) throw error;
+          return (data ?? []).map((row: Record<string, unknown>) => ({
+            id: String(row["id"]),
+            table,
+            label: recordLabel(table, row),
+            to: recordHref(table, String(row["id"])),
+          }));
+        }),
+      );
+      if (!cancelled) {
+        setHits(result.flatMap((item) => (item.status === "fulfilled" ? item.value : [])));
+        setSearching(false);
+      }
+    }, 260);
     return () => {
       cancelled = true;
+      controller.abort();
       clearTimeout(timer);
     };
-  }, [term]);
+  }, [open, term]);
 
-  const go = (to: string, params?: Record<string, string>) => {
+  const go = (to: string) => {
     onOpenChange(false);
-    setTerm("");
-    navigate({ to, params: params as never });
-  };
-
-  const groups = [...new Set(hits.map((hit) => hit.group))];
-  const icons: Record<string, typeof Building2> = {
-    Customers: Building2,
-    Sites: MapPin,
-    Equipment: Truck,
-    Bids: FileText,
-    Contacts: Users,
-    Incidents: ShieldAlert,
+    navigate({ to });
   };
 
   return (
@@ -150,55 +126,42 @@ export function CommandPalette({
       <CommandInput
         value={term}
         onValueChange={setTerm}
-        placeholder="Search customers, sites, equipment, bids…"
+        placeholder="Search apps and records…"
+        aria-label="Search apps and records"
       />
       <CommandList>
-        {term.trim().length < 2 ? (
-          <CommandGroup heading="Go to">
-            <CommandItem onSelect={() => go("/command-center")}>
-              <Gauge className="h-4 w-4" /> Command Center
-            </CommandItem>
-            <CommandItem onSelect={() => go("/customers")}>
-              <Building2 className="h-4 w-4" /> Customers
-            </CommandItem>
-            <CommandItem onSelect={() => go("/bids")}>
-              <FileText className="h-4 w-4" /> Bids
-            </CommandItem>
-            <CommandItem onSelect={() => go("/equipment")}>
-              <Truck className="h-4 w-4" /> Equipment
-            </CommandItem>
-            <CommandItem onSelect={() => go("/safety")}>
-              <ShieldAlert className="h-4 w-4" /> Safety
-            </CommandItem>
+        <CommandEmpty>{searching ? "Searching records…" : "No matches found."}</CommandEmpty>
+        {apps.length > 0 && (
+          <CommandGroup heading="Apps">
+            {apps.map((module) => (
+              <CommandItem
+                key={module.to}
+                value={`app ${module.label} ${module.description}`}
+                onSelect={() => go(module.to)}
+              >
+                <CompassIcon name={module.label} className="h-5 w-5" />
+                <span>{module.label}</span>
+                <ArrowUpRight className="ml-auto h-3.5 w-3.5 opacity-50" aria-hidden />
+              </CommandItem>
+            ))}
           </CommandGroup>
-        ) : (
-          <>
-            <CommandEmpty>No matches found.</CommandEmpty>
-            {groups.map((group) => {
-              const Icon = icons[group] ?? Building2;
-              return (
-                <CommandGroup key={group} heading={group}>
-                  {hits
-                    .filter((hit) => hit.group === group)
-                    .map((hit) => (
-                      <CommandItem
-                        key={`${group}-${hit.id}`}
-                        value={`${group}-${hit.id}`}
-                        onSelect={() => go(hit.to, hit.params)}
-                      >
-                        <Icon className="h-4 w-4" />
-                        <span>{hit.label}</span>
-                        {hit.sublabel && (
-                          <span className="ml-auto text-xs text-muted-foreground">
-                            {hit.sublabel}
-                          </span>
-                        )}
-                      </CommandItem>
-                    ))}
-                </CommandGroup>
-              );
-            })}
-          </>
+        )}
+        {hits.length > 0 && (
+          <CommandGroup heading="Records">
+            {hits.map((hit) => (
+              <CommandItem
+                key={`${hit.table}-${hit.id}`}
+                value={`record ${hit.table} ${hit.label}`}
+                onSelect={() => go(hit.to)}
+              >
+                <FileText className="h-4 w-4" aria-hidden />
+                <span className="truncate">{hit.label}</span>
+                <span className="ml-auto shrink-0 text-xs text-muted-foreground">
+                  {recordDefinition(hit.table)?.singular}
+                </span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
         )}
       </CommandList>
     </CommandDialog>

@@ -34,6 +34,15 @@ export type FieldConfig = {
   full?: boolean;
 };
 
+function startingValues(fields: FieldConfig[], initialValues?: Row, defaults?: Row): Row {
+  const base: Row = {};
+  for (const field of fields) {
+    const initial = initialValues?.[field.name] ?? defaults?.[field.name];
+    base[field.name] = initial ?? (field.type === "checkbox" ? false : "");
+  }
+  return base;
+}
+
 export function RecordForm({
   open,
   onOpenChange,
@@ -48,7 +57,7 @@ export function RecordForm({
   onSaved,
   presentation = "sheet",
 }: {
-  presentation?: "sheet" | "inline";
+  presentation?: "sheet" | "inline" | "record";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -63,17 +72,20 @@ export function RecordForm({
 }) {
   const queryClient = useQueryClient();
   const { canEdit } = useSession();
-  const [values, setValues] = useState<Row>({});
+  const [values, setValues] = useState<Row>(() => startingValues(fields, initialValues, defaults));
+  const [baseline, setBaseline] = useState<Row>(() =>
+    startingValues(fields, initialValues, defaults),
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const dirty = fields.some(
+    (field) => String(values[field.name] ?? "") !== String(baseline[field.name] ?? ""),
+  );
 
   useEffect(() => {
     if (!open) return;
-    const base: Row = {};
-    for (const field of fields) {
-      const initial = initialValues?.[field.name] ?? defaults?.[field.name];
-      base[field.name] = initial ?? (field.type === "checkbox" ? false : "");
-    }
+    const base = startingValues(fields, initialValues, defaults);
     setValues(base);
+    setBaseline(base);
     setErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, recordId]);
@@ -114,8 +126,15 @@ export function RecordForm({
       toast.success(recordId ? "Changes saved" : "Record created");
       queryClient.invalidateQueries();
       for (const key of invalidateKeys) queryClient.invalidateQueries({ queryKey: key });
+      if (presentation === "record") {
+        const next = startingValues(fields, saved, defaults);
+        if (table === "rates") next.change_reason = "";
+        setBaseline(next);
+        setValues(next);
+        setErrors({});
+      }
       onSaved?.(saved);
-      onOpenChange(false);
+      if (presentation !== "record") onOpenChange(false);
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -129,164 +148,181 @@ export function RecordForm({
 
   const contents = (
     <>
-      <SheetHeader className="border-b border-border px-6 py-4">
-        {presentation === "inline" ? (
-          <h2 className="text-lg font-semibold">{title}</h2>
-        ) : (
-          <SheetTitle>{title}</SheetTitle>
-        )}
-        {description &&
-          (presentation === "inline" ? (
-            <p className="text-sm text-muted-foreground">{description}</p>
+      {presentation !== "record" && (
+        <SheetHeader className="border-b border-border px-6 py-4">
+          {presentation === "inline" ? (
+            <h2 className="text-lg font-semibold">{title}</h2>
           ) : (
-            <SheetDescription>{description}</SheetDescription>
-          ))}
-      </SheetHeader>
+            <SheetTitle>{title}</SheetTitle>
+          )}
+          {description &&
+            (presentation === "inline" ? (
+              <p className="text-sm text-muted-foreground">{description}</p>
+            ) : (
+              <SheetDescription>{description}</SheetDescription>
+            ))}
+        </SheetHeader>
+      )}
 
       <div className="flex-1 overflow-y-auto px-6 py-5">
-        <div className={presentation === "inline" ? "inline-form-sections" : "space-y-7"}>
-          {sections.map(([sectionName, sectionFields]) => (
-            <section key={sectionName} className="space-y-4">
-              <h3 className="section-title">{sectionName}</h3>
-              <div
-                className={
-                  presentation === "inline"
-                    ? "grid grid-cols-1 gap-4"
-                    : "grid grid-cols-1 gap-4 sm:grid-cols-2"
-                }
-              >
-                {sectionFields.map((field) => {
-                  const id = `field-${field.name}`;
-                  const error = errors[field.name];
-                  return (
-                    <div
-                      key={field.name}
-                      className={
-                        presentation !== "inline" && (field.full || field.type === "textarea")
-                          ? "sm:col-span-2"
-                          : undefined
-                      }
-                    >
-                      {field.type === "checkbox" ? (
-                        <div className="flex items-center gap-2 pt-6">
-                          <Checkbox
-                            id={id}
-                            checked={Boolean(values[field.name])}
-                            onCheckedChange={(checked) =>
-                              setValues((prev: Row) => ({
-                                ...prev,
-                                [field.name]: Boolean(checked),
-                              }))
-                            }
-                          />
-                          <Label htmlFor={id} className="text-sm font-normal">
-                            {field.label}
-                          </Label>
-                        </div>
-                      ) : (
-                        <>
-                          <Label htmlFor={id} className="mb-1.5 block text-sm">
-                            {field.label}
-                            {field.required && <span className="ml-1 text-danger">*</span>}
-                          </Label>
-                          {field.type === "textarea" ? (
-                            <Textarea
+        <div className={presentation !== "sheet" ? "inline-form-sections" : "space-y-7"}>
+          {sections.map(([sectionName, sectionFields]) =>
+            presentation === "record" && sectionName === "Revision" && !dirty ? null : (
+              <section key={sectionName} className="space-y-4">
+                <h3 className="section-title">{sectionName}</h3>
+                <div
+                  className={
+                    presentation !== "sheet"
+                      ? "grid grid-cols-1 gap-4"
+                      : "grid grid-cols-1 gap-4 sm:grid-cols-2"
+                  }
+                >
+                  {sectionFields.map((field) => {
+                    const id = `field-${field.name}`;
+                    const error = errors[field.name];
+                    return (
+                      <div
+                        key={field.name}
+                        className={
+                          presentation === "sheet" && (field.full || field.type === "textarea")
+                            ? "sm:col-span-2"
+                            : undefined
+                        }
+                      >
+                        {field.type === "checkbox" ? (
+                          <div className="flex items-center gap-2 pt-6">
+                            <Checkbox
                               id={id}
-                              rows={3}
-                              value={values[field.name] ?? ""}
-                              placeholder={field.placeholder}
-                              onChange={(event) =>
+                              checked={Boolean(values[field.name])}
+                              onCheckedChange={(checked) =>
                                 setValues((prev: Row) => ({
                                   ...prev,
-                                  ...Object.fromEntries(
-                                    fields
-                                      .filter((child) => child.dependsOn === field.name)
-                                      .map((child) => [child.name, ""]),
-                                  ),
-                                  [field.name]: event.target.value,
+                                  [field.name]: Boolean(checked),
                                 }))
                               }
                             />
-                          ) : field.type === "select" ? (
-                            <select
-                              id={id}
-                              value={values[field.name] ?? ""}
-                              onChange={(event) =>
-                                setValues((prev: Row) => ({
-                                  ...prev,
-                                  ...Object.fromEntries(
-                                    fields
-                                      .filter((child) => child.dependsOn === field.name)
-                                      .map((child) => [child.name, ""]),
-                                  ),
-                                  [field.name]: event.target.value,
-                                }))
-                              }
-                              className="h-9 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground"
-                            >
-                              <option value="">Select…</option>
-                              {(field.options ?? [])
-                                .filter(
-                                  (option) =>
-                                    !field.dependsOn ||
-                                    option.parentValue === values[field.dependsOn],
-                                )
-                                .map((option) => (
-                                  <option key={option.value} value={option.value}>
-                                    {option.label}
-                                  </option>
-                                ))}
-                            </select>
-                          ) : (
-                            <Input
-                              id={id}
-                              type={
-                                field.type === "date"
-                                  ? "date"
-                                  : field.type === "number" || field.type === "money"
-                                    ? "number"
-                                    : "text"
-                              }
-                              step={field.type === "money" ? "0.01" : undefined}
-                              value={values[field.name] ?? ""}
-                              placeholder={field.placeholder}
-                              aria-invalid={Boolean(error)}
-                              onChange={(event) =>
-                                setValues((prev: Row) => ({
-                                  ...prev,
-                                  [field.name]: event.target.value,
-                                }))
-                              }
-                            />
-                          )}
-                          {field.help && !error && (
-                            <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>
-                          )}
-                          {error && <p className="mt-1 text-xs text-danger">{error}</p>}
-                        </>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ))}
+                            <Label htmlFor={id} className="text-sm font-normal">
+                              {field.label}
+                            </Label>
+                          </div>
+                        ) : (
+                          <>
+                            <Label htmlFor={id} className="mb-1.5 block text-sm">
+                              {field.label}
+                              {field.required && <span className="ml-1 text-danger">*</span>}
+                            </Label>
+                            {field.type === "textarea" ? (
+                              <Textarea
+                                id={id}
+                                rows={3}
+                                value={values[field.name] ?? ""}
+                                placeholder={field.placeholder}
+                                onChange={(event) =>
+                                  setValues((prev: Row) => ({
+                                    ...prev,
+                                    ...Object.fromEntries(
+                                      fields
+                                        .filter((child) => child.dependsOn === field.name)
+                                        .map((child) => [child.name, ""]),
+                                    ),
+                                    [field.name]: event.target.value,
+                                  }))
+                                }
+                              />
+                            ) : field.type === "select" ? (
+                              <select
+                                id={id}
+                                value={values[field.name] ?? ""}
+                                onChange={(event) =>
+                                  setValues((prev: Row) => ({
+                                    ...prev,
+                                    ...Object.fromEntries(
+                                      fields
+                                        .filter((child) => child.dependsOn === field.name)
+                                        .map((child) => [child.name, ""]),
+                                    ),
+                                    [field.name]: event.target.value,
+                                  }))
+                                }
+                                className="h-9 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground"
+                              >
+                                <option value="">Select…</option>
+                                {(field.options ?? [])
+                                  .filter(
+                                    (option) =>
+                                      !field.dependsOn ||
+                                      option.parentValue === values[field.dependsOn],
+                                  )
+                                  .map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                      {option.label}
+                                    </option>
+                                  ))}
+                              </select>
+                            ) : (
+                              <Input
+                                id={id}
+                                type={
+                                  field.type === "date"
+                                    ? "date"
+                                    : field.type === "number" || field.type === "money"
+                                      ? "number"
+                                      : "text"
+                                }
+                                step={field.type === "money" ? "0.01" : undefined}
+                                value={values[field.name] ?? ""}
+                                placeholder={field.placeholder}
+                                aria-invalid={Boolean(error)}
+                                onChange={(event) =>
+                                  setValues((prev: Row) => ({
+                                    ...prev,
+                                    [field.name]: event.target.value,
+                                  }))
+                                }
+                              />
+                            )}
+                            {field.help && !error && (
+                              <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>
+                            )}
+                            {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ),
+          )}
         </div>
       </div>
 
-      <SheetFooter className="form-savebar flex-row justify-end gap-2 border-t border-border px-6 py-4">
-        <Button variant="outline" onClick={() => onOpenChange(false)}>
-          Cancel
-        </Button>
-        <Button onClick={submit} disabled={mutation.isPending || !canEdit(table)}>
-          {mutation.isPending ? "Saving…" : recordId ? "Save changes" : "Create"}
-        </Button>
-      </SheetFooter>
+      {(presentation !== "record" || dirty) && (
+        <SheetFooter className="form-savebar flex-row justify-end gap-2 border-t border-border px-6 py-4">
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (presentation === "record") {
+                setValues(baseline);
+                setErrors({});
+              } else onOpenChange(false);
+            }}
+          >
+            {presentation === "record" ? "Discard" : "Cancel"}
+          </Button>
+          <Button onClick={submit} disabled={mutation.isPending || !canEdit(table)}>
+            {mutation.isPending ? "Saving…" : recordId ? "Save changes" : "Create"}
+          </Button>
+        </SheetFooter>
+      )}
     </>
   );
-  if (presentation === "inline")
+  if (presentation !== "sheet")
     return open ? (
-      <section className="record-editor inline-record-editor" aria-label={title}>
+      <section
+        className={`record-editor inline-record-editor ${presentation === "record" ? "always-editable-record" : ""}`}
+        aria-label={title}
+      >
         {contents}
       </section>
     ) : null;
