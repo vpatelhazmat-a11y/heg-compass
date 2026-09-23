@@ -175,7 +175,8 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
           { label: recordLabel(table, row) },
         ]}
         actions={
-          canEdit(table) && (
+          canEdit(table) &&
+          !editing && (
             <Button variant="outline" onClick={() => setEditing(true)}>
               <Pencil className="h-4 w-4" aria-hidden />
               Edit
@@ -196,17 +197,19 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
               void record.refetch();
             }}
           />
+        ) : editing ? (
+          <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
         ) : (
           <article className="record-sheet" aria-label="Record details">
             {[...grouped].map(([section, fields]) => (
-              <section className="record-section" key={section}>
+              <section
+                className={`record-section ${section === "Notes" || section === "Record information" ? "record-section-wide" : ""}`}
+                key={section}
+              >
                 <h2>{section}</h2>
-                <dl className="grid gap-x-12 md:grid-cols-2">
+                <dl className="grid gap-x-12">
                   {fields.map(([key, value]) => (
-                    <div
-                      key={key}
-                      className={`record-field ${typeof value === "string" && value.length > 150 ? "md:col-span-2" : ""}`}
-                    >
+                    <div key={key} className="record-field">
                       <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
                       <dd>{displayValue(key, value)}</dd>
                     </div>
@@ -235,9 +238,6 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
           </section>
         )}
       </div>
-      {editing && table !== "refused_loads" && (
-        <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
-      )}
     </>
   );
 }
@@ -308,6 +308,7 @@ function RecordEditor({ table, row, onClose }: { table: string; row: Row; onClos
     });
   return (
     <RecordForm
+      presentation="inline"
       open
       onOpenChange={(open) => {
         if (!open) onClose();

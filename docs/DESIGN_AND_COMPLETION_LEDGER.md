@@ -48,3 +48,12 @@ Cross-cutting saved views, tags, comprehensive related panels, and consistent ar
 - Shared table and actual record-sheet components reviewed using local, clearly labelled fixtures.
 - Release checks must cover schema/type/lint/tests/build and navigation on the published app.
 - Live role switching and destructive/writing operations are not part of visual verification.
+
+## Workspace refinement — September 23
+
+- Compact desktop module menus in the plum header, with a separate mobile menu.
+- Saturated custom app icons and a simpler Applications launcher.
+- Two-column record sections and inline editing for supporting records; dedicated master-record and Refused Loads editors remain.
+- Table column selection, visible-column CSV export, and compact toolbar paging. Column choices last for the current mounted table only.
+- Regression coverage for inline cancel, required rate reasons, filtered paging, and keeping at least one column visible.
+- This refinement does not complete phases 3–10 above.

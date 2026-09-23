@@ -57,7 +57,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
-      <header className="compass-topbar sticky top-0 z-20 flex min-h-14 items-center gap-3 px-3 sm:px-5">
+      <header className="compass-topbar sticky top-0 z-20 flex min-h-12 items-center gap-3 px-3 sm:px-5">
         <Link
           to="/command-center"
           aria-label="Open app launcher"
@@ -84,10 +84,15 @@ export function AppShell({ children }: { children: ReactNode }) {
             </span>
           )}
         </nav>
+        {module && (
+          <div className="desktop-module-menu">
+            <ModuleNavigation pathname={pathname} />
+          </div>
+        )}
         <button
           type="button"
           onClick={() => setPaletteOpen(true)}
-          className="global-search ml-auto flex h-9 w-9 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent sm:w-full sm:max-w-xs sm:justify-start sm:gap-2 sm:px-3"
+          className={`global-search ${module ? "module-search" : ""} ml-auto flex h-9 w-9 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent sm:w-full sm:max-w-xs sm:justify-start sm:gap-2 sm:px-3`}
           aria-label="Search everything"
         >
           <Search className="h-4 w-4 shrink-0" aria-hidden />
@@ -185,7 +190,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
-      <ModuleNavigation pathname={pathname} />
+      <div className={module ? "mobile-module-menu" : "home-module-menu"}>
+        <ModuleNavigation pathname={pathname} />
+      </div>
       <main id="main-content" className="min-w-0 flex-1">
         {children}
       </main>

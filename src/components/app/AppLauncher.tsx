@@ -12,9 +12,7 @@ export function AppLauncher() {
   return (
     <section aria-labelledby="modules-heading" className="app-desktop">
       <div className="launcher-intro">
-        <p className="launcher-eyebrow">HAZMAT ENVIRONMENTAL GROUP</p>
-        <h1 id="modules-heading">HEG Compass</h1>
-        <p>Select an app to open your workspace.</p>
+        <h1 id="modules-heading">Applications</h1>
       </div>
       <label className="app-finder">
         <Search size={18} aria-hidden />
@@ -35,19 +33,13 @@ export function AppLauncher() {
               <CompassIcon name={label} />
             </span>
             <span className="app-label">{label}</span>
-            <span className="app-description">{description}</span>
+            <span className="sr-only">{description}</span>
           </Link>
         ))}
       </div>
       {!modules.length && (
         <p className="launcher-empty">No apps match "{search}". Try a different name.</p>
       )}
-      <div className="launcher-footer">
-        <span>
-          HEG <strong>Compass</strong>
-        </span>
-        <span>Customers · Operations · Safety</span>
-      </div>
     </section>
   );
 }

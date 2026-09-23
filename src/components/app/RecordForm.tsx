@@ -46,7 +46,9 @@ export function RecordForm({
   defaults,
   invalidateKeys = [],
   onSaved,
+  presentation = "sheet",
 }: {
+  presentation?: "sheet" | "inline";
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -125,145 +127,173 @@ export function RecordForm({
     mutation.mutate();
   };
 
-  return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="record-editor flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        <SheetHeader className="border-b border-border px-6 py-4">
+  const contents = (
+    <>
+      <SheetHeader className="border-b border-border px-6 py-4">
+        {presentation === "inline" ? (
+          <h2 className="text-lg font-semibold">{title}</h2>
+        ) : (
           <SheetTitle>{title}</SheetTitle>
-          {description && <SheetDescription>{description}</SheetDescription>}
-        </SheetHeader>
+        )}
+        {description &&
+          (presentation === "inline" ? (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          ) : (
+            <SheetDescription>{description}</SheetDescription>
+          ))}
+      </SheetHeader>
 
-        <div className="flex-1 overflow-y-auto px-6 py-5">
-          <div className="space-y-7">
-            {sections.map(([sectionName, sectionFields]) => (
-              <section key={sectionName} className="space-y-4">
-                <h3 className="section-title">{sectionName}</h3>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {sectionFields.map((field) => {
-                    const id = `field-${field.name}`;
-                    const error = errors[field.name];
-                    return (
-                      <div
-                        key={field.name}
-                        className={
-                          field.full || field.type === "textarea" ? "sm:col-span-2" : undefined
-                        }
-                      >
-                        {field.type === "checkbox" ? (
-                          <div className="flex items-center gap-2 pt-6">
-                            <Checkbox
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className={presentation === "inline" ? "inline-form-sections" : "space-y-7"}>
+          {sections.map(([sectionName, sectionFields]) => (
+            <section key={sectionName} className="space-y-4">
+              <h3 className="section-title">{sectionName}</h3>
+              <div
+                className={
+                  presentation === "inline"
+                    ? "grid grid-cols-1 gap-4"
+                    : "grid grid-cols-1 gap-4 sm:grid-cols-2"
+                }
+              >
+                {sectionFields.map((field) => {
+                  const id = `field-${field.name}`;
+                  const error = errors[field.name];
+                  return (
+                    <div
+                      key={field.name}
+                      className={
+                        presentation !== "inline" && (field.full || field.type === "textarea")
+                          ? "sm:col-span-2"
+                          : undefined
+                      }
+                    >
+                      {field.type === "checkbox" ? (
+                        <div className="flex items-center gap-2 pt-6">
+                          <Checkbox
+                            id={id}
+                            checked={Boolean(values[field.name])}
+                            onCheckedChange={(checked) =>
+                              setValues((prev: Row) => ({
+                                ...prev,
+                                [field.name]: Boolean(checked),
+                              }))
+                            }
+                          />
+                          <Label htmlFor={id} className="text-sm font-normal">
+                            {field.label}
+                          </Label>
+                        </div>
+                      ) : (
+                        <>
+                          <Label htmlFor={id} className="mb-1.5 block text-sm">
+                            {field.label}
+                            {field.required && <span className="ml-1 text-danger">*</span>}
+                          </Label>
+                          {field.type === "textarea" ? (
+                            <Textarea
                               id={id}
-                              checked={Boolean(values[field.name])}
-                              onCheckedChange={(checked) =>
+                              rows={3}
+                              value={values[field.name] ?? ""}
+                              placeholder={field.placeholder}
+                              onChange={(event) =>
                                 setValues((prev: Row) => ({
                                   ...prev,
-                                  [field.name]: Boolean(checked),
+                                  ...Object.fromEntries(
+                                    fields
+                                      .filter((child) => child.dependsOn === field.name)
+                                      .map((child) => [child.name, ""]),
+                                  ),
+                                  [field.name]: event.target.value,
                                 }))
                               }
                             />
-                            <Label htmlFor={id} className="text-sm font-normal">
-                              {field.label}
-                            </Label>
-                          </div>
-                        ) : (
-                          <>
-                            <Label htmlFor={id} className="mb-1.5 block text-sm">
-                              {field.label}
-                              {field.required && <span className="ml-1 text-danger">*</span>}
-                            </Label>
-                            {field.type === "textarea" ? (
-                              <Textarea
-                                id={id}
-                                rows={3}
-                                value={values[field.name] ?? ""}
-                                placeholder={field.placeholder}
-                                onChange={(event) =>
-                                  setValues((prev: Row) => ({
-                                    ...prev,
-                                    ...Object.fromEntries(
-                                      fields
-                                        .filter((child) => child.dependsOn === field.name)
-                                        .map((child) => [child.name, ""]),
-                                    ),
-                                    [field.name]: event.target.value,
-                                  }))
-                                }
-                              />
-                            ) : field.type === "select" ? (
-                              <select
-                                id={id}
-                                value={values[field.name] ?? ""}
-                                onChange={(event) =>
-                                  setValues((prev: Row) => ({
-                                    ...prev,
-                                    ...Object.fromEntries(
-                                      fields
-                                        .filter((child) => child.dependsOn === field.name)
-                                        .map((child) => [child.name, ""]),
-                                    ),
-                                    [field.name]: event.target.value,
-                                  }))
-                                }
-                                className="h-9 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground"
-                              >
-                                <option value="">Select…</option>
-                                {(field.options ?? [])
-                                  .filter(
-                                    (option) =>
-                                      !field.dependsOn ||
-                                      option.parentValue === values[field.dependsOn],
-                                  )
-                                  .map((option) => (
-                                    <option key={option.value} value={option.value}>
-                                      {option.label}
-                                    </option>
-                                  ))}
-                              </select>
-                            ) : (
-                              <Input
-                                id={id}
-                                type={
-                                  field.type === "date"
-                                    ? "date"
-                                    : field.type === "number" || field.type === "money"
-                                      ? "number"
-                                      : "text"
-                                }
-                                step={field.type === "money" ? "0.01" : undefined}
-                                value={values[field.name] ?? ""}
-                                placeholder={field.placeholder}
-                                aria-invalid={Boolean(error)}
-                                onChange={(event) =>
-                                  setValues((prev: Row) => ({
-                                    ...prev,
-                                    [field.name]: event.target.value,
-                                  }))
-                                }
-                              />
-                            )}
-                            {field.help && !error && (
-                              <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>
-                            )}
-                            {error && <p className="mt-1 text-xs text-danger">{error}</p>}
-                          </>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </section>
-            ))}
-          </div>
+                          ) : field.type === "select" ? (
+                            <select
+                              id={id}
+                              value={values[field.name] ?? ""}
+                              onChange={(event) =>
+                                setValues((prev: Row) => ({
+                                  ...prev,
+                                  ...Object.fromEntries(
+                                    fields
+                                      .filter((child) => child.dependsOn === field.name)
+                                      .map((child) => [child.name, ""]),
+                                  ),
+                                  [field.name]: event.target.value,
+                                }))
+                              }
+                              className="h-9 w-full rounded-md border border-input bg-surface px-3 text-sm text-foreground"
+                            >
+                              <option value="">Select…</option>
+                              {(field.options ?? [])
+                                .filter(
+                                  (option) =>
+                                    !field.dependsOn ||
+                                    option.parentValue === values[field.dependsOn],
+                                )
+                                .map((option) => (
+                                  <option key={option.value} value={option.value}>
+                                    {option.label}
+                                  </option>
+                                ))}
+                            </select>
+                          ) : (
+                            <Input
+                              id={id}
+                              type={
+                                field.type === "date"
+                                  ? "date"
+                                  : field.type === "number" || field.type === "money"
+                                    ? "number"
+                                    : "text"
+                              }
+                              step={field.type === "money" ? "0.01" : undefined}
+                              value={values[field.name] ?? ""}
+                              placeholder={field.placeholder}
+                              aria-invalid={Boolean(error)}
+                              onChange={(event) =>
+                                setValues((prev: Row) => ({
+                                  ...prev,
+                                  [field.name]: event.target.value,
+                                }))
+                              }
+                            />
+                          )}
+                          {field.help && !error && (
+                            <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>
+                          )}
+                          {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
         </div>
+      </div>
 
-        <SheetFooter className="flex-row justify-end gap-2 border-t border-border px-6 py-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={submit} disabled={mutation.isPending || !canEdit(table)}>
-            {mutation.isPending ? "Saving…" : recordId ? "Save changes" : "Create"}
-          </Button>
-        </SheetFooter>
+      <SheetFooter className="form-savebar flex-row justify-end gap-2 border-t border-border px-6 py-4">
+        <Button variant="outline" onClick={() => onOpenChange(false)}>
+          Cancel
+        </Button>
+        <Button onClick={submit} disabled={mutation.isPending || !canEdit(table)}>
+          {mutation.isPending ? "Saving…" : recordId ? "Save changes" : "Create"}
+        </Button>
+      </SheetFooter>
+    </>
+  );
+  if (presentation === "inline")
+    return open ? (
+      <section className="record-editor inline-record-editor" aria-label={title}>
+        {contents}
+      </section>
+    ) : null;
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent className="record-editor flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        {contents}
       </SheetContent>
     </Sheet>
   );
