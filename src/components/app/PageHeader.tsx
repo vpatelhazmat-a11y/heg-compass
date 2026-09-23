@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { ChevronRight } from "lucide-react";
+import { ArrowLeft, ChevronRight } from "lucide-react";
 
 export type Crumb = { label: string; to?: string; params?: Record<string, string> };
 
@@ -10,13 +10,16 @@ export function PageHeader({
   breadcrumbs,
   meta,
   actions,
+  related,
 }: {
   title: string;
   description?: string | undefined;
   breadcrumbs?: Crumb[] | undefined;
   meta?: ReactNode | undefined;
   actions?: ReactNode | undefined;
+  related?: ReactNode | undefined;
 }) {
+  const back = breadcrumbs?.at(-2);
   return (
     <header className="workspace-control border-b border-border bg-surface">
       {breadcrumbs && breadcrumbs.length > 0 && (
@@ -24,6 +27,16 @@ export function PageHeader({
           aria-label="Breadcrumb"
           className="mb-2 flex flex-wrap items-center gap-1 text-xs text-muted-foreground"
         >
+          {back?.to && (
+            <Link
+              to={back.to}
+              params={back.params as never}
+              aria-label={`Back to ${back.label}`}
+              className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded border border-border text-foreground hover:bg-accent"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden />
+            </Link>
+          )}
           {breadcrumbs.map((crumb, index) => (
             <span key={`${crumb.label}-${index}`} className="flex items-center gap-1">
               {index > 0 && <ChevronRight className="h-3 w-3 opacity-60" aria-hidden />}
@@ -54,6 +67,7 @@ export function PageHeader({
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
+      {related && <div className="workspace-related">{related}</div>}
     </header>
   );
 }

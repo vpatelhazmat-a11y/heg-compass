@@ -2,12 +2,12 @@ import { useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "./StatusBadge";
 import { formatDate } from "@/lib/format";
-import { Pencil } from "lucide-react";
 import { getRow, listRows, type Row } from "@/lib/data";
 import {
   recordDefinition,
   recordLabel,
   recordHref,
+  recordListHref,
   fieldLabel,
   RELATION_TARGETS,
   editableRelationKeys,
@@ -169,22 +169,13 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
       <PageHeader
         title={recordLabel(table, row)}
         meta={row.status ? <StatusBadge status={row.status} /> : undefined}
+        related={<SmartButtons table={table} id={id} />}
         breadcrumbs={[
           { label: "Apps", to: "/command-center" },
-          { label: definition.label, to: "/records/$entityType", params: { entityType: table } },
+          { label: definition.label, to: recordListHref(table) },
           { label: recordLabel(table, row) },
         ]}
-        actions={
-          canEdit(table) &&
-          !editing && (
-            <Button variant="outline" onClick={() => setEditing(true)}>
-              <Pencil className="h-4 w-4" aria-hidden />
-              Edit
-            </Button>
-          )
-        }
       />
-      <SmartButtons table={table} id={id} />
       <RecordRelations row={row} />
       <div className="space-y-6 px-3 pb-6 sm:px-6">
         {editing && table === "refused_loads" ? (
@@ -197,6 +188,8 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
               void record.refetch();
             }}
           />
+        ) : canEdit(table) && table !== "refused_loads" ? (
+          <RecordEditor table={table} row={row} />
         ) : editing ? (
           <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
         ) : (
@@ -211,7 +204,20 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
                   {fields.map(([key, value]) => (
                     <div key={key} className="record-field">
                       <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
-                      <dd>{displayValue(key, value)}</dd>
+                      <dd>
+                        {table === "refused_loads" && canEdit(table) ? (
+                          <button
+                            type="button"
+                            className="record-edit-value"
+                            onClick={() => setEditing(true)}
+                            aria-label={`Edit ${labels.get(key) ?? fieldLabel(key)}`}
+                          >
+                            {displayValue(key, value)}
+                          </button>
+                        ) : (
+                          displayValue(key, value)
+                        )}
+                      </dd>
                     </div>
                   ))}
                 </dl>
@@ -242,7 +248,7 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
   );
 }
 
-function RecordEditor({ table, row, onClose }: { table: string; row: Row; onClose: () => void }) {
+function RecordEditor({ table, row, onClose }: { table: string; row: Row; onClose?: () => void }) {
   const definition = recordDefinition(table)!;
   const relationKeys = editableRelationKeys(table);
   const targets = [
@@ -308,10 +314,10 @@ function RecordEditor({ table, row, onClose }: { table: string; row: Row; onClos
     });
   return (
     <RecordForm
-      presentation="inline"
+      presentation={onClose ? "inline" : "record"}
       open
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open) onClose?.();
       }}
       title={`Edit ${definition.singular.toLowerCase()}`}
       table={table}

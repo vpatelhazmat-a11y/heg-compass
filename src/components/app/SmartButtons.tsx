@@ -13,10 +13,7 @@ export function SmartButtons({ table, id }: { table: string; id: string }) {
   });
   if (!relations.length) return null;
   return (
-    <nav
-      aria-label="Related records"
-      className="related-buttons flex flex-wrap border-b border-border bg-surface"
-    >
+    <nav aria-label="Related records" className="related-buttons flex flex-wrap">
       {relations.map((relation, index) => (
         <a
           key={relation.table}
