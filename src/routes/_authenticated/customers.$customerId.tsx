@@ -246,7 +246,7 @@ function CustomerDetail() {
             <TabsTrigger value="equipment">Equipment</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview" className="mt-4 space-y-6">
+          <TabsContent forceMount value="overview" className="mt-4 space-y-6">
             {canWrite ? (
               <RecordForm
                 presentation="record"

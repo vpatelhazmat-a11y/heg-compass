@@ -179,7 +179,7 @@ function EquipmentDetail() {
             <TabsTrigger value="incidents">Incidents</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="specification" className="mt-4 space-y-6">
+          <TabsContent forceMount value="specification" className="mt-4 space-y-6">
             {canWrite ? (
               <RecordForm
                 presentation="record"

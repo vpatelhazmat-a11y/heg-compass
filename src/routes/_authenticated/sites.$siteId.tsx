@@ -169,7 +169,7 @@ function SiteDetail() {
             <TabsTrigger value="related">Products, lanes & equipment</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="operations" className="mt-4 space-y-6">
+          <TabsContent forceMount value="operations" className="mt-4 space-y-6">
             {canWrite ? (
               <RecordForm
                 presentation="record"
