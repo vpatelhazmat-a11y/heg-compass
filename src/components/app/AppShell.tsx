@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { Bell, ChevronDown, ChevronRight, LayoutGrid, LogOut, Plus, Search } from "lucide-react";
+import { ChevronDown, LogOut, Plus, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -90,15 +90,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <Link to="/command-center" className="hidden font-semibold hover:underline sm:inline">
             HEG Compass
           </Link>
-          {module && (
-            <>
-              <ChevronRight
-                className="hidden h-3.5 w-3.5 text-muted-foreground sm:block"
-                aria-hidden
-              />
-              <span className="truncate font-medium">{module.label}</span>
-            </>
-          )}
+          {module && <span className="truncate font-medium sm:hidden">{module.label}</span>}
           {!module && (
             <span className="font-semibold sm:hidden">
               {pathname === "/overview" ? "Overview" : "Apps"}
@@ -116,7 +108,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             setPaletteQuery("");
             setPaletteOpen(true);
           }}
-          className={`global-search ${module ? "module-search" : ""} ml-auto flex h-9 w-9 items-center justify-center rounded-md border border-input text-muted-foreground hover:bg-accent sm:w-full sm:max-w-xs sm:justify-start sm:gap-2 sm:px-3`}
+          className="global-search module-search ml-auto flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
           aria-label="Search everything"
         >
           <Search className="h-4 w-4 shrink-0" aria-hidden />
@@ -125,23 +117,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ⌘K
           </kbd>
         </button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" aria-label="Activity menu">
-              <Bell className="h-4 w-4" aria-hidden />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Activity</DropdownMenuLabel>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/tasks" })}>
-              Tasks and follow-ups
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => navigate({ to: "/overview" })}>
-              Deadlines and today's overview
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {canWrite && (
+        {canWrite && pathname !== "/command-center" && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="sm" className="header-create inline-flex">
