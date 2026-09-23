@@ -64,4 +64,4 @@ Cross-cutting saved views, tags, comprehensive related panels, and consistent ar
 - Supporting records open with directly editable fields. Save and Discard appear only after a change; rates still require a fresh reason and use the revision operation.
 - The launcher has no visible search box. Typing on the page opens combined app and primary-record search, with Ctrl/Command+K as an alternative.
 - Smart buttons sit in the record header; breadcrumbs include a direct back control.
-- Master-record field values can be selected to open their existing detailed editor. Fully direct editing inside their tabs, saved searches, grouping, and remaining original phases are still pending.
+- Customer, site, and equipment records have directly editable fields in their primary tab. Further related tabs, saved searches, grouping, and remaining original phases are still pending.

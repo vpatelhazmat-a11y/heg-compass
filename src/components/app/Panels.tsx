@@ -1,17 +1,5 @@
-import { createContext, useContext, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-
-const FieldEditContext = createContext<(() => void) | null>(null);
-
-export function FieldEditProvider({
-  children,
-  onEdit,
-}: {
-  children: ReactNode;
-  onEdit?: (() => void) | undefined;
-}) {
-  return <FieldEditContext.Provider value={onEdit ?? null}>{children}</FieldEditContext.Provider>;
-}
 
 export function Panel({
   title,
@@ -73,25 +61,10 @@ export function Field({
   children: ReactNode;
   full?: boolean;
 }) {
-  const onEdit = useContext(FieldEditContext);
-  const plainValue = typeof children === "string" || typeof children === "number";
   return (
     <div className={full ? "sm:col-span-2 lg:col-span-3" : undefined}>
       <dt className="field-label">{label}</dt>
-      <dd className="mt-0.5 whitespace-pre-line text-sm text-foreground">
-        {onEdit && plainValue ? (
-          <button
-            type="button"
-            className="field-edit-value"
-            onClick={onEdit}
-            aria-label={`Edit ${label}`}
-          >
-            {children}
-          </button>
-        ) : (
-          children
-        )}
-      </dd>
+      <dd className="mt-0.5 whitespace-pre-line text-sm text-foreground">{children}</dd>
     </div>
   );
 }

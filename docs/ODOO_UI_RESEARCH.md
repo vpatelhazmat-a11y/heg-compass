@@ -11,17 +11,17 @@ Official references:
 
 ## Interaction map
 
-| Odoo pattern                              | HEG application                                                                                     | Current status                                                                              |
-| ----------------------------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| App launcher opens a module               | Custom app icons and module routes                                                                  | Implemented                                                                                 |
-| Module navigation and list view           | Plum top bar, module menu, record tables                                                            | Implemented                                                                                 |
-| Form title and grouped fields             | Record header and compact grouped form                                                              | Implemented for supporting records; master records retain their focused tabs                |
-| Related statistics near the form title    | Smart buttons centered in the record header                                                         | Implemented                                                                                 |
-| Breadcrumb navigation                     | Linked crumbs and explicit back control                                                             | Implemented                                                                                 |
-| Edit the form directly                    | Supporting record fields accept input on opening the record; Save and Discard appear after a change | Implemented; master-record field selection opens their existing detailed editor             |
-| Search from the current context           | Typing on the page opens a combined app and record search; Ctrl/Command+K remains available         | Implemented for application labels and primary record labels across the registered entities |
-| Search filters, grouping, saved favorites | Module-specific search views and persistent saved views                                             | Pending                                                                                     |
-| Inline related lists and chatter          | Existing related tabs and tables; shared conversation/activity model                                | Pending broader plan                                                                        |
+| Odoo pattern                              | HEG application                                                                                                                                 | Current status                                                                              |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| App launcher opens a module               | Custom app icons and module routes                                                                                                              | Implemented                                                                                 |
+| Module navigation and list view           | Plum top bar, module menu, record tables                                                                                                        | Implemented                                                                                 |
+| Form title and grouped fields             | Record header and compact grouped form                                                                                                          | Implemented for supporting records; master records retain their focused tabs                |
+| Related statistics near the form title    | Smart buttons centered in the record header                                                                                                     | Implemented                                                                                 |
+| Breadcrumb navigation                     | Linked crumbs and explicit back control                                                                                                         | Implemented                                                                                 |
+| Edit the form directly                    | Supporting records and the primary tab of customer, site, and equipment records accept input on opening; Save and Discard appear after a change | Implemented for these record forms                                                          |
+| Search from the current context           | Typing on the page opens a combined app and record search; Ctrl/Command+K remains available                                                     | Implemented for application labels and primary record labels across the registered entities |
+| Search filters, grouping, saved favorites | Module-specific search views and persistent saved views                                                                                         | Pending                                                                                     |
+| Inline related lists and chatter          | Existing related tabs and tables; shared conversation/activity model                                                                            | Pending broader plan                                                                        |
 
 ## HEG-specific rules
 
@@ -33,4 +33,4 @@ Official references:
 
 ## Next UX work
 
-Build shared module search views with field filters, group-by, and saved favorites; make master-record fields editable directly within their tabs; consolidate duplicate profile and related panels; and make keyboard results searchable by more than each entity's primary label. Follow the completion ledger for the separate functional phases such as chatter, documents, imports, and reports.
+Build shared module search views with field filters, group-by, and saved favorites; extend direct editing to the remaining master-record tabs; consolidate duplicate related panels; and make keyboard results searchable by more than each entity's primary label. Follow the completion ledger for the separate functional phases such as chatter, documents, imports, and reports.
