@@ -84,7 +84,8 @@ afterEach(() => {
 test("launcher exposes all twelve workspaces with usable destinations", () => {
   mount(<AppLauncher />);
   expect(screen.queryByRole("textbox", { name: "Find an app" })).toBeNull();
-  expect(screen.getByText("Start typing to find an app or record")).toBeTruthy();
+  expect(screen.getByRole("region", { name: "Applications" })).toBeTruthy();
+  expect(screen.queryByText("Start typing to find an app or record")).toBeNull();
   const links = screen.getAllByRole("link");
   expect(links).toHaveLength(12);
   expect(screen.getByRole("link", { name: /Site Assessments/ }).getAttribute("href")).toBe(

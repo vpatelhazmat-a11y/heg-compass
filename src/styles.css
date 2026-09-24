@@ -822,12 +822,6 @@
 .inline-record-editor textarea {
   border-radius: 2px;
 }
-.launcher-hint {
-  margin: 6px 0 26px;
-  text-align: center;
-  font-size: 12px;
-  color: #786c7a;
-}
 .workspace-related {
   display: flex;
   justify-content: center;
