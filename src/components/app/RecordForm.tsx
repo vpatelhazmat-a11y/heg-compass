@@ -18,6 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { insertRow, updateRow, type Row } from "@/lib/data";
+import { formatDate } from "@/lib/format";
 
 export type FieldType = "text" | "textarea" | "number" | "date" | "select" | "checkbox" | "money";
 
@@ -77,6 +78,7 @@ export function RecordForm({
     startingValues(fields, initialValues, defaults),
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeField, setActiveField] = useState<string | null>(null);
   const dirty = fields.some(
     (field) => String(values[field.name] ?? "") !== String(baseline[field.name] ?? ""),
   );
@@ -87,6 +89,7 @@ export function RecordForm({
     setValues(base);
     setBaseline(base);
     setErrors({});
+    setActiveField(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, recordId]);
 
@@ -180,14 +183,38 @@ export function RecordForm({
                   {sectionFields.map((field) => {
                     const id = `field-${field.name}`;
                     const error = errors[field.name];
+                    const isDisplayValue =
+                      presentation === "record" &&
+                      field.type !== "checkbox" &&
+                      activeField !== field.name;
+                    const rawValue = values[field.name];
+                    const displayValue =
+                      field.type === "select"
+                        ? (field.options?.find((option) => option.value === rawValue)?.label ??
+                          rawValue)
+                        : field.type === "date" && rawValue
+                          ? formatDate(rawValue)
+                          : rawValue;
                     return (
                       <div
                         key={field.name}
                         className={
-                          presentation === "sheet" && (field.full || field.type === "textarea")
-                            ? "sm:col-span-2"
-                            : undefined
+                          [
+                            presentation === "record" ? "record-data-field" : "",
+                            presentation === "sheet" && (field.full || field.type === "textarea")
+                              ? "sm:col-span-2"
+                              : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ") || undefined
                         }
+                        onBlur={(event) => {
+                          if (
+                            activeField === field.name &&
+                            !event.currentTarget.contains(event.relatedTarget)
+                          )
+                            setActiveField(null);
+                        }}
                       >
                         {field.type === "checkbox" ? (
                           <div className="flex items-center gap-2 pt-6">
@@ -211,9 +238,22 @@ export function RecordForm({
                               {field.label}
                               {field.required && <span className="ml-1 text-danger">*</span>}
                             </Label>
-                            {field.type === "textarea" ? (
+                            {isDisplayValue ? (
+                              <button
+                                id={id}
+                                type="button"
+                                className="record-data-value"
+                                aria-label={`Edit ${field.label}: ${String(displayValue ?? "").trim() || "empty"}`}
+                                onClick={() => setActiveField(field.name)}
+                              >
+                                {String(displayValue ?? "").trim() || (
+                                  <span className="record-data-empty">—</span>
+                                )}
+                              </button>
+                            ) : field.type === "textarea" ? (
                               <Textarea
                                 id={id}
+                                autoFocus={presentation === "record"}
                                 rows={3}
                                 value={values[field.name] ?? ""}
                                 placeholder={field.placeholder}
@@ -232,6 +272,7 @@ export function RecordForm({
                             ) : field.type === "select" ? (
                               <select
                                 id={id}
+                                autoFocus={presentation === "record"}
                                 value={values[field.name] ?? ""}
                                 onChange={(event) =>
                                   setValues((prev: Row) => ({
@@ -262,6 +303,7 @@ export function RecordForm({
                             ) : (
                               <Input
                                 id={id}
+                                autoFocus={presentation === "record"}
                                 type={
                                   field.type === "date"
                                     ? "date"
@@ -305,6 +347,7 @@ export function RecordForm({
               if (presentation === "record") {
                 setValues(baseline);
                 setErrors({});
+                setActiveField(null);
               } else onOpenChange(false);
             }}
           >

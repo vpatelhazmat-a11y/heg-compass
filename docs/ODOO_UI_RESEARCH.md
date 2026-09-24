@@ -8,6 +8,7 @@ Official references:
 - [Web client structure](https://www.odoo.com/documentation/19.0/developer/reference/frontend/framework_overview.html)
 - [Search, filters, grouping, and favorites](https://www.odoo.com/documentation/19.0/applications/essentials/search.html)
 - [Keyboard shortcuts](https://www.odoo.com/documentation/19.0/applications/essentials/keyboard_shortcuts.html)
+- [Activities and record chatter](https://www.odoo.com/documentation/19.0/applications/essentials/activities.html)
 
 ## Interaction map
 
@@ -18,10 +19,10 @@ Official references:
 | Form title and grouped fields             | Record header and compact grouped form                                                                                                          | Implemented for supporting records; master records retain their focused tabs                |
 | Related statistics near the form title    | Smart buttons centered in the record header                                                                                                     | Implemented                                                                                 |
 | Breadcrumb navigation                     | Linked crumbs and explicit back control                                                                                                         | Implemented                                                                                 |
-| Edit the form directly                    | Supporting records and the primary tab of customer, site, and equipment records accept input on opening; Save and Discard appear after a change | Implemented for these record forms                                                          |
+| Edit the form directly                    | Supporting records and the primary tab of customer, site, and equipment records show plain values; selecting a value opens its field in place; Save and Discard appear after a change | Implemented for these record forms                                                          |
 | Search from the current context           | Typing on the page opens a combined app and record search; Ctrl/Command+K remains available                                                     | Implemented for application labels and primary record labels across the registered entities |
 | Search filters, grouping, saved favorites | Module-specific search views and persistent saved views                                                                                         | Pending                                                                                     |
-| Inline related lists and chatter          | Existing related tabs and tables; shared conversation/activity model                                                                            | Pending broader plan                                                                        |
+| Inline related lists and chatter          | Existing related tabs and tables; shared conversation/activity model                                                                            | Related lists exist; real chatter remains pending                                           |
 
 ## HEG-specific rules
 
@@ -29,6 +30,7 @@ Official references:
 - Read-only roles see record values and navigation but no editable fields.
 - Search queries remain under existing row-level security; the search UI does not grant access to hidden records.
 - A record is saved only when the user selects Save changes. Automatic save on navigation is deferred until there is a reliable unsaved-changes flow for rates and other guarded records.
+- A displayed value is an accessible button that opens its own control. Empty values display a dash, and keyboard focus remains visible. A record page does not show a grid of input boxes before editing.
 - Keyboard search ignores input fields, dialog controls, links, buttons, and modifier shortcuts so typing into a form stays in that form.
 
 ## Next UX work

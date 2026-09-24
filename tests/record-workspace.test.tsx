@@ -133,10 +133,13 @@ test("rate editor requires a fresh reason and uses the versioned RPC without ide
   mount(<RecordDetailPage table="rates" id={id} />);
   expect(await screen.findByRole("region", { name: "Edit rate" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
+  expect(screen.queryByRole("spinbutton", { name: /Amount/ })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Amount:/ }));
   fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "125" } });
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   expect(await screen.findByText("Reason for change is required")).toBeTruthy();
   expect(mocks.rpc).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Reason for change:/ }));
   fireEvent.change(screen.getByLabelText(/Reason for change/), {
     target: { value: "Annual review" },
   });
@@ -162,7 +165,9 @@ test("stale rate save keeps the editor open and displays the refresh error", asy
   });
   mount(<RecordDetailPage table="rates" id={id} />);
   expect(await screen.findByRole("region", { name: "Edit rate" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Amount:/ }));
   fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "125" } });
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Reason for change:/ }));
   fireEvent.change(screen.getByLabelText(/Reason for change/), { target: { value: "Review" } });
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   await waitFor(() =>
@@ -197,10 +202,11 @@ test("direct record editing discards changes without changing the stored rate", 
   mount(<RecordDetailPage table="rates" id={id} />);
   expect(await screen.findByRole("region", { name: "Edit rate" })).toBeTruthy();
   expect(screen.queryByRole("dialog")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Amount:/ }));
   fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "999" } });
   fireEvent.click(screen.getByRole("button", { name: "Discard" }));
   expect(screen.getByRole("region", { name: "Edit rate" })).toBeTruthy();
-  expect((screen.getByLabelText(/Amount/) as HTMLInputElement).value).toBe("100");
+  expect(screen.getByRole("button", { name: /^Edit Amount:/ }).textContent).toBe("100");
   expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
   expect(mocks.rpc).not.toHaveBeenCalled();
   expect(mocks.update).not.toHaveBeenCalled();
