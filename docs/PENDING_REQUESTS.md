@@ -4,8 +4,8 @@ This is the consolidated backlog from the original Odoo-style rebuild request, l
 
 | Priority | Request | Status | Next acceptance point |
 | --- | --- | --- | --- |
-| 1 | Odoo-like app launcher: quiet grid, original colorful icons, global type-to-search, user-prioritized app order | Foundation; ordering in progress | Drag and accessible move controls, reset, and per-user persistence; later sync across devices |
-| 2 | Consistent record anatomy: breadcrumb/header, smart buttons, chatter, grouped record information, final Notes section | Foundation | Consolidate the twelve customer tabs and preserve every related record and create path |
+| 1 | Odoo-like app launcher: quiet grid, original colorful icons, global type-to-search, user-prioritized app order | Launcher controls implemented; account sync in review | Verify migration and ordering on two devices and two accounts |
+| 2 | Consistent record anatomy: breadcrumb/header, smart buttons, chatter, grouped record information, final Notes section | Customer tabs consolidated to four groups and Notes moved last; shared layout and chatter pending | Preserve every related record and create path while extending the anatomy to other records |
 | 3 | Direct editing by selecting a value, with no form-box grid or redundant Edit buttons | Implemented on supporting records and primary customer/site/equipment tabs | Extend and visually review remaining record-specific sections |
 | 4 | Shared module home/control panel with contextual field search, filters, Group By, saved personal/team views, and view switcher | Pending | Server-backed, permission-scoped results consistent across list and appropriate Kanban/calendar/activity views |
 | 5 | Real chatter on each record: messages, internal notes, tracked changes, @mentions, activities, followers | Pending | Shared tables, role/RLS tests, timeline, due/overdue activity behavior, and no unsolicited outbound messages |

@@ -1,4 +1,5 @@
 import { HUB_MODULES } from "./modules";
+import { supabase } from "@/integrations/supabase/client";
 
 const defaultOrder = HUB_MODULES.map((module) => module.id);
 
@@ -55,4 +56,22 @@ export function resetAppOrder(userId: string): string[] {
     // Reset the visible order even when browser storage is unavailable.
   }
   return normalizeAppOrder(null);
+}
+
+export async function readSyncedAppOrder(userId: string): Promise<string[] | null> {
+  const { data, error } = await supabase
+    .from("user_workspace_preferences")
+    .select("app_order")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ? normalizeAppOrder(data.app_order) : null;
+}
+
+export async function saveSyncedAppOrder(userId: string, order: string[]): Promise<void> {
+  const { error } = await supabase.from("user_workspace_preferences").upsert({
+    user_id: userId,
+    app_order: normalizeAppOrder(order),
+  });
+  if (error) throw new Error(error.message);
 }

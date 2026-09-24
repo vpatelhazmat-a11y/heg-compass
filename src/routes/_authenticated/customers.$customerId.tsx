@@ -229,19 +229,10 @@ function CustomerDetail() {
         <Tabs defaultValue="overview">
           <TabsList className="flex w-full flex-wrap justify-start">
             <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="sites">Sites</TabsTrigger>
-            <TabsTrigger value="contacts">Contacts</TabsTrigger>
-            <TabsTrigger value="requirements">Requirements</TabsTrigger>
-            <TabsTrigger value="products">Products</TabsTrigger>
-            <TabsTrigger value="rates">Rates</TabsTrigger>
-            <TabsTrigger value="commercial">Bids & pipeline</TabsTrigger>
-            <TabsTrigger value="contracts">Contracts & documents</TabsTrigger>
-            <TabsTrigger value="lost">Lost business</TabsTrigger>
-            <TabsTrigger value="refused">Refused Loads</TabsTrigger>
-            <TabsTrigger value="lanes">Lanes</TabsTrigger>
-            <TabsTrigger value="equipment">Equipment</TabsTrigger>
+            <TabsTrigger value="operations">Operations</TabsTrigger>
+            <TabsTrigger value="commercial">Commercial</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
-
           <TabsContent forceMount value="overview" className="mt-4 space-y-6">
             {canWrite ? (
               <RecordForm
@@ -252,7 +243,10 @@ function CustomerDetail() {
                 table="customers"
                 recordId={customerId}
                 initialValues={customer}
-                fields={customerFields}
+                fields={customerFields.filter(
+                  (field) =>
+                    !["qualification_notes", "commercial_notes", "risk_notes"].includes(field.name),
+                )}
                 invalidateKeys={[["customer", customerId], ["customers"]]}
               />
             ) : (
@@ -281,19 +275,6 @@ function CustomerDetail() {
                     </Field>
                   </FieldGrid>
                 </Panel>
-                <div className="grid gap-6 lg:grid-cols-2">
-                  <Panel title="Qualification">
-                    <p className="text-sm text-foreground">
-                      {orDash(customer.qualification_notes)}
-                    </p>
-                  </Panel>
-                  <Panel title="Commercial & risk notes">
-                    <p className="text-sm text-foreground">{orDash(customer.commercial_notes)}</p>
-                    <p className="mt-3 text-sm text-muted-foreground">
-                      {orDash(customer.risk_notes)}
-                    </p>
-                  </Panel>
-                </div>
                 <Panel
                   title="Where this information came from"
                   description="Provenance is kept so the record can always be traced back"
@@ -321,8 +302,7 @@ function CustomerDetail() {
               </details>
             )}
           </TabsContent>
-
-          <TabsContent value="sites" className="mt-4">
+          <TabsContent value="operations" className="mt-4 space-y-6">
             <Panel title="Sites" actions={addButton("Add site", "sites", siteFields)}>
               <DataTable
                 columns={siteColumns}
@@ -337,9 +317,7 @@ function CustomerDetail() {
                 emptyDescription="Add the locations HEG picks up from or delivers to for this customer."
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="contacts" className="mt-4">
             <Panel title="Contacts" actions={addButton("Add contact", "contacts", contactFields)}>
               <DataTable
                 columns={[
@@ -360,9 +338,7 @@ function CustomerDetail() {
                 emptyDescription="Capture who HEG works with so the knowledge isn't held by one person."
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="requirements" className="mt-4">
             <Panel
               title="Customer requirements"
               actions={addButton("Add requirement", "requirements", requirementFields)}
@@ -389,9 +365,7 @@ function CustomerDetail() {
                 emptyDescription="Record the rules this customer expects HEG to follow."
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="products" className="mt-4">
             <Panel
               title="Products and materials"
               actions={addButton("Add product", "products", productFields)}
@@ -411,9 +385,42 @@ function CustomerDetail() {
                 emptyDescription="Add materials HEG moves for this customer. Leave hazard details blank if unverified."
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="rates" className="mt-4">
+            <Panel title="Lanes" actions={addButton("Add lane", "lanes", laneFields)}>
+              <DataTable
+                recordTable="lanes"
+                rows={data?.lanes ?? []}
+                error={related.error}
+                columns={[
+                  { key: "lane_name", header: "Lane" },
+                  { key: "origin_description", header: "Origin" },
+                  { key: "destination_description", header: "Destination" },
+                ]}
+              />
+            </Panel>
+
+            <Panel title="Current equipment assignments">
+              <DataTable
+                recordTable="equipment_assignments"
+                rows={data?.equipment ?? []}
+                error={related.error}
+                columns={[
+                  {
+                    key: "unit",
+                    header: "Unit",
+                    value: (row) => row.equipment?.unit_number ?? "",
+                  },
+                  { key: "assignment_type", header: "Assignment" },
+                  {
+                    key: "start_date",
+                    header: "Start",
+                    render: (row) => formatDate(row.start_date),
+                  },
+                ]}
+              />
+            </Panel>
+          </TabsContent>
+          <TabsContent value="commercial" className="mt-4 space-y-6">
             <Panel
               title="Rates"
               description="Quoted, contracted and historical pricing"
@@ -454,9 +461,7 @@ function CustomerDetail() {
                 emptyDescription="Rate history is how HEG stops re-quoting from memory."
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="commercial" className="mt-4 space-y-6">
             <Panel
               title="Opportunities"
               actions={addButton("Add opportunity", "opportunities", opportunityFields)}
@@ -521,9 +526,7 @@ function CustomerDetail() {
                 }
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="contracts" className="mt-4 space-y-6">
             <Panel
               title="Contracts"
               actions={addButton("Add contract", "contracts", contractFields)}
@@ -577,8 +580,7 @@ function CustomerDetail() {
               />
             </Panel>
           </TabsContent>
-
-          <TabsContent value="lost" className="mt-4">
+          <TabsContent value="history" className="mt-4 space-y-6">
             <Panel
               title="Business we could not serve"
               description="Why HEG lost or declined work — the record that drives capacity decisions"
@@ -612,8 +614,7 @@ function CustomerDetail() {
                 emptyDescription="Recording declined work is how HEG proves where capacity is costing revenue."
               />
             </Panel>
-          </TabsContent>
-          <TabsContent value="refused" className="mt-4">
+
             <Panel
               title="Refused Loads"
               description="Individual requests HEG could not accept. Separate from broader commercial losses."
@@ -642,43 +643,32 @@ function CustomerDetail() {
               />
             </Panel>
           </TabsContent>
-          <TabsContent value="lanes" className="mt-4">
-            <Panel title="Lanes" actions={addButton("Add lane", "lanes", laneFields)}>
-              <DataTable
-                recordTable="lanes"
-                rows={data?.lanes ?? []}
-                error={related.error}
-                columns={[
-                  { key: "lane_name", header: "Lane" },
-                  { key: "origin_description", header: "Origin" },
-                  { key: "destination_description", header: "Destination" },
-                ]}
-              />
-            </Panel>
-          </TabsContent>
-          <TabsContent value="equipment" className="mt-4">
-            <Panel title="Current equipment assignments">
-              <DataTable
-                recordTable="equipment_assignments"
-                rows={data?.equipment ?? []}
-                error={related.error}
-                columns={[
-                  {
-                    key: "unit",
-                    header: "Unit",
-                    value: (row) => row.equipment?.unit_number ?? "",
-                  },
-                  { key: "assignment_type", header: "Assignment" },
-                  {
-                    key: "start_date",
-                    header: "Start",
-                    render: (row) => formatDate(row.start_date),
-                  },
-                ]}
-              />
-            </Panel>
-          </TabsContent>
         </Tabs>
+        <section aria-label="Notes" className="pt-4">
+          {canWrite ? (
+            <RecordForm
+              presentation="record"
+              open
+              onOpenChange={() => undefined}
+              title="Notes"
+              table="customers"
+              recordId={customerId}
+              initialValues={customer}
+              fields={customerFields.filter((field) =>
+                ["qualification_notes", "commercial_notes", "risk_notes"].includes(field.name),
+              )}
+              invalidateKeys={[["customer", customerId], ["customers"]]}
+            />
+          ) : (
+            <Panel title="Notes">
+              <FieldGrid>
+                <Field label="Qualification">{orDash(customer.qualification_notes)}</Field>
+                <Field label="Commercial">{orDash(customer.commercial_notes)}</Field>
+                <Field label="Risk">{orDash(customer.risk_notes)}</Field>
+              </FieldGrid>
+            </Panel>
+          )}
+        </section>
       </div>
 
       {editingRate && (
