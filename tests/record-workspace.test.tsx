@@ -23,7 +23,9 @@ vi.mock("../src/lib/data", () => ({
   updateRow: mocks.update,
   insertRow: vi.fn(),
 }));
-vi.mock("../src/hooks/use-session", () => ({ useSession: () => ({ canEdit: mocks.canEdit }) }));
+vi.mock("../src/hooks/use-session", () => ({
+  useSession: () => ({ canEdit: mocks.canEdit, session: { userId: "test-user" } }),
+}));
 vi.mock("../src/integrations/supabase/client", () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: mocks.toastError } }));
 vi.mock("@tanstack/react-router", () => ({
@@ -59,6 +61,7 @@ function mount(children: React.ReactNode) {
   return render(<QueryClientProvider client={client}>{children}</QueryClientProvider>);
 }
 beforeEach(() => {
+  localStorage.clear();
   mocks.canEdit.mockReturnValue(true);
   mocks.listRows.mockResolvedValue([]);
   mocks.countRows.mockResolvedValue(3);
@@ -94,6 +97,12 @@ test("launcher exposes all twelve workspaces with usable destinations", () => {
   expect(screen.getByRole("link", { name: /Refused Loads/ }).getAttribute("href")).toBe(
     "/lost-loads",
   );
+  fireEvent.click(screen.getByRole("button", { name: "Arrange apps" }));
+  fireEvent.click(screen.getByRole("button", { name: "Move Sites earlier" }));
+  expect(screen.getAllByRole("link")[0]?.textContent).toContain("Sites");
+  fireEvent.click(screen.getByRole("button", { name: "Reset order" }));
+  expect(screen.getAllByRole("link")[0]?.textContent).toContain("Customers");
+  fireEvent.click(screen.getByRole("button", { name: "Done" }));
 });
 
 test("supporting records open from lists and relationship links do not activate the row", async () => {

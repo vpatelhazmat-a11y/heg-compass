@@ -356,6 +356,57 @@
   max-width: 900px;
   margin: 0 auto;
 }
+.launcher-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  max-width: 900px;
+  min-height: 32px;
+  margin: 0 auto 12px;
+}
+.launcher-actions button {
+  padding: 5px 9px;
+  color: #60465d;
+  font-size: 12px;
+  border-radius: 3px;
+}
+.launcher-actions button:hover,
+.launcher-actions button:focus-visible {
+  background: #ffffffb8;
+}
+.launcher-actions button:disabled {
+  opacity: 0.45;
+  cursor: wait;
+}
+.app-position.is-arranging {
+  border: 1px dashed #bba9b9;
+  border-radius: 8px;
+  cursor: grab;
+}
+.app-position.is-dragging {
+  opacity: 0.45;
+}
+.app-order-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-bottom: 6px;
+  color: #70576e;
+}
+.app-order-controls button {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px;
+  font-size: 17px;
+}
+.app-order-controls button:hover:not(:disabled),
+.app-order-controls button:focus-visible {
+  background: #ffffffc9;
+}
+.app-order-controls button:disabled {
+  opacity: 0.3;
+}
 .app-tile {
   display: flex;
   flex-direction: column;
