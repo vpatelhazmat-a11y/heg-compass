@@ -18,6 +18,8 @@ Odoo's form architecture has a header, sheet, grouped fields, notebook pages, re
 
 Keep the plum global bar and colorful original app icons. Remove the visible “Applications” heading and “Start typing” sentence; typing on the page and the search icon continue to open global search. Let each signed-in user drag app tiles into a preferred order. Provide keyboard Move earlier/Move later controls and Reset order, so the feature works without a mouse. Persist the order by stable module ID under that user's account, not as a shared sequence. New apps appear after the saved ones. Reordering changes only presentation, never module access. Test desktop, touch, keyboard, reload, and a second account.
 
+The first release stores order in this browser under the signed-in user ID. Cross-device sync requires a separate protected user-preference record and remains open work.
+
 ### Module home and list view
 
 Use one consistent control panel: module name and New on the left; contextual search and view-switch icons on the right. The search field searches only the current module's permitted records. Its dropdown offers field-specific search, predefined filters, custom filters, Group By, and saved Favorites. Active conditions appear as removable chips. Filter and group state belongs in the URL so back/forward navigation and shared links work. Saved favorites belong to the user; sharing them requires an explicit separate permission model.
