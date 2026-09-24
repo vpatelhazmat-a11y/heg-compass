@@ -215,7 +215,7 @@ export function DataTable({
           description={`Nothing matches "${search}". Try a different search.`}
         />
       ) : (
-        <div className="table-frame overflow-hidden rounded-lg border border-border bg-surface">
+        <div className="table-frame overflow-hidden border border-border bg-surface">
           <div className="max-h-[70vh] overflow-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 z-10 bg-secondary">
@@ -225,7 +225,7 @@ export function DataTable({
                       key={column.key}
                       scope="col"
                       className={cn(
-                        "border-b border-border px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-muted-foreground",
+                        "border-b border-border px-4 py-2.5 text-left text-xs font-medium text-muted-foreground",
                         column.align === "right" && "text-right",
                         column.className,
                       )}

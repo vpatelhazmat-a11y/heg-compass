@@ -692,9 +692,13 @@
 .master-record [role="tablist"] {
   height: auto;
   gap: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .master-record [role="tab"] {
   font-size: 12px;
+  flex: none;
 }
 .master-record [role="tabpanel"] > section {
   border-radius: 3px;
@@ -845,6 +849,68 @@
 }
 .always-editable-record section:last-child {
   border-bottom: 0;
+}
+.always-editable-record .record-data-field > label {
+  margin-bottom: 2px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.always-editable-record .record-data-value {
+  display: block;
+  width: 100%;
+  min-height: 36px;
+  padding: 7px 0 6px;
+  border-bottom: 1px solid transparent;
+  color: var(--foreground);
+  text-align: left;
+  font-size: 14px;
+  line-height: 21px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.always-editable-record .record-data-value:hover {
+  border-bottom-color: var(--border-strong);
+}
+.always-editable-record .record-data-value:focus-visible {
+  border-bottom-color: var(--primary);
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.always-editable-record .record-data-empty {
+  color: var(--muted-foreground);
+}
+.always-editable-record .record-data-field input,
+.always-editable-record .record-data-field select,
+.always-editable-record .record-data-field textarea {
+  border-color: transparent;
+  background: transparent;
+  color: var(--foreground);
+  padding-left: 0;
+  padding-right: 0;
+  transition: border-color 120ms ease, background-color 120ms ease, padding 120ms ease;
+}
+.always-editable-record .record-data-field input::placeholder,
+.always-editable-record .record-data-field textarea::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.72;
+}
+.always-editable-record .record-data-field input:hover,
+.always-editable-record .record-data-field select:hover,
+.always-editable-record .record-data-field textarea:hover {
+  border-bottom-color: var(--border-strong);
+}
+.always-editable-record .record-data-field input:focus-visible,
+.always-editable-record .record-data-field select:focus-visible,
+.always-editable-record .record-data-field textarea:focus-visible {
+  border-color: var(--primary);
+  background: var(--surface);
+  padding-left: 8px;
+  padding-right: 8px;
+  outline: 2px solid transparent;
+  box-shadow: 0 2px 0 var(--primary);
+}
+.always-editable-record .record-data-field textarea {
+  resize: vertical;
 }
 .always-editable-record .form-savebar {
   position: fixed;

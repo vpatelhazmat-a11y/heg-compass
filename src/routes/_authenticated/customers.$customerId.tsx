@@ -216,10 +216,6 @@ function CustomerDetail() {
             <MetaItem label="Status">
               <StatusBadge status={customer.status} />
             </MetaItem>
-            <MetaItem label="Qualification">
-              <StatusBadge status={customer.qualification_status} />
-            </MetaItem>
-            <MetaItem label="Customer since">{formatDate(customer.customer_since)}</MetaItem>
             <MetaItem label="Data quality">{orDash(customer.data_quality_status)}</MetaItem>
           </>
         }
