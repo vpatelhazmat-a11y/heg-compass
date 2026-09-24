@@ -1,5 +1,7 @@
 # HEG Compass design and completion ledger
 
+The next Odoo-style record, launcher, and module-control-panel work is specified in [ODOO_WORKSPACE_PLAN.md](ODOO_WORKSPACE_PLAN.md). It is planned work; it does not change the completion statuses below.
+
 ## Design direction approved September 22, 2026
 
 Odoo-inspired plum, white, and colorful original app icons. Reference: [Odoo view architecture](https://www.odoo.com/documentation/master/developer/reference/user_interface/view_architectures.html). The goal is a consistent working application with distinct app, list, and record contexts.
