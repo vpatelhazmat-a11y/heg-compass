@@ -1744,8 +1744,11 @@ export type Database = {
           linked_entity_id: string
           kind: string
           body: string
-          author_id: string
+          author_id: string | null
           created_at: string
+          field_name: string | null
+          old_value: string | null
+          new_value: string | null
           linked_customer_fk: string | null
           linked_site_fk: string | null
           linked_equipment_fk: string | null
@@ -1762,8 +1765,11 @@ export type Database = {
           linked_entity_id: string
           kind: string
           body: string
-          author_id?: string
+          author_id?: string | null
           created_at?: string
+          field_name?: string | null
+          old_value?: string | null
+          new_value?: string | null
         }
         Update: {
           id?: string
@@ -1771,8 +1777,11 @@ export type Database = {
           linked_entity_id?: string
           kind?: string
           body?: string
-          author_id?: string
+          author_id?: string | null
           created_at?: string
+          field_name?: string | null
+          old_value?: string | null
+          new_value?: string | null
         }
         Relationships: [
           { foreignKeyName: "mail_messages_linked_customer_fk_fkey"; columns: ["linked_customer_fk"]; isOneToOne: false; referencedRelation: "customers"; referencedColumns: ["id"] },
