@@ -19,6 +19,7 @@ import { PageHeader } from "./PageHeader";
 import { DataTable } from "./DataTable";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordRelations } from "./RecordLink";
+import { RecordChatter } from "./RecordChatter";
 import { SmartButtons } from "./SmartButtons";
 import { RecordForm, type FieldConfig } from "./RecordForm";
 import { RefusedLoadForm, toFormState } from "./RefusedLoadForm";
@@ -177,6 +178,7 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
         ]}
       />
       <RecordRelations row={row} />
+      <RecordChatter table={table} id={id} />
       <div className="space-y-6 px-3 pb-6 sm:px-6">
         {editing && table === "refused_loads" ? (
           <RefusedLoadForm

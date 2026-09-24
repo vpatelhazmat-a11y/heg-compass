@@ -1,5 +1,6 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
+import { RecordChatter } from "@/components/app/RecordChatter";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -156,6 +157,7 @@ function SiteDetail() {
         related={<SmartButtons table="sites" id={siteId} />}
       />
       <RecordRelations row={site} />
+      <RecordChatter table="sites" id={siteId} />
 
       <div className="master-record space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}

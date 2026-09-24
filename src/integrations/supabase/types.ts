@@ -1737,6 +1737,55 @@ export type Database = {
           },
         ]
       }
+      mail_messages: {
+        Row: {
+          id: string
+          linked_entity_type: string
+          linked_entity_id: string
+          kind: string
+          body: string
+          author_id: string
+          created_at: string
+          linked_customer_fk: string | null
+          linked_site_fk: string | null
+          linked_equipment_fk: string | null
+          linked_incident_fk: string | null
+          linked_driver_fk: string | null
+          linked_rate_fk: string | null
+          linked_bid_fk: string | null
+          linked_opportunity_fk: string | null
+          linked_contract_fk: string | null
+        }
+        Insert: {
+          id?: string
+          linked_entity_type: string
+          linked_entity_id: string
+          kind: string
+          body: string
+          author_id?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          linked_entity_type?: string
+          linked_entity_id?: string
+          kind?: string
+          body?: string
+          author_id?: string
+          created_at?: string
+        }
+        Relationships: [
+          { foreignKeyName: "mail_messages_linked_customer_fk_fkey"; columns: ["linked_customer_fk"]; isOneToOne: false; referencedRelation: "customers"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_site_fk_fkey"; columns: ["linked_site_fk"]; isOneToOne: false; referencedRelation: "sites"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_equipment_fk_fkey"; columns: ["linked_equipment_fk"]; isOneToOne: false; referencedRelation: "equipment"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_incident_fk_fkey"; columns: ["linked_incident_fk"]; isOneToOne: false; referencedRelation: "incidents"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_driver_fk_fkey"; columns: ["linked_driver_fk"]; isOneToOne: false; referencedRelation: "drivers"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_rate_fk_fkey"; columns: ["linked_rate_fk"]; isOneToOne: false; referencedRelation: "rates"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_bid_fk_fkey"; columns: ["linked_bid_fk"]; isOneToOne: false; referencedRelation: "bids"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_opportunity_fk_fkey"; columns: ["linked_opportunity_fk"]; isOneToOne: false; referencedRelation: "opportunities"; referencedColumns: ["id"] },
+          { foreignKeyName: "mail_messages_linked_contract_fk_fkey"; columns: ["linked_contract_fk"]; isOneToOne: false; referencedRelation: "contracts"; referencedColumns: ["id"] },
+        ]
+      }
       meetings: {
         Row: {
           created_at: string
