@@ -159,6 +159,31 @@ test("chatter links and authors are enforced in the database", async () => {
     ),
   ).rejects.toThrow();
 });
+test("record changes appear in chatter and cannot be forged by clients", async () => {
+  await asRole("sales", "update customers set industry='Tracked industry' where id=$1", [customer]);
+  const entries = (
+    await asRole(
+      "sales",
+      "select field_name,old_value,new_value,author_id from mail_messages where linked_entity_type='customer' and linked_entity_id=$1 and kind='change' and field_name='industry'",
+      [customer],
+    )
+  ).rows;
+  expect(entries).toEqual([
+    {
+      field_name: "industry",
+      old_value: null,
+      new_value: "Tracked industry",
+      author_id: users.sales,
+    },
+  ]);
+  await expect(
+    asRole(
+      "sales",
+      "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body,field_name) values('customer',$1,'change','Fake change','industry')",
+      [customer],
+    ),
+  ).rejects.toThrow();
+});
 test("shared links reject nonexistent or half-specified entities", async () => {
   await expect(
     asRole(

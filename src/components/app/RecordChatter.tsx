@@ -161,13 +161,16 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
                 <span>
                   {item.entry === "activity"
                     ? "Activity"
-                    : item.kind === "note"
-                      ? "Internal note"
-                      : "Message"}
+                    : item.kind === "change"
+                      ? "Record change"
+                      : item.kind === "note"
+                        ? "Internal note"
+                        : "Message"}
                   {(() => {
                     const person = item.entry === "activity" ? item.owner : item.author_id;
-                    const name =
-                      person === session?.userId
+                    const name = !person
+                      ? "System"
+                      : person === session?.userId
                         ? "You"
                         : profiles.data?.find((profile) => profile.id === person)?.full_name ||
                           "Team member";
@@ -176,9 +179,25 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
                 </span>
                 <time dateTime={item.created_at}>{new Date(item.created_at).toLocaleString()}</time>
               </div>
-              <p className="mt-1 whitespace-pre-wrap text-foreground">
-                {item.entry === "activity" ? item.title : item.body}
-              </p>
+              {item.kind === "change" ? (
+                <details className="mt-1 text-foreground">
+                  <summary className="cursor-pointer">{item.body}</summary>
+                  <div className="mt-2 grid gap-2 text-xs sm:grid-cols-2">
+                    <p className="break-words">
+                      <span className="text-muted-foreground">Before: </span>
+                      {item.old_value ?? "Empty"}
+                    </p>
+                    <p className="break-words">
+                      <span className="text-muted-foreground">After: </span>
+                      {item.new_value ?? "Empty"}
+                    </p>
+                  </div>
+                </details>
+              ) : (
+                <p className="mt-1 whitespace-pre-wrap text-foreground">
+                  {item.entry === "activity" ? item.title : item.body}
+                </p>
+              )}
               {item.entry === "activity" && (
                 <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                   <span>
