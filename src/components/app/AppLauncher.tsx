@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { GripVertical } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
@@ -7,8 +7,10 @@ import {
   moveApp,
   normalizeAppOrder,
   readAppOrder,
+  readSyncedAppOrder,
   resetAppOrder,
   saveAppOrder,
+  saveSyncedAppOrder,
   shiftApp,
 } from "@/lib/launcher-order";
 import { CompassIcon } from "./CompassIcon";
@@ -19,9 +21,36 @@ export function AppLauncher() {
   const [order, setOrder] = useState(() => normalizeAppOrder(null));
   const [arranging, setArranging] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
+  const [syncError, setSyncError] = useState(false);
+  const changeNumber = useRef(0);
+  const saveQueue = useRef(Promise.resolve());
 
   useEffect(() => {
-    if (userId) setOrder(readAppOrder(userId));
+    if (!userId) return;
+    let active = true;
+    const initialChange = changeNumber.current;
+    const localOrder = readAppOrder(userId);
+    setOrder(localOrder);
+    setSyncError(false);
+    readSyncedAppOrder(userId)
+      .then((remoteOrder) => {
+        if (!active || changeNumber.current !== initialChange) return;
+        if (remoteOrder) {
+          setOrder(remoteOrder);
+          saveAppOrder(userId, remoteOrder);
+        } else {
+          saveQueue.current = saveQueue.current.then(() => saveSyncedAppOrder(userId, localOrder));
+          saveQueue.current.catch(() => {
+            if (active) setSyncError(true);
+          });
+        }
+      })
+      .catch(() => {
+        if (active) setSyncError(true);
+      });
+    return () => {
+      active = false;
+    };
   }, [userId]);
 
   const orderedModules = useMemo(
@@ -31,7 +60,15 @@ export function AppLauncher() {
 
   const updateOrder = (next: string[]) => {
     setOrder(next);
-    if (userId) saveAppOrder(userId, next);
+    if (userId) {
+      changeNumber.current += 1;
+      saveAppOrder(userId, next);
+      setSyncError(false);
+      saveQueue.current = saveQueue.current
+        .catch(() => undefined)
+        .then(() => saveSyncedAppOrder(userId, next));
+      saveQueue.current.catch(() => setSyncError(true));
+    }
   };
 
   return (
@@ -42,7 +79,8 @@ export function AppLauncher() {
             <button
               type="button"
               onClick={() => {
-                setOrder(userId ? resetAppOrder(userId) : normalizeAppOrder(null));
+                const defaultOrder = userId ? resetAppOrder(userId) : normalizeAppOrder(null);
+                updateOrder(defaultOrder);
                 setDragging(null);
               }}
             >
@@ -58,6 +96,11 @@ export function AppLauncher() {
           </button>
         )}
       </div>
+      {syncError && (
+        <p role="status" className="text-sm text-destructive">
+          App order is saved on this device but could not sync. Move an app to retry.
+        </p>
+      )}
       <div className="app-grid">
         {orderedModules.map(({ id, label, description, to }, index) => (
           <div

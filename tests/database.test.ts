@@ -96,6 +96,41 @@ test("all public base tables have RLS enabled", async () => {
     ).rows,
   ).toHaveLength(0);
 });
+test("launcher preferences are private to their owner, including for administrators", async () => {
+  await asRole(
+    "sales",
+    'insert into user_workspace_preferences(user_id,app_order) values($1,\'["tasks","customers"]\'::jsonb)',
+    [users.sales],
+  );
+  expect(
+    (
+      await asRole("sales", "select app_order from user_workspace_preferences where user_id=$1", [
+        users.sales,
+      ])
+    ).rows[0].app_order,
+  ).toEqual(["tasks", "customers"]);
+  expect(
+    (
+      await asRole("admin", "select * from user_workspace_preferences where user_id=$1", [
+        users.sales,
+      ])
+    ).rows,
+  ).toHaveLength(0);
+  await expect(
+    asRole(
+      "admin",
+      "update user_workspace_preferences set app_order='[]'::jsonb where user_id=$1 returning *",
+      [users.sales],
+    ),
+  ).resolves.toMatchObject({ rows: [] });
+  await expect(
+    asRole(
+      "admin",
+      "insert into user_workspace_preferences(user_id,app_order) values($1,'[]'::jsonb)",
+      [users.sales],
+    ),
+  ).rejects.toThrow();
+});
 test("shared links reject nonexistent or half-specified entities", async () => {
   await expect(
     asRole(

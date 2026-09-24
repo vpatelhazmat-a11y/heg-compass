@@ -2978,6 +2978,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_workspace_preferences: {
+        Row: {
+          user_id: string
+          app_order: Json
+          updated_at: string
+        }
+        Insert: {
+          user_id: string
+          app_order?: Json
+          updated_at?: string
+        }
+        Update: {
+          user_id?: string
+          app_order?: Json
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
