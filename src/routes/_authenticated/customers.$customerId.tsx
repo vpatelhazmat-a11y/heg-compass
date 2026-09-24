@@ -1,5 +1,6 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
+import { RecordChatter } from "@/components/app/RecordChatter";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -222,6 +223,7 @@ function CustomerDetail() {
         related={<SmartButtons table="customers" id={customerId} />}
       />
       <RecordRelations row={customer} />
+      <RecordChatter table="customers" id={customerId} />
 
       <div className="master-record space-y-6 p-6">
         {related.error && <ErrorState message={related.error.message} />}

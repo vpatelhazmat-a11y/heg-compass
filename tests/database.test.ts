@@ -131,6 +131,34 @@ test("launcher preferences are private to their owner, including for administrat
     ),
   ).rejects.toThrow();
 });
+test("chatter links and authors are enforced in the database", async () => {
+  const posted = await asRole(
+    "sales",
+    "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body,author_id) values('customer',$1,'note','Internal context',$2) returning author_id",
+    [customer, users.admin],
+  );
+  expect(posted.rows[0].author_id).toBe(users.sales);
+  expect(
+    (
+      await asRole("read_only", "select body from mail_messages where linked_entity_id=$1", [
+        customer,
+      ])
+    ).rows,
+  ).toHaveLength(1);
+  await expect(
+    asRole(
+      "read_only",
+      "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body) values('customer',$1,'note','Denied')",
+      [customer],
+    ),
+  ).rejects.toThrow();
+  await expect(
+    asRole(
+      "sales",
+      "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body) values('customer','11111111-1111-1111-1111-111111111111','note','Orphan')",
+    ),
+  ).rejects.toThrow();
+});
 test("shared links reject nonexistent or half-specified entities", async () => {
   await expect(
     asRole(
