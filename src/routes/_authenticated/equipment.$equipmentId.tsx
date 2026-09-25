@@ -176,9 +176,7 @@ function EquipmentDetail() {
           <TabsList className="flex w-full flex-wrap justify-start">
             <TabsTrigger value="specification">Specification</TabsTrigger>
             <TabsTrigger value="assignments">Assignments</TabsTrigger>
-            <TabsTrigger value="compliance">Compliance</TabsTrigger>
-            <TabsTrigger value="technology">Technology</TabsTrigger>
-            <TabsTrigger value="incidents">Incidents</TabsTrigger>
+            <TabsTrigger value="compliance">Compliance & safety</TabsTrigger>
           </TabsList>
 
           <TabsContent forceMount value="specification" className="mt-4 space-y-6">
@@ -191,7 +189,7 @@ function EquipmentDetail() {
                 table="equipment"
                 recordId={equipmentId}
                 initialValues={unit}
-                fields={equipmentFields}
+                fields={equipmentFields.filter((field) => field.name !== "notes")}
                 invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
               />
             ) : (
@@ -210,9 +208,6 @@ function EquipmentDetail() {
                     <Field label="Serial number">{orDash(unit.serial_number)}</Field>
                     <Field label="Plate number">{orDash(unit.plate_number)}</Field>
                   </FieldGrid>
-                </Panel>
-                <Panel title="Notes">
-                  <p className="text-sm text-foreground">{orDash(unit.notes)}</p>
                 </Panel>
               </>
             )}
@@ -248,7 +243,7 @@ function EquipmentDetail() {
             </Panel>
           </TabsContent>
 
-          <TabsContent value="compliance" className="mt-4">
+          <TabsContent value="compliance" className="mt-4 space-y-6">
             <Panel
               title="Registration and compliance"
               actions={addButton(
@@ -280,9 +275,7 @@ function EquipmentDetail() {
                 emptyDescription="Track state registrations and permits with their expiry dates."
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="technology" className="mt-4">
             <Panel
               title="Installed technology"
               actions={addButton(
@@ -313,8 +306,7 @@ function EquipmentDetail() {
                 emptyTitle="No technology recorded"
               />
             </Panel>
-          </TabsContent>
-          <TabsContent value="incidents" className="mt-4">
+
             <Panel title="Equipment incidents">
               <DataTable
                 recordTable="incidents"
@@ -333,6 +325,25 @@ function EquipmentDetail() {
             </Panel>
           </TabsContent>
         </Tabs>
+        <section aria-label="Notes" className="pt-4">
+          {canWrite ? (
+            <RecordForm
+              presentation="record"
+              open
+              onOpenChange={() => undefined}
+              title="Notes"
+              table="equipment"
+              recordId={equipmentId}
+              initialValues={unit}
+              fields={equipmentFields.filter((field) => field.name === "notes")}
+              invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
+            />
+          ) : (
+            <Panel title="Notes">
+              <p className="text-sm text-foreground">{orDash(unit.notes)}</p>
+            </Panel>
+          )}
+        </section>
       </div>
 
       {editingAssignment && (
