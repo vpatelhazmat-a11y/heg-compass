@@ -165,10 +165,7 @@ function SiteDetail() {
           <TabsList className="flex w-full flex-wrap justify-start">
             <TabsTrigger value="operations">Operations</TabsTrigger>
             <TabsTrigger value="safety">Safety & environmental</TabsTrigger>
-            <TabsTrigger value="requirements">Requirements</TabsTrigger>
-            <TabsTrigger value="assessments">Assessments</TabsTrigger>
-            <TabsTrigger value="documents">Documents</TabsTrigger>
-            <TabsTrigger value="related">Products, lanes & equipment</TabsTrigger>
+            <TabsTrigger value="related">Related work</TabsTrigger>
           </TabsList>
 
           <TabsContent forceMount value="operations" className="mt-4 space-y-6">
@@ -181,7 +178,10 @@ function SiteDetail() {
                 table="sites"
                 recordId={siteId}
                 initialValues={site}
-                fields={siteFields}
+                fields={siteFields.filter(
+                  (field) =>
+                    !["route_notes", "parking_notes", "special_instructions"].includes(field.name),
+                )}
                 invalidateKeys={[["site", siteId]]}
               />
             ) : (
@@ -199,12 +199,6 @@ function SiteDetail() {
                     <Field label="Security requirements" full>
                       {orDash(site.security_requirements)}
                     </Field>
-                    <Field label="Parking notes" full>
-                      {orDash(site.parking_notes)}
-                    </Field>
-                    <Field label="Route notes" full>
-                      {orDash(site.route_notes)}
-                    </Field>
                   </FieldGrid>
                 </Panel>
                 <Panel title="Loading and unloading">
@@ -213,7 +207,6 @@ function SiteDetail() {
                     <Field label="Unloading instructions">
                       {orDash(site.unloading_requirements)}
                     </Field>
-                    <Field label="Special instructions">{orDash(site.special_instructions)}</Field>
                   </FieldGrid>
                 </Panel>
               </>
@@ -258,9 +251,7 @@ function SiteDetail() {
                 />
               </Panel>
             )}
-          </TabsContent>
 
-          <TabsContent value="requirements" className="mt-4">
             <Panel
               title="Site requirements"
               actions={addButton("Add requirement", "requirements", requirementFields)}
@@ -286,9 +277,7 @@ function SiteDetail() {
                 emptyTitle="No site requirements recorded"
               />
             </Panel>
-          </TabsContent>
 
-          <TabsContent value="assessments" className="mt-4">
             <Panel
               title="Site assessments"
               actions={addButton("Add assessment", "site_assessments", assessmentFields)}
@@ -322,7 +311,7 @@ function SiteDetail() {
             </Panel>
           </TabsContent>
 
-          <TabsContent value="documents" className="mt-4">
+          <TabsContent value="related" className="mt-4 space-y-6">
             <Panel
               title="Documents"
               actions={addButton("Add document", "documents", documentFields)}
@@ -343,8 +332,7 @@ function SiteDetail() {
                 emptyTitle="No documents recorded"
               />
             </Panel>
-          </TabsContent>
-          <TabsContent value="related" className="mt-4 space-y-6">
+
             <Panel title="Products linked through site rates">
               <DataTable
                 recordTable="products"
@@ -383,6 +371,31 @@ function SiteDetail() {
             </Panel>
           </TabsContent>
         </Tabs>
+        <section aria-label="Notes" className="pt-4">
+          {canWrite ? (
+            <RecordForm
+              presentation="record"
+              open
+              onOpenChange={() => undefined}
+              title="Notes"
+              table="sites"
+              recordId={siteId}
+              initialValues={site}
+              fields={siteFields.filter((field) =>
+                ["route_notes", "parking_notes", "special_instructions"].includes(field.name),
+              )}
+              invalidateKeys={[["site", siteId]]}
+            />
+          ) : (
+            <Panel title="Notes">
+              <FieldGrid>
+                <Field label="Route">{orDash(site.route_notes)}</Field>
+                <Field label="Parking">{orDash(site.parking_notes)}</Field>
+                <Field label="Special instructions">{orDash(site.special_instructions)}</Field>
+              </FieldGrid>
+            </Panel>
+          )}
+        </section>
       </div>
 
       {creator && (
