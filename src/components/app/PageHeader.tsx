@@ -32,7 +32,7 @@ export function PageHeader({
               to={back.to}
               params={back.params as never}
               aria-label={`Back to ${back.label}`}
-              className="mr-2 inline-flex h-7 w-7 items-center justify-center rounded border border-border text-foreground hover:bg-accent"
+              className="mr-1 inline-flex h-7 w-7 items-center justify-center rounded text-foreground hover:bg-accent"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden />
             </Link>

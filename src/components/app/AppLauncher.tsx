@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { GripVertical } from "lucide-react";
 import { useSession } from "@/hooks/use-session";
 import { HUB_MODULES } from "@/lib/modules";
 import {
@@ -19,8 +18,12 @@ export function AppLauncher() {
   const { session } = useSession();
   const userId = session?.userId;
   const [order, setOrder] = useState(() => normalizeAppOrder(null));
-  const [arranging, setArranging] = useState(false);
   const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
+  const touchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const touchDrag = useRef<string | null>(null);
+  const touchTarget = useRef<string | null>(null);
+  const suppressClick = useRef(false);
   const [syncError, setSyncError] = useState(false);
   const changeNumber = useRef(0);
   const saveQueue = useRef(Promise.resolve());
@@ -71,30 +74,39 @@ export function AppLauncher() {
     }
   };
 
+  const stopTouch = () => {
+    if (touchTimer.current) clearTimeout(touchTimer.current);
+    touchTimer.current = null;
+  };
+
+  const endTouch = () => {
+    stopTouch();
+    if (touchDrag.current && touchTarget.current && touchDrag.current !== touchTarget.current) {
+      updateOrder(moveApp(order, touchDrag.current, touchTarget.current));
+    }
+    if (touchDrag.current) {
+      suppressClick.current = true;
+      window.setTimeout(() => {
+        suppressClick.current = false;
+      }, 350);
+    }
+    touchDrag.current = null;
+    touchTarget.current = null;
+    setDragging(null);
+    setDropTarget(null);
+  };
+
   return (
     <section aria-label="Applications" className="app-desktop">
       <div className="launcher-actions">
-        {arranging ? (
-          <>
-            <button
-              type="button"
-              onClick={() => {
-                const defaultOrder = userId ? resetAppOrder(userId) : normalizeAppOrder(null);
-                updateOrder(defaultOrder);
-                setDragging(null);
-              }}
-            >
-              Reset order
-            </button>
-            <button type="button" onClick={() => setArranging(false)}>
-              Done
-            </button>
-          </>
-        ) : (
-          <button type="button" disabled={!userId} onClick={() => setArranging(true)}>
-            Arrange apps
-          </button>
-        )}
+        <span>Hold and drag an app to move it</span>
+        <button
+          type="button"
+          disabled={!userId}
+          onClick={() => updateOrder(userId ? resetAppOrder(userId) : normalizeAppOrder(null))}
+        >
+          Reset order
+        </button>
       </div>
       {syncError && (
         <p role="status" className="text-sm text-destructive">
@@ -102,36 +114,74 @@ export function AppLauncher() {
         </p>
       )}
       <div className="app-grid">
-        {orderedModules.map(({ id, label, description, to }, index) => (
+        {orderedModules.map(({ id, label, description, to }) => (
           <div
             key={id}
-            className={`app-position ${arranging ? "is-arranging" : ""} ${dragging === id ? "is-dragging" : ""}`}
-            draggable={arranging}
+            data-app-id={id}
+            className={`app-position ${dragging === id ? "is-dragging" : ""} ${dropTarget === id ? "is-drop-target" : ""}`}
+            draggable
             onDragStart={(event) => {
-              if (!arranging) return;
               setDragging(id);
               event.dataTransfer.effectAllowed = "move";
               event.dataTransfer.setData("text/plain", id);
             }}
             onDragOver={(event) => {
-              if (arranging && dragging && dragging !== id) event.preventDefault();
+              if (dragging && dragging !== id) {
+                event.preventDefault();
+                setDropTarget(id);
+              }
             }}
             onDrop={(event) => {
               event.preventDefault();
-              if (arranging && dragging) updateOrder(moveApp(order, dragging, id));
+              if (dragging) updateOrder(moveApp(order, dragging, id));
               setDragging(null);
+              setDropTarget(null);
             }}
-            onDragEnd={() => setDragging(null)}
+            onDragEnd={() => {
+              setDragging(null);
+              setDropTarget(null);
+            }}
+            onPointerDown={(event) => {
+              if (event.pointerType === "mouse") return;
+              stopTouch();
+              const tile = event.currentTarget;
+              const pointerId = event.pointerId;
+              touchTimer.current = setTimeout(() => {
+                touchDrag.current = id;
+                setDragging(id);
+                tile.setPointerCapture(pointerId);
+              }, 280);
+            }}
+            onPointerMove={(event) => {
+              if (!touchDrag.current) return;
+              const target =
+                document
+                  .elementFromPoint(event.clientX, event.clientY)
+                  ?.closest<HTMLElement>("[data-app-id]")?.dataset["appId"] ?? null;
+              touchTarget.current = target;
+              setDropTarget(target);
+            }}
+            onPointerUp={endTouch}
+            onPointerCancel={endTouch}
           >
             <Link
               to={to}
               className="app-tile"
               title={description}
-              aria-disabled={arranging}
-              tabIndex={arranging ? -1 : undefined}
               onClick={(event) => {
-                if (arranging) event.preventDefault();
+                if (suppressClick.current) event.preventDefault();
               }}
+              onKeyDown={(event) => {
+                if (
+                  !event.altKey ||
+                  !["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)
+                )
+                  return;
+                event.preventDefault();
+                const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
+                updateOrder(shiftApp(order, id, direction));
+              }}
+              aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown"
             >
               <span className="app-icon" data-app={label}>
                 <CompassIcon name={label} />
@@ -139,27 +189,6 @@ export function AppLauncher() {
               <span className="app-label">{label}</span>
               <span className="sr-only">{description}</span>
             </Link>
-            {arranging && (
-              <div className="app-order-controls">
-                <button
-                  type="button"
-                  aria-label={`Move ${label} earlier`}
-                  disabled={index === 0}
-                  onClick={() => updateOrder(shiftApp(order, id, -1))}
-                >
-                  ←
-                </button>
-                <GripVertical aria-hidden="true" className="h-4 w-4" />
-                <button
-                  type="button"
-                  aria-label={`Move ${label} later`}
-                  disabled={index === order.length - 1}
-                  onClick={() => updateOrder(shiftApp(order, id, 1))}
-                >
-                  →
-                </button>
-              </div>
-            )}
           </div>
         ))}
       </div>
