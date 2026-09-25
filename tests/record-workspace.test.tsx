@@ -97,12 +97,14 @@ test("launcher exposes all twelve workspaces with usable destinations", () => {
   expect(screen.getByRole("link", { name: /Refused Loads/ }).getAttribute("href")).toBe(
     "/lost-loads",
   );
-  fireEvent.click(screen.getByRole("button", { name: "Arrange apps" }));
-  fireEvent.click(screen.getByRole("button", { name: "Move Sites earlier" }));
+  expect(links[0]?.parentElement?.getAttribute("draggable")).toBe("true");
+  fireEvent.keyDown(screen.getByRole("link", { name: /Sites/ }), {
+    key: "ArrowLeft",
+    altKey: true,
+  });
   expect(screen.getAllByRole("link")[0]?.textContent).toContain("Sites");
   fireEvent.click(screen.getByRole("button", { name: "Reset order" }));
   expect(screen.getAllByRole("link")[0]?.textContent).toContain("Customers");
-  fireEvent.click(screen.getByRole("button", { name: "Done" }));
 });
 
 test("supporting records open from lists and relationship links do not activate the row", async () => {
