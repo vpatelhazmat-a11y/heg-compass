@@ -91,19 +91,22 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
   if (!kind) return null;
   const writable = canEdit(table);
   return (
-    <section aria-label="Chatter" className="border-b border-border bg-surface px-6 py-5">
+    <section
+      aria-label="Chatter"
+      className="record-chatter border-b border-border bg-surface px-6 py-5"
+    >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">Chatter</h2>
         {writable && (
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="outline" onClick={() => setMode("message")}>
-              Post update
+            <Button size="sm" variant="ghost" onClick={() => setMode("message")}>
+              Send message
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setMode("note")}>
+            <Button size="sm" variant="ghost" onClick={() => setMode("note")}>
               Log note
             </Button>
-            <Button size="sm" variant="outline" onClick={() => setMode("activity")}>
-              Schedule activity
+            <Button size="sm" variant="ghost" onClick={() => setMode("activity")}>
+              Activity
             </Button>
           </div>
         )}

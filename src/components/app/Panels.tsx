@@ -19,7 +19,7 @@ export function Panel({
   footer?: ReactNode | undefined;
 }) {
   return (
-    <section className={cn("rounded-lg border border-border bg-surface", className)}>
+    <section className={cn("border-b border-border bg-surface", className)}>
       {(title || actions || icon) && (
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
           <div className="flex items-start gap-2">
@@ -103,13 +103,13 @@ export function StatTile({
       <button
         type="button"
         onClick={onClick}
-        className="rounded-lg border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-border-strong hover:bg-accent/40"
+        className="border-b border-border bg-surface px-4 py-3 text-left transition-colors hover:bg-accent/40"
       >
         {content}
       </button>
     );
   }
-  return <div className="rounded-lg border border-border bg-surface px-4 py-3">{content}</div>;
+  return <div className="border-b border-border bg-surface px-4 py-3">{content}</div>;
 }
 
 export function Timeline({

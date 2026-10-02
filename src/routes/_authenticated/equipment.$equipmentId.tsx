@@ -168,182 +168,183 @@ function EquipmentDetail() {
         related={<SmartButtons table="equipment" id={equipmentId} />}
       />
       <RecordRelations row={unit} />
-      <RecordChatter table="equipment" id={equipmentId} />
+      <div className="record-workspace-layout">
+        <RecordChatter table="equipment" id={equipmentId} />
+        <div className="master-record space-y-6 p-6">
+          {related.error && <ErrorState message={related.error.message} />}
+          <Tabs defaultValue="specification">
+            <TabsList className="flex w-full flex-wrap justify-start">
+              <TabsTrigger value="specification">Specification</TabsTrigger>
+              <TabsTrigger value="assignments">Assignments</TabsTrigger>
+              <TabsTrigger value="compliance">Compliance & safety</TabsTrigger>
+            </TabsList>
 
-      <div className="master-record space-y-6 p-6">
-        {related.error && <ErrorState message={related.error.message} />}
-        <Tabs defaultValue="specification">
-          <TabsList className="flex w-full flex-wrap justify-start">
-            <TabsTrigger value="specification">Specification</TabsTrigger>
-            <TabsTrigger value="assignments">Assignments</TabsTrigger>
-            <TabsTrigger value="compliance">Compliance & safety</TabsTrigger>
-          </TabsList>
+            <TabsContent forceMount value="specification" className="mt-4 space-y-6">
+              {canWrite ? (
+                <RecordForm
+                  presentation="record"
+                  open
+                  onOpenChange={() => undefined}
+                  title="Equipment details"
+                  table="equipment"
+                  recordId={equipmentId}
+                  initialValues={unit}
+                  fields={equipmentFields.filter((field) => field.name !== "notes")}
+                  invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
+                />
+              ) : (
+                <>
+                  <Panel title="Unit details">
+                    <FieldGrid>
+                      <Field label="Unit number">{unit.unit_number}</Field>
+                      <Field label="Category">{orDash(unit.category)}</Field>
+                      <Field label="Type">{orDash(unit.equipment_type)}</Field>
+                      <Field label="Year">{orDash(unit.model_year)}</Field>
+                      <Field label="Make">{orDash(unit.make)}</Field>
+                      <Field label="Color">{orDash(unit.color)}</Field>
+                      <Field label="Capacity">{orDash(unit.capacity)}</Field>
+                      <Field label="Certified weight">{orDash(unit.certified_weight)}</Field>
+                      <Field label="VIN">{orDash(unit.vin)}</Field>
+                      <Field label="Serial number">{orDash(unit.serial_number)}</Field>
+                      <Field label="Plate number">{orDash(unit.plate_number)}</Field>
+                    </FieldGrid>
+                  </Panel>
+                </>
+              )}
+            </TabsContent>
 
-          <TabsContent forceMount value="specification" className="mt-4 space-y-6">
+            <TabsContent value="assignments" className="mt-4">
+              <Panel
+                title="Assignment history"
+                actions={addButton("Add assignment", "equipment_assignments", assignmentFields)}
+              >
+                <DataTable
+                  columns={[
+                    { key: "assignment_type", header: "Assignment" },
+                    {
+                      key: "start_date",
+                      header: "Start",
+                      render: (row) => formatDate(row.start_date),
+                    },
+                    { key: "end_date", header: "End", render: (row) => formatDate(row.end_date) },
+                    {
+                      key: "status",
+                      header: "Status",
+                      render: (row) => <StatusBadge status={row.status} />,
+                    },
+                  ]}
+                  recordTable="equipment_assignments"
+                  rows={data?.assignments ?? []}
+                  onRowClick={canWrite ? setEditingAssignment : undefined}
+                  isLoading={related.isLoading}
+                  emptyTitle="No assignments recorded"
+                  emptyDescription="Record where this unit has been assigned so history isn't lost."
+                />
+              </Panel>
+            </TabsContent>
+
+            <TabsContent value="compliance" className="mt-4 space-y-6">
+              <Panel
+                title="Registration and compliance"
+                actions={addButton(
+                  "Add compliance record",
+                  "equipment_compliance",
+                  equipmentComplianceFields,
+                )}
+              >
+                <DataTable
+                  columns={[
+                    { key: "jurisdiction", header: "Jurisdiction" },
+                    { key: "requirement", header: "Requirement" },
+                    { key: "plate_number", header: "Plate / permit" },
+                    {
+                      key: "expiration_date",
+                      header: "Expires",
+                      render: (row) => formatDate(row.expiration_date),
+                    },
+                    {
+                      key: "required",
+                      header: "Required",
+                      render: (row) => (row.required ? "Yes" : "No"),
+                    },
+                  ]}
+                  recordTable="equipment_compliance"
+                  rows={data?.compliance ?? []}
+                  isLoading={related.isLoading}
+                  emptyTitle="No compliance records"
+                  emptyDescription="Track state registrations and permits with their expiry dates."
+                />
+              </Panel>
+
+              <Panel
+                title="Installed technology"
+                actions={addButton(
+                  "Add technology",
+                  "equipment_technology",
+                  equipmentTechnologyFields,
+                )}
+              >
+                <DataTable
+                  columns={[
+                    { key: "technology_type", header: "Technology" },
+                    { key: "device_id", header: "Device ID" },
+                    { key: "cable_id", header: "Cable ID" },
+                    {
+                      key: "installation_date",
+                      header: "Installed",
+                      render: (row) => formatDate(row.installation_date),
+                    },
+                    {
+                      key: "removal_date",
+                      header: "Removed",
+                      render: (row) => formatDate(row.removal_date),
+                    },
+                  ]}
+                  recordTable="equipment_technology"
+                  rows={data?.technology ?? []}
+                  isLoading={related.isLoading}
+                  emptyTitle="No technology recorded"
+                />
+              </Panel>
+
+              <Panel title="Equipment incidents">
+                <DataTable
+                  recordTable="incidents"
+                  rows={data?.incidents ?? []}
+                  error={related.error}
+                  columns={[
+                    {
+                      key: "incident_date",
+                      header: "Date",
+                      render: (row) => formatDate(row.incident_date),
+                    },
+                    { key: "incident_type", header: "Type" },
+                    { key: "status", header: "Status" },
+                  ]}
+                />
+              </Panel>
+            </TabsContent>
+          </Tabs>
+          <section aria-label="Notes" className="pt-4">
             {canWrite ? (
               <RecordForm
                 presentation="record"
                 open
                 onOpenChange={() => undefined}
-                title="Equipment details"
+                title="Notes"
                 table="equipment"
                 recordId={equipmentId}
                 initialValues={unit}
-                fields={equipmentFields.filter((field) => field.name !== "notes")}
+                fields={equipmentFields.filter((field) => field.name === "notes")}
                 invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
               />
             ) : (
-              <>
-                <Panel title="Unit details">
-                  <FieldGrid>
-                    <Field label="Unit number">{unit.unit_number}</Field>
-                    <Field label="Category">{orDash(unit.category)}</Field>
-                    <Field label="Type">{orDash(unit.equipment_type)}</Field>
-                    <Field label="Year">{orDash(unit.model_year)}</Field>
-                    <Field label="Make">{orDash(unit.make)}</Field>
-                    <Field label="Color">{orDash(unit.color)}</Field>
-                    <Field label="Capacity">{orDash(unit.capacity)}</Field>
-                    <Field label="Certified weight">{orDash(unit.certified_weight)}</Field>
-                    <Field label="VIN">{orDash(unit.vin)}</Field>
-                    <Field label="Serial number">{orDash(unit.serial_number)}</Field>
-                    <Field label="Plate number">{orDash(unit.plate_number)}</Field>
-                  </FieldGrid>
-                </Panel>
-              </>
+              <Panel title="Notes">
+                <p className="text-sm text-foreground">{orDash(unit.notes)}</p>
+              </Panel>
             )}
-          </TabsContent>
-
-          <TabsContent value="assignments" className="mt-4">
-            <Panel
-              title="Assignment history"
-              actions={addButton("Add assignment", "equipment_assignments", assignmentFields)}
-            >
-              <DataTable
-                columns={[
-                  { key: "assignment_type", header: "Assignment" },
-                  {
-                    key: "start_date",
-                    header: "Start",
-                    render: (row) => formatDate(row.start_date),
-                  },
-                  { key: "end_date", header: "End", render: (row) => formatDate(row.end_date) },
-                  {
-                    key: "status",
-                    header: "Status",
-                    render: (row) => <StatusBadge status={row.status} />,
-                  },
-                ]}
-                recordTable="equipment_assignments"
-                rows={data?.assignments ?? []}
-                onRowClick={canWrite ? setEditingAssignment : undefined}
-                isLoading={related.isLoading}
-                emptyTitle="No assignments recorded"
-                emptyDescription="Record where this unit has been assigned so history isn't lost."
-              />
-            </Panel>
-          </TabsContent>
-
-          <TabsContent value="compliance" className="mt-4 space-y-6">
-            <Panel
-              title="Registration and compliance"
-              actions={addButton(
-                "Add compliance record",
-                "equipment_compliance",
-                equipmentComplianceFields,
-              )}
-            >
-              <DataTable
-                columns={[
-                  { key: "jurisdiction", header: "Jurisdiction" },
-                  { key: "requirement", header: "Requirement" },
-                  { key: "plate_number", header: "Plate / permit" },
-                  {
-                    key: "expiration_date",
-                    header: "Expires",
-                    render: (row) => formatDate(row.expiration_date),
-                  },
-                  {
-                    key: "required",
-                    header: "Required",
-                    render: (row) => (row.required ? "Yes" : "No"),
-                  },
-                ]}
-                recordTable="equipment_compliance"
-                rows={data?.compliance ?? []}
-                isLoading={related.isLoading}
-                emptyTitle="No compliance records"
-                emptyDescription="Track state registrations and permits with their expiry dates."
-              />
-            </Panel>
-
-            <Panel
-              title="Installed technology"
-              actions={addButton(
-                "Add technology",
-                "equipment_technology",
-                equipmentTechnologyFields,
-              )}
-            >
-              <DataTable
-                columns={[
-                  { key: "technology_type", header: "Technology" },
-                  { key: "device_id", header: "Device ID" },
-                  { key: "cable_id", header: "Cable ID" },
-                  {
-                    key: "installation_date",
-                    header: "Installed",
-                    render: (row) => formatDate(row.installation_date),
-                  },
-                  {
-                    key: "removal_date",
-                    header: "Removed",
-                    render: (row) => formatDate(row.removal_date),
-                  },
-                ]}
-                recordTable="equipment_technology"
-                rows={data?.technology ?? []}
-                isLoading={related.isLoading}
-                emptyTitle="No technology recorded"
-              />
-            </Panel>
-
-            <Panel title="Equipment incidents">
-              <DataTable
-                recordTable="incidents"
-                rows={data?.incidents ?? []}
-                error={related.error}
-                columns={[
-                  {
-                    key: "incident_date",
-                    header: "Date",
-                    render: (row) => formatDate(row.incident_date),
-                  },
-                  { key: "incident_type", header: "Type" },
-                  { key: "status", header: "Status" },
-                ]}
-              />
-            </Panel>
-          </TabsContent>
-        </Tabs>
-        <section aria-label="Notes" className="pt-4">
-          {canWrite ? (
-            <RecordForm
-              presentation="record"
-              open
-              onOpenChange={() => undefined}
-              title="Notes"
-              table="equipment"
-              recordId={equipmentId}
-              initialValues={unit}
-              fields={equipmentFields.filter((field) => field.name === "notes")}
-              invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
-            />
-          ) : (
-            <Panel title="Notes">
-              <p className="text-sm text-foreground">{orDash(unit.notes)}</p>
-            </Panel>
-          )}
-        </section>
+          </section>
+        </div>
       </div>
 
       {editingAssignment && (

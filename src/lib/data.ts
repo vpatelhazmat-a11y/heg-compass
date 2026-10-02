@@ -18,6 +18,55 @@ export type ListOptions = {
   includeArchived?: boolean;
 };
 
+export type PageOptions = {
+  filters?: Record<string, string | number | boolean | null | undefined>;
+  searchField?: string | undefined;
+  search?: string | undefined;
+  exactField?: string | undefined;
+  exactValue?: string | undefined;
+  groupBy?: string | undefined;
+  offset?: number;
+  limit?: number;
+  ids?: string[] | undefined;
+};
+
+export async function listRowsPage(
+  table: string,
+  options: PageOptions = {},
+): Promise<{ rows: Row[]; count: number }> {
+  const safeColumn = (column: string) => {
+    if (!/^[a-z][a-z0-9_]*$/.test(column)) throw new Error("Invalid search field");
+    return column;
+  };
+  const limit = Math.min(100, Math.max(1, Math.floor(options.limit ?? 25)));
+  const offset = Math.max(0, Math.floor(options.offset ?? 0));
+  let query = (supabase.from(table as never) as Row).select("*", { count: "exact" });
+  for (const [column, value] of Object.entries(options.filters ?? {})) {
+    if (value === undefined) continue;
+    query =
+      value === null ? query.is(safeColumn(column), null) : query.eq(safeColumn(column), value);
+  }
+  if (options.ids) {
+    if (!options.ids.length) return { rows: [], count: 0 };
+    query = query.in("id", options.ids);
+  }
+  if (["customers", "sites", "equipment"].includes(table)) query = query.is("archived_at", null);
+  if (options.searchField && options.search?.trim()) {
+    const escaped = options.search.trim().replace(/[\\%_]/g, "\\$&");
+    query = query.ilike(safeColumn(options.searchField), `%${escaped}%`);
+  }
+  if (options.exactField && options.exactValue)
+    query = query.eq(safeColumn(options.exactField), options.exactValue);
+  query = query.order(safeColumn(options.groupBy ?? "created_at"), {
+    ascending: Boolean(options.groupBy),
+    nullsFirst: false,
+  });
+  query = query.order("id", { ascending: true });
+  const { data, count, error } = await query.range(offset, offset + limit - 1);
+  if (error) throw new Error(error.message);
+  return { rows: data ?? [], count: count ?? 0 };
+}
+
 export async function listRows(table: string, options: ListOptions = {}): Promise<Row[]> {
   let query = (supabase.from(table as never) as Row).select(options.select ?? "*");
 
