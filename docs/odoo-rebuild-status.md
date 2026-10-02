@@ -15,4 +15,4 @@ This tracks the user's ten-phase HEG Hub rebuild plan against the running applic
 | 9. General Settings | Personal Settings and separate Administration page exist. | Unified module settings, granular permission management, lookup/template/type management, audit and data quality views, backend health. |
 | 10. Equipment rates | Equipment leases can store one rate. | Lease/maintenance rate terms, currency/unit/effective/expiry dates, contract/customer link, history, reporting. |
 
-Cross-cutting gaps: saved searches and team views, archive controls and archived filters, record tags, and a complete related-record audit. Global keyboard search exists.
+Cross-cutting: personal saved searches now work on the current device. Team-shared views, cross-device sync, archive controls and archived filters, record tags, and a complete related-record audit remain. Global keyboard search exists.

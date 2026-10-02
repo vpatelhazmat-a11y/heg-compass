@@ -28,6 +28,8 @@ import type { Row } from "@/lib/data";
 import { recordHref, recordLabel, RELATION_TARGETS } from "@/lib/record-registry";
 import { RecordLink } from "./RecordLink";
 import { downloadCsv } from "@/lib/csv";
+import { useSession } from "@/hooks/use-session";
+import { SavedViews } from "./SavedViews";
 
 export type Column = {
   key: string;
@@ -72,6 +74,7 @@ export function DataTable({
   bare?: boolean;
   groupingField?: string | undefined;
 }) {
+  const { session } = useSession();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; asc: boolean } | null>(null);
   const [page, setPage] = useState(0);
@@ -259,6 +262,23 @@ export function DataTable({
               </div>
             )}
           </div>
+          {exportName && (
+            <SavedViews
+              userId={session?.userId}
+              scope={exportName}
+              value={{ search, searchField, filterField, filterValue, groupBy, view }}
+              onApply={(saved) => {
+                setSearch(saved.search);
+                setSearchField(saved.searchField);
+                setFilterField(saved.filterField);
+                setFilterValue(saved.filterValue);
+                setGroupBy(saved.groupBy);
+                setView(saved.view);
+                setSort(null);
+                setPage(0);
+              }}
+            />
+          )}
           <span className="table-count" aria-live="polite">
             {sorted.length
               ? `${current * pageSize + 1}–${Math.min(sorted.length, (current + 1) * pageSize)} of ${sorted.length}`
