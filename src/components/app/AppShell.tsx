@@ -18,6 +18,7 @@ import { ModuleNavigation } from "./ModuleNavigation";
 import { activeModule } from "@/lib/modules";
 import { CommandPalette } from "./CommandPalette";
 import { QuickCreate, type QuickCreateKind } from "./QuickCreate";
+import { ActivityMenu } from "./ActivityMenu";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { session, roles, canWrite, canEdit } = useSession();
@@ -117,6 +118,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             ⌘K
           </kbd>
         </button>
+        <ActivityMenu />
         {canWrite && pathname !== "/command-center" && (
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

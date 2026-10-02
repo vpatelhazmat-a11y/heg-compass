@@ -1280,6 +1280,19 @@
 .table-active-filters button:hover { background: var(--muted); }
 .record-list-actions { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 3px; color: var(--muted-foreground); }
 .record-list-actions:hover { background: var(--muted); color: var(--foreground); }
+.activity-trigger { position: relative; display: grid; place-items: center; flex: none; width: 36px; height: 36px; border-radius: 4px; color: inherit; }
+.activity-trigger:hover { background: #ffffff22; }
+.activity-count { position: absolute; top: 0; right: -2px; display: grid; place-items: center; min-width: 16px; height: 16px; padding: 0 3px; border-radius: 8px; background: #dc8459; color: white; font-size: 10px; font-weight: 700; }
+.activity-menu-content { width: min(370px, calc(100vw - 20px)); max-height: min(540px, calc(100vh - 80px)); overflow-y: auto; }
+.activity-empty { padding: 14px 10px; color: var(--muted-foreground); font-size: 12px; }
+.activity-items { display: grid; }
+.activity-item { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 11px 10px; border-top: 1px solid var(--border); color: var(--foreground); }
+.activity-item:hover { background: var(--muted); }
+.activity-item span { display: grid; gap: 3px; min-width: 0; }
+.activity-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; }
+.activity-item small { color: var(--muted-foreground); font-size: 11px; }
+.activity-item em { flex: none; color: var(--muted-foreground); font-size: 11px; font-style: normal; }
+.activity-item em.is-urgent { color: var(--danger); font-weight: 600; }
 @media (max-width: 1100px) {
   .record-workspace-layout {
     display: flex;
