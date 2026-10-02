@@ -27,6 +27,7 @@ import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordRelations } from "./RecordLink";
 import { RecordChatter } from "./RecordChatter";
 import { DocumentFile } from "./DocumentFile";
+import { DocumentFolderTree } from "./DocumentFolderTree";
 import { ArchiveVisibility, RecordArchiveActions } from "./RecordArchiveActions";
 import { SmartButtons } from "./SmartButtons";
 import { RecordForm, type FieldConfig } from "./RecordForm";
@@ -55,6 +56,9 @@ import {
 type ListState = RecordPageRequest & { view?: "list" | "cards" };
 type ListPatch = {
   archived?: boolean;
+  folder?: string | undefined;
+  parent?: string | undefined;
+  parentId?: string | undefined;
   q?: string;
   field?: string;
   filterField?: string;
@@ -101,6 +105,7 @@ export function RecordListPage({
       state.filterValue,
       state.groupBy,
       state.archived,
+      state.folder,
       page,
     ],
     queryFn: () => loadRecordListPage(table, parent, parentId, state),
@@ -141,7 +146,26 @@ export function RecordListPage({
           { label: definition.label },
         ]}
       />
-      <div className="record-list-workspace">
+      <div
+        className={
+          table === "documents" ? "record-list-workspace document-browser" : "record-list-workspace"
+        }
+      >
+        {table === "documents" && (
+          <DocumentFolderTree
+            folder={state.folder}
+            parent={parent}
+            parentId={parentId}
+            onSelect={(selection) =>
+              onChange?.({
+                folder: selection.folder,
+                parent: selection.parent,
+                parentId: selection.parentId,
+                page: 0,
+              })
+            }
+          />
+        )}
         <div className="record-list-controls">
           <div className="record-list-search">
             <Search className="h-4 w-4" aria-hidden />
