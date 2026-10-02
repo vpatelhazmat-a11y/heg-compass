@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import { Bell, KeyRound, Monitor, ShieldCheck, UserRound } from "lucide-react";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel, Field, FieldGrid } from "@/components/app/Panels";
@@ -25,20 +24,31 @@ export const Route = createFileRoute("/_authenticated/settings")({
 
 function SettingsPage() {
   const { session } = useSession();
-  const queryClient = useQueryClient();
   const [email, setEmail] = useState(session?.email ?? "");
   const [password, setPassword] = useState("");
-  const [digest, setDigest] = useState(
-    () => localStorage.getItem("heg-notification-digest") !== "off",
-  );
-  const [taskAlerts, setTaskAlerts] = useState(
-    () => localStorage.getItem("heg-task-alerts") !== "off",
-  );
+  const [taskAlerts, setTaskAlerts] = useState(true);
   const [status, setStatus] = useState<string | null>(null);
 
-  const saveNotifications = (key: string, value: boolean, setter: (value: boolean) => void) => {
-    setter(value);
-    localStorage.setItem(key, value ? "on" : "off");
+  useEffect(() => setEmail(session?.email ?? ""), [session?.email]);
+
+  useEffect(() => {
+    if (!session?.userId) return;
+    try {
+      setTaskAlerts(localStorage.getItem(`heg-task-alerts:${session.userId}`) !== "off");
+    } catch {
+      setTaskAlerts(true);
+    }
+  }, [session?.userId]);
+
+  const saveTaskAlerts = (value: boolean) => {
+    if (!session?.userId) return;
+    setTaskAlerts(value);
+    try {
+      localStorage.setItem(`heg-task-alerts:${session.userId}`, value ? "on" : "off");
+    } catch {
+      /* The preference still applies to this page until reload. */
+    }
+    window.dispatchEvent(new Event("heg:preference-changed"));
   };
 
   const updateEmail = async () => {
@@ -107,32 +117,23 @@ function SettingsPage() {
 
         <Panel
           title="Notifications"
-          description="Choose which personal alerts you want to receive."
+          description="Choose whether the activity menu shows approaching deadlines."
           icon={<Bell className="h-4 w-4" />}
         >
           <div className="space-y-5">
             <SettingRow
-              title="Task and follow-up alerts"
-              description="Show reminders for assigned or overdue work."
+              title="Activity alerts"
+              description="Show assigned tasks and upcoming bid, contract and document deadlines in the top bar."
             >
               <Switch
                 checked={taskAlerts}
-                onCheckedChange={(value) =>
-                  saveNotifications("heg-task-alerts", value, setTaskAlerts)
-                }
+                disabled={!session?.userId}
+                onCheckedChange={saveTaskAlerts}
               />
             </SettingRow>
-            <SettingRow
-              title="Weekly activity digest"
-              description="Keep a lightweight weekly summary of activity in the Hub."
-            >
-              <Switch
-                checked={digest}
-                onCheckedChange={(value) =>
-                  saveNotifications("heg-notification-digest", value, setDigest)
-                }
-              />
-            </SettingRow>
+            <p className="text-xs text-muted-foreground">
+              Email digests are not available until an email service is connected.
+            </p>
           </div>
         </Panel>
 
