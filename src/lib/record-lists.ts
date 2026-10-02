@@ -6,6 +6,7 @@ export const isRecordId = (value: string) =>
 
 export type RecordPageRequest = {
   page?: number | undefined;
+  archived?: boolean | undefined;
   search?: string | undefined;
   searchField?: string | undefined;
   filterField?: string | undefined;
@@ -85,6 +86,7 @@ export async function loadRecordListPage(
     groupBy,
     offset: page * 25,
     limit: 25,
+    archived: request.archived,
   });
 }
 

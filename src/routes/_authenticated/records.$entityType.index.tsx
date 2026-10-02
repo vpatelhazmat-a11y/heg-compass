@@ -12,6 +12,7 @@ export const Route = createFileRoute("/_authenticated/records/$entityType/")({
       typeof search["filterValue"] === "string" ? search["filterValue"].slice(0, 120) : undefined,
     groupBy: typeof search["groupBy"] === "string" ? search["groupBy"] : undefined,
     view: search["view"] === "cards" ? ("cards" as const) : ("list" as const),
+    archived: search["archived"] === true,
     page:
       typeof search["page"] === "number" && Number.isInteger(search["page"]) && search["page"] >= 0
         ? search["page"]
@@ -36,6 +37,7 @@ function RecordListRoute() {
         groupBy: state.groupBy,
         view: state.view,
         page: state.page,
+        archived: state.archived,
       }}
       onChange={(patch) => navigate({ search: (previous) => ({ ...previous, ...patch }) })}
     />

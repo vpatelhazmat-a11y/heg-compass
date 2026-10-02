@@ -26,6 +26,7 @@ import { SavedViews } from "./SavedViews";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordRelations } from "./RecordLink";
 import { RecordChatter } from "./RecordChatter";
+import { ArchiveVisibility, RecordArchiveActions } from "./RecordArchiveActions";
 import { SmartButtons } from "./SmartButtons";
 import { RecordForm, type FieldConfig } from "./RecordForm";
 import { RefusedLoadForm, toFormState } from "./RefusedLoadForm";
@@ -50,6 +51,7 @@ import {
 
 type ListState = RecordPageRequest & { view?: "list" | "cards" };
 type ListPatch = {
+  archived?: boolean;
   q?: string;
   field?: string;
   filterField?: string;
@@ -94,6 +96,7 @@ export function RecordListPage({
       state.filterField,
       state.filterValue,
       state.groupBy,
+      state.archived,
       page,
     ],
     queryFn: () => loadRecordListPage(table, parent, parentId, state),
@@ -237,6 +240,12 @@ export function RecordListPage({
               })
             }
           />
+          {["customers", "sites", "equipment"].includes(table) && (
+            <ArchiveVisibility
+              archived={Boolean(state.archived)}
+              onChange={(archived) => onChange?.({ archived, page: 0 })}
+            />
+          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="record-list-actions" aria-label="List actions">
@@ -284,7 +293,9 @@ export function RecordListPage({
                         {definition.columns.slice(1, 4).map((key) => (
                           <span key={key}>
                             <small>{fieldLabel(key)}</small>
-                            {String(row[key] ?? "—")}
+                            {key === "status" && row.archived_at
+                              ? "Archived"
+                              : String(row[key] ?? "—")}
                           </span>
                         ))}
                       </a>
@@ -304,7 +315,17 @@ export function RecordListPage({
                   ...(state.groupBy && !definition.columns.includes(state.groupBy)
                     ? [state.groupBy]
                     : []),
-                ].map((key) => ({ key, header: fieldLabel(key), sortable: false }))}
+                ].map((key) => ({
+                  key,
+                  header: fieldLabel(key),
+                  sortable: false,
+                  ...(key === "status"
+                    ? {
+                        render: (row: Row) =>
+                          row.archived_at ? "Archived" : String(row.status ?? "—"),
+                      }
+                    : {}),
+                }))}
                 rows={rows.data?.rows ?? []}
                 emptyTitle={`No ${definition.label.toLowerCase()} found`}
               />
@@ -429,7 +450,23 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
     <>
       <PageHeader
         title={recordLabel(table, row)}
-        meta={row.status ? <StatusBadge status={row.status} /> : undefined}
+        meta={
+          row.archived_at ? (
+            <StatusBadge status="Archived" />
+          ) : row.status ? (
+            <StatusBadge status={row.status} />
+          ) : undefined
+        }
+        actions={
+          ["customers", "sites", "equipment"].includes(table) ? (
+            <RecordArchiveActions
+              table={table as "customers" | "sites" | "equipment"}
+              id={id}
+              archived={Boolean(row.archived_at)}
+              onChanged={() => void record.refetch()}
+            />
+          ) : undefined
+        }
         related={<SmartButtons table={table} id={id} />}
         breadcrumbs={[
           { label: "Apps", to: "/command-center" },

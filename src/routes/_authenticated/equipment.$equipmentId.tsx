@@ -24,6 +24,7 @@ import {
 } from "@/lib/entities";
 import { formatDate, orDash } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
+import { RecordArchiveActions } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/equipment/$equipmentId")({
   head: () => ({
@@ -148,6 +149,14 @@ function EquipmentDetail() {
     <>
       <PageHeader
         title={`Unit ${unit.unit_number}`}
+        actions={
+          <RecordArchiveActions
+            table="equipment"
+            id={equipmentId}
+            archived={Boolean(unit.archived_at)}
+            onChanged={() => void unitQuery.refetch()}
+          />
+        }
         description={
           [unit.model_year, unit.make, unit.equipment_type].filter(Boolean).join(" ") || undefined
         }
@@ -158,7 +167,7 @@ function EquipmentDetail() {
         meta={
           <>
             <MetaItem label="Status">
-              <StatusBadge status={unit.status} />
+              <StatusBadge status={unit.archived_at ? "Archived" : unit.status} />
             </MetaItem>
             <MetaItem label="Category">{orDash(unit.category)}</MetaItem>
             <MetaItem label="Ownership">{orDash(unit.ownership_type)}</MetaItem>

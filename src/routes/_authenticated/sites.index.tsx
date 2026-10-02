@@ -4,6 +4,8 @@ import { PageHeader } from "@/components/app/PageHeader";
 import { DataTable, type Column } from "@/components/app/DataTable";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import { listRows } from "@/lib/data";
+import { useState } from "react";
+import { ArchiveVisibility } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/sites/")({
   head: () => ({
@@ -25,14 +27,16 @@ export const Route = createFileRoute("/_authenticated/sites/")({
 
 function SitesPage() {
   const navigate = useNavigate();
+  const [archived, setArchived] = useState(false);
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["sites-all"],
+    queryKey: ["sites-all", archived],
     queryFn: () =>
       listRows("sites", {
+        archivedOnly: archived,
         select: "*, customers(legal_name)",
         order: { column: "site_name", ascending: true },
       }),
@@ -44,7 +48,11 @@ function SitesPage() {
     { key: "city", header: "City" },
     { key: "state", header: "State" },
     { key: "site_type", header: "Type" },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: "status",
+      header: "Status",
+      render: (row) => <StatusBadge status={row.archived_at ? "Archived" : row.status} />,
+    },
   ];
 
   return (
@@ -52,6 +60,7 @@ function SitesPage() {
       <PageHeader
         title="Sites"
         description="Locations HEG picks up from and delivers to, including access, safety and routing knowledge."
+        actions={<ArchiveVisibility archived={archived} onChange={setArchived} />}
       />
       <div className="p-6">
         <DataTable
