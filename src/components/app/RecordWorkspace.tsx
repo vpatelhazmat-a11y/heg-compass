@@ -22,6 +22,7 @@ import {
 import { useSession } from "@/hooks/use-session";
 import { PageHeader } from "./PageHeader";
 import { DataTable } from "./DataTable";
+import { SavedViews } from "./SavedViews";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordRelations } from "./RecordLink";
 import { RecordChatter } from "./RecordChatter";
@@ -71,6 +72,7 @@ export function RecordListPage({
   state?: ListState;
   onChange?: (patch: ListPatch) => void;
 }) {
+  const { session } = useSession();
   const definition = recordDefinition(table);
   const fields = recordListFields(table);
   const [searchInput, setSearchInput] = useState(state.search ?? "");
@@ -212,6 +214,29 @@ export function RecordListPage({
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
+          <SavedViews
+            userId={session?.userId}
+            scope={`record-${table}`}
+            value={{
+              search: state.search ?? "",
+              searchField: state.searchField ?? "",
+              filterField: state.filterField ?? "",
+              filterValue: state.filterValue ?? "",
+              groupBy: state.groupBy ?? "",
+              view: state.view ?? "list",
+            }}
+            onApply={(saved) =>
+              onChange?.({
+                q: saved.search,
+                field: saved.searchField,
+                filterField: saved.filterField,
+                filterValue: saved.filterValue,
+                groupBy: saved.groupBy,
+                view: saved.view,
+                page: 0,
+              })
+            }
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="record-list-actions" aria-label="List actions">
