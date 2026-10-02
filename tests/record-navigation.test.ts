@@ -130,6 +130,28 @@ describe("record navigation contract", () => {
     );
   });
 
+  test("document folders scope the server query to linked and unlinked records", async () => {
+    vi.clearAllMocks();
+    vi.mocked(listRowsPage).mockResolvedValue({ rows: [], count: 0 });
+    await loadRecordListPage("documents", undefined, undefined, { folder: "customer" });
+    expect(listRowsPage).toHaveBeenLastCalledWith(
+      "documents",
+      expect.objectContaining({ filters: { linked_entity_type: "customer" } }),
+    );
+    await loadRecordListPage("documents", undefined, undefined, { folder: "unlinked" });
+    expect(listRowsPage).toHaveBeenLastCalledWith(
+      "documents",
+      expect.objectContaining({ filters: { linked_entity_type: null } }),
+    );
+    await loadRecordListPage("documents", "customers", id, { folder: "site" });
+    expect(listRowsPage).toHaveBeenLastCalledWith(
+      "documents",
+      expect.objectContaining({
+        filters: { linked_entity_type: "customer", linked_entity_id: id },
+      }),
+    );
+  });
+
   test("links preserve existing primary pages and give supporting records stable addresses", () => {
     expect(recordHref("customers", id)).toBe(`/customers/${id}`);
     expect(recordHref("bids", id)).toBe(`/records/bids/${id}`);

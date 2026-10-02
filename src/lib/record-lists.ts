@@ -7,6 +7,7 @@ export const isRecordId = (value: string) =>
 export type RecordPageRequest = {
   page?: number | undefined;
   archived?: boolean | undefined;
+  folder?: string | undefined;
   search?: string | undefined;
   searchField?: string | undefined;
   filterField?: string | undefined;
@@ -61,7 +62,7 @@ export async function loadRecordListPage(
   const groupBy =
     request.groupBy && allowed.filter.includes(request.groupBy) ? request.groupBy : undefined;
   const page = Math.max(0, Math.floor(request.page ?? 0));
-  let filters: Record<string, string> = {};
+  let filters: Record<string, string | null> = {};
   let ids: string[] | undefined;
   if (parent || parentId) {
     if (!parent || !parentId || !isRecordId(parentId))
@@ -75,6 +76,10 @@ export async function loadRecordListPage(
       });
       ids = [...new Set<string>(assignments.map((row) => row.equipment_id))];
     } else filters = relatedFilters(relation, parentId);
+  } else if (table === "documents") {
+    if (["customer", "site", "equipment"].includes(request.folder ?? ""))
+      filters = { linked_entity_type: request.folder! };
+    else if (request.folder === "unlinked") filters = { linked_entity_type: null };
   }
   return listRowsPage(table, {
     filters,
