@@ -223,6 +223,81 @@ test("sensitive document and task metadata cannot leak to sales", async () => {
     (await asRole("safety", "select * from documents where document_name='Safety file'")).rows,
   ).toHaveLength(1);
 });
+test("private document files follow document permissions and record path", async () => {
+  const document = (
+    await asRole(
+      "sales",
+      "insert into documents(document_name,linked_entity_type,linked_entity_id) values('Customer file','customer',$1) returning id",
+      [customer],
+    )
+  ).rows[0];
+  const path = `${document.id}/test.pdf`;
+  await expect(
+    asRole("sales", "update documents set file_path='wrong/file.pdf' where id=$1", [document.id]),
+  ).rejects.toThrow();
+  await asRole("sales", "update documents set file_path=$1,file_name='test.pdf' where id=$2", [
+    path,
+    document.id,
+  ]);
+  expect(
+    (
+      await asRole(
+        "sales",
+        "update documents set file_path=$1,file_name='second.pdf' where id=$2 and file_path is null returning id",
+        [`${document.id}/second.pdf`, document.id],
+      )
+    ).rows,
+  ).toHaveLength(0);
+  await asRole("sales", "insert into storage.objects(bucket_id,name) values('heg-documents',$1)", [
+    path,
+  ]);
+  expect(
+    (await asRole("sales", "select name from storage.objects where name=$1", [path])).rows,
+  ).toHaveLength(1);
+  await expect(
+    asRole(
+      "sales",
+      "insert into storage.objects(bucket_id,name) values('heg-documents','unregistered/file.pdf')",
+    ),
+  ).rejects.toThrow();
+  const driver = (
+    await db.query(
+      "insert into drivers(employee_reference) values('Private file driver') returning id",
+    )
+  ).rows[0].id;
+  const privateDoc = (
+    await asRole(
+      "safety",
+      "insert into documents(document_name,classification,linked_entity_type,linked_entity_id) values('Safety file','Safety','driver',$1) returning id",
+      [driver],
+    )
+  ).rows[0];
+  const privatePath = `${privateDoc.id}/safety.pdf`;
+  expect(
+    (
+      await asRole(
+        "sales",
+        "update documents set classification='Public Internal' where id=$1 returning id",
+        [privateDoc.id],
+      )
+    ).rows,
+  ).toHaveLength(0);
+  await asRole("safety", "update documents set file_path=$1,file_name='safety.pdf' where id=$2", [
+    privatePath,
+    privateDoc.id,
+  ]);
+  await asRole("safety", "insert into storage.objects(bucket_id,name) values('heg-documents',$1)", [
+    privatePath,
+  ]);
+  await expect(
+    asRole("sales", "insert into storage.objects(bucket_id,name) values('heg-documents',$1)", [
+      privatePath,
+    ]),
+  ).rejects.toThrow();
+  expect(
+    (await asRole("sales", "select name from storage.objects where name=$1", [privatePath])).rows,
+  ).toHaveLength(0);
+});
 test("rate RPC writes one version and records unit-only changes too", async () => {
   const row = (
     await asRole(
