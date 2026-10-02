@@ -120,6 +120,16 @@ describe("record navigation contract", () => {
     );
   });
 
+  test("archived list scope reaches the server query", async () => {
+    vi.clearAllMocks();
+    vi.mocked(listRowsPage).mockResolvedValue({ rows: [], count: 0 });
+    await loadRecordListPage("customers", undefined, undefined, { archived: true });
+    expect(listRowsPage).toHaveBeenCalledWith(
+      "customers",
+      expect.objectContaining({ archived: true, offset: 0, limit: 25 }),
+    );
+  });
+
   test("links preserve existing primary pages and give supporting records stable addresses", () => {
     expect(recordHref("customers", id)).toBe(`/customers/${id}`);
     expect(recordHref("bids", id)).toBe(`/records/bids/${id}`);

@@ -19,6 +19,7 @@ import { scopeDefaults, scopeFilters } from "@/lib/relations";
 import { assessmentFields, documentFields, requirementFields, siteFields } from "@/lib/entities";
 import { formatDate, orDash } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
+import { RecordArchiveActions } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/sites/$siteId")({
   head: () => ({
@@ -125,6 +126,14 @@ function SiteDetail() {
     <>
       <PageHeader
         title={site.site_name}
+        actions={
+          <RecordArchiveActions
+            table="sites"
+            id={siteId}
+            archived={Boolean(site.archived_at)}
+            onChanged={() => void siteQuery.refetch()}
+          />
+        }
         description={
           [site.address, site.city, site.state, site.postal_code].filter(Boolean).join(", ") ||
           undefined
@@ -145,7 +154,7 @@ function SiteDetail() {
         meta={
           <>
             <MetaItem label="Status">
-              <StatusBadge status={site.status} />
+              <StatusBadge status={site.archived_at ? "Archived" : site.status} />
             </MetaItem>
             <MetaItem label="Site type">{orDash(site.site_type)}</MetaItem>
             <MetaItem label="Appointment required">

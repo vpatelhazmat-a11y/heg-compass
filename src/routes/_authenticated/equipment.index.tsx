@@ -12,6 +12,7 @@ import { listRows } from "@/lib/data";
 import { equipmentFields } from "@/lib/entities";
 import { orDash } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
+import { ArchiveVisibility } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/equipment/")({
   head: () => ({
@@ -34,14 +35,19 @@ function EquipmentPage() {
   const { canEdit } = useSession();
   const canWrite = canEdit("equipment");
   const [creating, setCreating] = useState(false);
+  const [archived, setArchived] = useState(false);
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["equipment"],
-    queryFn: () => listRows("equipment", { order: { column: "unit_number", ascending: true } }),
+    queryKey: ["equipment", archived],
+    queryFn: () =>
+      listRows("equipment", {
+        archivedOnly: archived,
+        order: { column: "unit_number", ascending: true },
+      }),
   });
 
   const columns: Column[] = [
@@ -52,10 +58,14 @@ function EquipmentPage() {
     { key: "make", header: "Make" },
     { key: "capacity", header: "Capacity", render: (row) => orDash(row.capacity) },
     { key: "ownership_type", header: "Ownership" },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: "status",
+      header: "Status",
+      render: (row) => <StatusBadge status={row.archived_at ? "Archived" : row.status} />,
+    },
   ];
 
-  const active = data.filter((row) => row.status === "Active").length;
+  const active = data.filter((row) => !row.archived_at && row.status === "Active").length;
   const outOfService = data.filter((row) => row.status === "Out of service").length;
   const leased = data.filter((row) => row.ownership_type === "Leased").length;
 
@@ -65,12 +75,15 @@ function EquipmentPage() {
         title="Equipment"
         description="Units HEG owns, leases or hauls — with compliance, technology and assignment history."
         actions={
-          canWrite ? (
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" aria-hidden />
-              New equipment
-            </Button>
-          ) : null
+          <>
+            <ArchiveVisibility archived={archived} onChange={setArchived} />
+            {canWrite && !archived ? (
+              <Button onClick={() => setCreating(true)}>
+                <Plus className="h-4 w-4" aria-hidden />
+                New equipment
+              </Button>
+            ) : null}
+          </>
         }
       />
 

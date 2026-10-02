@@ -31,6 +31,7 @@ import {
 } from "@/lib/entities";
 import { formatDate, formatMoney, orDash } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
+import { RecordArchiveActions } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/customers/$customerId")({
   head: () => ({
@@ -210,12 +211,20 @@ function CustomerDetail() {
     <>
       <PageHeader
         title={customer.legal_name}
+        actions={
+          <RecordArchiveActions
+            table="customers"
+            id={customerId}
+            archived={Boolean(customer.archived_at)}
+            onChanged={() => void customerQuery.refetch()}
+          />
+        }
         description={customer.dba_name ? `Doing business as ${customer.dba_name}` : undefined}
         breadcrumbs={[{ label: "Customers", to: "/customers" }, { label: customer.legal_name }]}
         meta={
           <>
             <MetaItem label="Status">
-              <StatusBadge status={customer.status} />
+              <StatusBadge status={customer.archived_at ? "Archived" : customer.status} />
             </MetaItem>
             <MetaItem label="Data quality">{orDash(customer.data_quality_status)}</MetaItem>
           </>

@@ -16,6 +16,7 @@ export type ListOptions = {
   limit?: number;
   anyOf?: Record<string, string>;
   includeArchived?: boolean;
+  archivedOnly?: boolean;
 };
 
 export type PageOptions = {
@@ -28,6 +29,7 @@ export type PageOptions = {
   offset?: number;
   limit?: number;
   ids?: string[] | undefined;
+  archived?: boolean | undefined;
 };
 
 export async function listRowsPage(
@@ -50,7 +52,8 @@ export async function listRowsPage(
     if (!options.ids.length) return { rows: [], count: 0 };
     query = query.in("id", options.ids);
   }
-  if (["customers", "sites", "equipment"].includes(table)) query = query.is("archived_at", null);
+  if (["customers", "sites", "equipment"].includes(table))
+    query = options.archived ? query.not("archived_at", "is", null) : query.is("archived_at", null);
   if (options.searchField && options.search?.trim()) {
     const escaped = options.search.trim().replace(/[\\%_]/g, "\\$&");
     query = query.ilike(safeColumn(options.searchField), `%${escaped}%`);
@@ -75,8 +78,10 @@ export async function listRows(table: string, options: ListOptions = {}): Promis
     query = value === null ? query.is(column, null) : query.eq(column, value);
   }
 
-  if (!options.includeArchived && ["customers", "sites", "equipment"].includes(table))
-    query = query.is("archived_at", null);
+  if (["customers", "sites", "equipment"].includes(table)) {
+    if (options.archivedOnly) query = query.not("archived_at", "is", null);
+    else if (!options.includeArchived) query = query.is("archived_at", null);
+  }
   if (options.anyOf)
     query = query.or(
       Object.entries(options.anyOf)
@@ -134,8 +139,19 @@ export async function updateRow(table: string, id: string, values: Row): Promise
 }
 
 export async function archiveRow(table: string, id: string): Promise<void> {
+  if (!["customers", "sites", "equipment"].includes(table))
+    throw new Error("This record cannot be archived.");
   const { error } = await (supabase.from(table as never) as Row)
-    .update({ archived_at: new Date().toISOString(), status: "Archived" })
+    .update({ archived_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(friendlyError(error.message));
+}
+
+export async function restoreRow(table: string, id: string): Promise<void> {
+  if (!["customers", "sites", "equipment"].includes(table))
+    throw new Error("This record cannot be restored.");
+  const { error } = await (supabase.from(table as never) as Row)
+    .update({ archived_at: null })
     .eq("id", id);
   if (error) throw new Error(friendlyError(error.message));
 }

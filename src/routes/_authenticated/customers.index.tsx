@@ -11,6 +11,7 @@ import { listRows } from "@/lib/data";
 import { customerFields } from "@/lib/entities";
 import { formatDate, orDash } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
+import { ArchiveVisibility } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/customers/")({
   head: () => ({
@@ -35,21 +36,30 @@ function CustomersPage() {
   const { canEdit } = useSession();
   const canWrite = canEdit("customers");
   const [creating, setCreating] = useState(false);
+  const [archived, setArchived] = useState(false);
 
   const {
     data = [],
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["customers"],
-    queryFn: () => listRows("customers", { order: { column: "legal_name", ascending: true } }),
+    queryKey: ["customers", archived],
+    queryFn: () =>
+      listRows("customers", {
+        archivedOnly: archived,
+        order: { column: "legal_name", ascending: true },
+      }),
   });
 
   const columns: Column[] = [
     { key: "legal_name", header: "Customer" },
     { key: "dba_name", header: "Doing business as" },
     { key: "industry", header: "Industry" },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+    {
+      key: "status",
+      header: "Status",
+      render: (row) => <StatusBadge status={row.archived_at ? "Archived" : row.status} />,
+    },
     {
       key: "qualification_status",
       header: "Qualification",
@@ -73,12 +83,15 @@ function CustomersPage() {
         title="Customers"
         description="The commercial record for every customer — status, qualification, sites, rates and history."
         actions={
-          canWrite ? (
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" aria-hidden />
-              New customer
-            </Button>
-          ) : null
+          <>
+            <ArchiveVisibility archived={archived} onChange={setArchived} />
+            {canWrite && !archived ? (
+              <Button onClick={() => setCreating(true)}>
+                <Plus className="h-4 w-4" aria-hidden />
+                New customer
+              </Button>
+            ) : null}
+          </>
         }
       />
 
