@@ -12,9 +12,9 @@ import {
   relationDependsOnCustomer,
 } from "../src/lib/record-registry";
 
-vi.mock("../src/lib/data", () => ({ listRows: vi.fn(), getRow: vi.fn() }));
-import { listRows, getRow } from "../src/lib/data";
-import { loadRecordList } from "../src/lib/record-lists";
+vi.mock("../src/lib/data", () => ({ listRows: vi.fn(), getRow: vi.fn(), listRowsPage: vi.fn() }));
+import { listRows, getRow, listRowsPage } from "../src/lib/data";
+import { loadRecordList, loadRecordListPage } from "../src/lib/record-lists";
 
 const id = "11111111-1111-4111-8111-111111111111";
 describe("record navigation contract", () => {
@@ -78,6 +78,46 @@ describe("record navigation contract", () => {
     expect(await loadRecordList("equipment", "sites", id)).toEqual([
       { id: "a", archived_at: null },
     ]);
+  });
+
+  test("paged list searches and filters only registered fields and preserves parent scope", async () => {
+    vi.clearAllMocks();
+    vi.mocked(listRowsPage).mockResolvedValue({ rows: [], count: 0 });
+    await loadRecordListPage("sites", "customers", id, {
+      page: 2,
+      search: "Depot",
+      searchField: "site_name",
+      filterField: "status",
+      filterValue: "Active",
+      groupBy: "status",
+    });
+    expect(listRowsPage).toHaveBeenCalledWith(
+      "sites",
+      expect.objectContaining({
+        filters: { customer_id: id },
+        searchField: "site_name",
+        search: "Depot",
+        exactField: "status",
+        exactValue: "Active",
+        groupBy: "status",
+        offset: 50,
+        limit: 25,
+      }),
+    );
+    await loadRecordListPage("sites", undefined, undefined, {
+      searchField: "archived_at",
+      filterField: "customer_id",
+      filterValue: id,
+      groupBy: "customer_id",
+    });
+    expect(listRowsPage).toHaveBeenLastCalledWith(
+      "sites",
+      expect.objectContaining({
+        exactField: undefined,
+        exactValue: undefined,
+        groupBy: undefined,
+      }),
+    );
   });
 
   test("links preserve existing primary pages and give supporting records stable addresses", () => {

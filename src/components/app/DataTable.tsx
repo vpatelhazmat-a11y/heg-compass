@@ -4,17 +4,21 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuLabel,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { useMemo, useState, type ReactNode } from "react";
+import { Fragment, useMemo, useState, type ReactNode } from "react";
 import {
   ArrowDown,
   ArrowUp,
   ChevronsUpDown,
   Download,
   Search,
-  Columns3,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
+  LayoutGrid,
+  List,
+  Settings2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -23,6 +27,7 @@ import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import type { Row } from "@/lib/data";
 import { recordHref, recordLabel, RELATION_TARGETS } from "@/lib/record-registry";
 import { RecordLink } from "./RecordLink";
+import { downloadCsv } from "@/lib/csv";
 
 export type Column = {
   key: string;
@@ -48,6 +53,8 @@ export function DataTable({
   searchPlaceholder = "Search",
   exportName,
   pageSize = 25,
+  bare = false,
+  groupingField,
 }: {
   columns: Column[];
   rows: Row[];
@@ -62,11 +69,20 @@ export function DataTable({
   searchPlaceholder?: string;
   exportName?: string;
   pageSize?: number;
+  bare?: boolean;
+  groupingField?: string | undefined;
 }) {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; asc: boolean } | null>(null);
   const [page, setPage] = useState(0);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  const [searchField, setSearchField] = useState("");
+  const [filterField, setFilterField] = useState("");
+  const [filterValue, setFilterValue] = useState("");
+  const [groupBy, setGroupBy] = useState("");
+  const [view, setView] = useState<"list" | "cards">("list");
+  const [searchOptionsOpen, setSearchOptionsOpen] = useState(false);
+  const activeGroupBy = bare ? (groupingField ?? "") : groupBy;
   const selectedColumns = columns.filter((column) => !hiddenColumns.includes(column.key));
   const visibleColumns = selectedColumns.length ? selectedColumns : columns;
   const openRow = recordTable
@@ -80,17 +96,31 @@ export function DataTable({
 
   const filtered = useMemo(() => {
     const term = search.trim().toLowerCase();
-    if (!term) return rows;
-    return rows.filter((row) =>
-      columns.some((column) => cellValue(row, column).toLowerCase().includes(term)),
+    const selectedFilter = columns.find((column) => column.key === filterField);
+    return rows.filter(
+      (row) =>
+        (!term ||
+          columns.some(
+            (column) =>
+              (!searchField || column.key === searchField) &&
+              cellValue(row, column).toLowerCase().includes(term),
+          )) &&
+        (!selectedFilter ||
+          !filterValue ||
+          cellValue(row, selectedFilter).toLowerCase() === filterValue.toLowerCase()),
     );
-  }, [rows, search, columns]);
+  }, [rows, search, searchField, filterField, filterValue, columns]);
 
   const sorted = useMemo(() => {
-    if (!sort) return filtered;
-    const column = columns.find((c) => c.key === sort.key);
-    if (!column) return filtered;
+    if (!sort && !activeGroupBy) return filtered;
+    const column = columns.find((c) => c.key === sort?.key);
+    const grouping = columns.find((c) => c.key === activeGroupBy);
     return [...filtered].sort((a, b) => {
+      if (grouping) {
+        const groupCompare = cellValue(a, grouping).localeCompare(cellValue(b, grouping));
+        if (groupCompare) return groupCompare;
+      }
+      if (!column) return 0;
       const av = cellValue(a, column);
       const bv = cellValue(b, column);
       const an = Number(av);
@@ -99,28 +129,26 @@ export function DataTable({
         av !== "" && bv !== "" && !Number.isNaN(an) && !Number.isNaN(bn)
           ? an - bn
           : av.localeCompare(bv);
-      return sort.asc ? cmp : -cmp;
+      return sort?.asc ? cmp : -cmp;
     });
-  }, [filtered, sort, columns]);
+  }, [filtered, sort, activeGroupBy, columns]);
+
+  const filterColumn = columns.find((column) => column.key === filterField);
+  const filterOptions = filterColumn
+    ? [...new Set(rows.map((row) => cellValue(row, filterColumn)).filter(Boolean))].sort()
+    : [];
+  const groupColumn = columns.find((column) => column.key === activeGroupBy);
 
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const current = Math.min(page, pageCount - 1);
   const visible = sorted.slice(current * pageSize, current * pageSize + pageSize);
 
   const exportCsv = () => {
-    const header = visibleColumns.map((c) => `"${c.header}"`).join(",");
-    const body = sorted
-      .map((row) =>
-        visibleColumns.map((c) => `"${cellValue(row, c).replace(/"/g, '""')}"`).join(","),
-      )
-      .join("\n");
-    const blob = new Blob([`${header}\n${body}`], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${exportName ?? "export"}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadCsv(
+      exportName ?? "export",
+      visibleColumns.map((column) => column.header),
+      sorted.map((row) => visibleColumns.map((column) => cellValue(row, column))),
+    );
   };
 
   if (isLoading) return <LoadingState />;
@@ -128,92 +156,280 @@ export function DataTable({
 
   return (
     <div className="workspace-table">
-      <div className="table-tools flex flex-wrap items-center gap-2">
-        <div className="relative min-w-[180px] max-w-lg flex-1">
-          <Search
-            className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-            aria-hidden
-          />
-          <Input
-            value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(0);
-            }}
-            placeholder={searchPlaceholder}
-            aria-label={searchPlaceholder}
-            className="pl-9"
-          />
-        </div>
-        <span className="table-count" aria-live="polite">
-          {sorted.length
-            ? `${current * pageSize + 1}–${Math.min(sorted.length, (current + 1) * pageSize)} of ${sorted.length}`
-            : "0 records"}
-        </span>
-        <div className="table-pager">
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Previous page"
-            disabled={current === 0}
-            onClick={() => setPage(current - 1)}
-          >
-            <ChevronLeft />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="Next page"
-            disabled={current >= pageCount - 1}
-            onClick={() => setPage(current + 1)}
-          >
-            <ChevronRight />
-          </Button>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" aria-label="Choose columns">
-              <Columns3 />
-              <span className="hidden sm:inline">Columns</span>
+      {!bare && (
+        <div className="table-tools flex flex-wrap items-center gap-2">
+          <div className="relative flex min-w-[180px] max-w-xl flex-1 items-center">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              value={search}
+              onChange={(event) => {
+                setSearch(event.target.value);
+                setPage(0);
+              }}
+              placeholder={searchPlaceholder}
+              aria-label={searchPlaceholder}
+              className="pl-9 pr-9"
+            />
+            <button
+              type="button"
+              aria-label="Search options"
+              aria-expanded={searchOptionsOpen}
+              onClick={() => setSearchOptionsOpen((open) => !open)}
+              className="absolute right-1 grid h-7 w-7 place-items-center rounded hover:bg-muted"
+            >
+              <ChevronDown className="h-4 w-4" aria-hidden />
+            </button>
+            {searchOptionsOpen && (
+              <div className="table-search-options">
+                <label>
+                  Search in
+                  <select
+                    value={searchField}
+                    onChange={(event) => {
+                      setSearchField(event.target.value);
+                      setPage(0);
+                    }}
+                  >
+                    <option value="">All fields</option>
+                    {columns.map((column) => (
+                      <option key={column.key} value={column.key}>
+                        {column.header}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Filter
+                  <select
+                    value={filterField}
+                    onChange={(event) => {
+                      setFilterField(event.target.value);
+                      setFilterValue("");
+                      setPage(0);
+                    }}
+                  >
+                    <option value="">All records</option>
+                    {columns.map((column) => (
+                      <option key={column.key} value={column.key}>
+                        {column.header}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {filterField && (
+                  <label>
+                    Value
+                    <select
+                      value={filterValue}
+                      onChange={(event) => {
+                        setFilterValue(event.target.value);
+                        setPage(0);
+                      }}
+                    >
+                      <option value="">All values</option>
+                      {filterOptions.map((value) => (
+                        <option key={value} value={value}>
+                          {value}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <label>
+                  Group by
+                  <select
+                    value={groupBy}
+                    onChange={(event) => {
+                      setGroupBy(event.target.value);
+                      setSort(null);
+                      setPage(0);
+                    }}
+                  >
+                    <option value="">No grouping</option>
+                    {columns.map((column) => (
+                      <option key={column.key} value={column.key}>
+                        {column.header}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
+          <span className="table-count" aria-live="polite">
+            {sorted.length
+              ? `${current * pageSize + 1}–${Math.min(sorted.length, (current + 1) * pageSize)} of ${sorted.length}`
+              : "0 records"}
+          </span>
+          <div className="table-pager">
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Previous page"
+              disabled={current === 0}
+              onClick={() => setPage(current - 1)}
+            >
+              <ChevronLeft />
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
-            {columns.map((column) => (
-              <DropdownMenuCheckboxItem
-                key={column.key}
-                checked={visibleColumns.some((visible) => visible.key === column.key)}
-                disabled={visibleColumns.length === 1 && visibleColumns[0]?.key === column.key}
-                onSelect={(event) => event.preventDefault()}
-                onCheckedChange={(checked) =>
-                  setHiddenColumns((previous) =>
-                    checked
-                      ? previous.filter((key) => key !== column.key)
-                      : [...previous, column.key],
-                  )
-                }
-              >
-                {column.header}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        {toolbar}
-        {exportName && rows.length > 0 && (
-          <Button variant="outline" size="sm" onClick={exportCsv}>
-            <Download className="h-4 w-4" aria-hidden />
-            Export
-          </Button>
-        )}
-      </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Next page"
+              disabled={current >= pageCount - 1}
+              onClick={() => setPage(current + 1)}
+            >
+              <ChevronRight />
+            </Button>
+          </div>
+          <div className="record-list-view" aria-label="View mode">
+            <button
+              type="button"
+              aria-label="List view"
+              aria-pressed={view === "list"}
+              onClick={() => setView("list")}
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Card view"
+              aria-pressed={view === "cards"}
+              onClick={() => setView("cards")}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" aria-label="List actions">
+                <Settings2 className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Visible columns</DropdownMenuLabel>
+              {columns.map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.key}
+                  checked={visibleColumns.some((visible) => visible.key === column.key)}
+                  disabled={visibleColumns.length === 1 && visibleColumns[0]?.key === column.key}
+                  onSelect={(event) => event.preventDefault()}
+                  onCheckedChange={(checked) =>
+                    setHiddenColumns((previous) =>
+                      checked
+                        ? previous.filter((key) => key !== column.key)
+                        : [...previous, column.key],
+                    )
+                  }
+                >
+                  {column.header}
+                </DropdownMenuCheckboxItem>
+              ))}
+              {exportName && rows.length > 0 && (
+                <DropdownMenuItem onSelect={exportCsv}>
+                  <Download className="h-4 w-4" aria-hidden /> Export filtered results
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {toolbar}
+        </div>
+      )}
+      {!bare && (filterValue || groupBy) && (
+        <div className="table-active-filters">
+          {filterValue && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterField("");
+                setFilterValue("");
+                setPage(0);
+              }}
+            >
+              {filterColumn?.header}: {filterValue} <span aria-hidden>×</span>
+            </button>
+          )}
+          {groupBy && (
+            <button
+              type="button"
+              onClick={() => {
+                setGroupBy("");
+                setPage(0);
+              }}
+            >
+              Grouped by {groupColumn?.header} <span aria-hidden>×</span>
+            </button>
+          )}
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
       ) : sorted.length === 0 ? (
         <EmptyState
           title="No matches"
-          description={`Nothing matches "${search}". Try a different search.`}
+          description={
+            search
+              ? `Nothing matches "${search}". Try a different search.`
+              : "No records match this filter."
+          }
         />
+      ) : view === "cards" && !bare ? (
+        <div className="record-list-cards">
+          {visible.map((row, index) => {
+            const group = groupColumn ? cellValue(row, groupColumn) || "Not set" : null;
+            const previous = index ? visible[index - 1] : null;
+            const showGroup =
+              group &&
+              (!previous || cellValue(previous, groupColumn!) !== cellValue(row, groupColumn!));
+            return (
+              <Fragment key={(row.id as string) ?? index}>
+                {showGroup && (
+                  <h3 className="record-list-group-heading">
+                    {groupColumn?.header}: {group}
+                  </h3>
+                )}
+                {recordTable ? (
+                  <a className="record-list-card" href={recordHref(recordTable, row.id)}>
+                    <strong>{recordLabel(recordTable, row)}</strong>
+                    {visibleColumns.slice(1, 5).map((column) => (
+                      <span key={column.key}>
+                        <small>{column.header}</small>
+                        {cellValue(row, column) || "—"}
+                      </span>
+                    ))}
+                  </a>
+                ) : onRowClick ? (
+                  <button
+                    type="button"
+                    className="record-list-card text-left"
+                    onClick={() => onRowClick(row)}
+                  >
+                    <strong>{cellValue(row, visibleColumns[0]!) || "Record"}</strong>
+                    {visibleColumns.slice(1, 5).map((column) => (
+                      <span key={column.key}>
+                        <small>{column.header}</small>
+                        {cellValue(row, column) || "—"}
+                      </span>
+                    ))}
+                  </button>
+                ) : (
+                  <div className="record-list-card" role="group">
+                    <strong>{cellValue(row, visibleColumns[0]!) || "Record"}</strong>
+                    {visibleColumns.slice(1, 5).map((column) => (
+                      <span key={column.key}>
+                        <small>{column.header}</small>
+                        {cellValue(row, column) || "—"}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </Fragment>
+            );
+          })}
+        </div>
       ) : (
         <div className="table-frame overflow-hidden border border-border bg-surface">
           <div className="max-h-[70vh] overflow-auto">
@@ -267,79 +483,95 @@ export function DataTable({
               </thead>
               <tbody>
                 {visible.map((row, index) => (
-                  <tr
-                    key={(row.id as string) ?? index}
-                    className={cn(
-                      "border-b border-border last:border-0",
-                      openRow && "cursor-pointer hover:bg-accent/60 focus-within:bg-accent/60",
-                    )}
-                    onClick={
-                      openRow
-                        ? (event) => {
-                            if (
-                              !(event.target as HTMLElement).closest(
-                                "a,button,input,select,textarea",
+                  <Fragment key={(row.id as string) ?? index}>
+                    {groupColumn &&
+                      (index === 0 ||
+                        cellValue(visible[index - 1], groupColumn) !==
+                          cellValue(row, groupColumn)) && (
+                        <tr className="record-list-group-row">
+                          <th
+                            scope="rowgroup"
+                            colSpan={visibleColumns.length + (recordTable ? 1 : 0)}
+                          >
+                            {groupColumn.header}: {cellValue(row, groupColumn) || "Not set"}
+                          </th>
+                        </tr>
+                      )}
+                    <tr
+                      className={cn(
+                        "border-b border-border last:border-0",
+                        openRow && "cursor-pointer hover:bg-accent/60 focus-within:bg-accent/60",
+                      )}
+                      onClick={
+                        openRow
+                          ? (event) => {
+                              if (
+                                !(event.target as HTMLElement).closest(
+                                  "a,button,input,select,textarea",
+                                )
                               )
-                            )
-                              openRow(row);
-                          }
-                        : undefined
-                    }
-                    tabIndex={openRow ? 0 : undefined}
-                    onKeyDown={
-                      openRow
-                        ? (event) => {
-                            if (event.key === "Enter" && event.target === event.currentTarget)
-                              openRow(row);
-                          }
-                        : undefined
-                    }
-                  >
-                    {visibleColumns.map((column) => (
-                      <td
-                        key={column.key}
-                        className={cn(
-                          "px-4 py-2.5 align-middle text-foreground",
-                          column.align === "right" && "text-right tabular",
-                          column.className,
-                        )}
-                      >
-                        {RELATION_TARGETS[
-                          column.key.endsWith("_id") ? column.key : `${column.key}_id`
-                        ] && row[column.key.endsWith("_id") ? column.key : `${column.key}_id`] ? (
-                          <RecordLink
-                            table={
-                              RELATION_TARGETS[
-                                column.key.endsWith("_id") ? column.key : `${column.key}_id`
-                              ]!
+                                openRow(row);
                             }
-                            id={row[column.key.endsWith("_id") ? column.key : `${column.key}_id`]}
-                            label={
-                              column.value
-                                ? String(column.value(row) ?? "") || undefined
-                                : undefined
+                          : undefined
+                      }
+                      tabIndex={openRow ? 0 : undefined}
+                      onKeyDown={
+                        openRow
+                          ? (event) => {
+                              if (event.key === "Enter" && event.target === event.currentTarget)
+                                openRow(row);
                             }
-                          />
-                        ) : column.render ? (
-                          column.render(row)
-                        ) : (
-                          cellValue(row, column) || <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                    ))}
-                    {recordTable && (
-                      <td className="px-4 py-2.5 text-right">
-                        <a
-                          href={recordHref(recordTable, row.id)}
-                          aria-label={`Open record: ${recordLabel(recordTable, row)}`}
-                          onClick={(event) => event.stopPropagation()}
-                          className="text-sm font-medium text-primary hover:underline"
+                          : undefined
+                      }
+                    >
+                      {visibleColumns.map((column) => (
+                        <td
+                          key={column.key}
+                          className={cn(
+                            "px-4 py-2.5 align-middle text-foreground",
+                            column.align === "right" && "text-right tabular",
+                            column.className,
+                          )}
                         >
-                          Open<span className="sr-only"> record</span> ↗
-                        </a>
-                      </td>
-                    )}
-                  </tr>
+                          {RELATION_TARGETS[
+                            column.key.endsWith("_id") ? column.key : `${column.key}_id`
+                          ] && row[column.key.endsWith("_id") ? column.key : `${column.key}_id`] ? (
+                            <RecordLink
+                              table={
+                                RELATION_TARGETS[
+                                  column.key.endsWith("_id") ? column.key : `${column.key}_id`
+                                ]!
+                              }
+                              id={row[column.key.endsWith("_id") ? column.key : `${column.key}_id`]}
+                              label={
+                                column.value
+                                  ? String(column.value(row) ?? "") || undefined
+                                  : undefined
+                              }
+                            />
+                          ) : column.render ? (
+                            column.render(row)
+                          ) : (
+                            cellValue(row, column) || (
+                              <span className="text-muted-foreground">—</span>
+                            )
+                          )}
+                        </td>
+                      ))}
+                      {recordTable && (
+                        <td className="px-4 py-2.5 text-right">
+                          <a
+                            href={recordHref(recordTable, row.id)}
+                            aria-label={`Open record: ${recordLabel(recordTable, row)}`}
+                            onClick={(event) => event.stopPropagation()}
+                            className="text-sm font-medium text-primary hover:underline"
+                          >
+                            Open<span className="sr-only"> record</span> ↗
+                          </a>
+                        </td>
+                      )}
+                    </tr>
+                  </Fragment>
                 ))}
               </tbody>
             </table>

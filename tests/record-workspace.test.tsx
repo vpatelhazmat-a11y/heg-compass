@@ -258,7 +258,7 @@ test("column picker hides a column while keeping at least one visible", async ()
       ]}
     />,
   );
-  fireEvent.keyDown(screen.getByRole("button", { name: "Choose columns" }), { key: "Enter" });
+  fireEvent.keyDown(screen.getByRole("button", { name: "List actions" }), { key: "Enter" });
   const status = await screen.findByRole("menuitemcheckbox", { name: "Status" });
   fireEvent.click(status);
   expect(screen.getByRole("menuitemcheckbox", { name: "Name" }).getAttribute("aria-disabled")).toBe(
@@ -268,4 +268,31 @@ test("column picker hides a column while keeping at least one visible", async ()
   await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
   expect(screen.queryByRole("columnheader", { name: "Status" })).toBeNull();
   expect(screen.getByRole("columnheader", { name: "Name" })).toBeTruthy();
+});
+
+test("list controls filter, group, and switch views without changing the underlying rows", () => {
+  mount(
+    <DataTable
+      rows={[
+        { id: 1, name: "Alpha", status: "Active" },
+        { id: 2, name: "Beta", status: "Pending" },
+        { id: 3, name: "Gamma", status: "Active" },
+      ]}
+      columns={[
+        { key: "name", header: "Name" },
+        { key: "status", header: "Status" },
+      ]}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Search options" }));
+  fireEvent.change(screen.getByLabelText("Filter"), { target: { value: "status" } });
+  fireEvent.change(screen.getByLabelText("Value"), { target: { value: "Active" } });
+  expect(screen.queryByRole("cell", { name: "Beta" })).toBeNull();
+  fireEvent.change(screen.getByLabelText("Group by"), { target: { value: "status" } });
+  expect(screen.getByRole("row", { name: "Status: Active" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Card view" }));
+  expect(screen.getByText("Alpha")).toBeTruthy();
+  expect(screen.queryByText("Beta")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "List view" }));
+  expect(screen.getByRole("cell", { name: "Gamma" })).toBeTruthy();
 });

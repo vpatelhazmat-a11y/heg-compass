@@ -157,245 +157,250 @@ function SiteDetail() {
         related={<SmartButtons table="sites" id={siteId} />}
       />
       <RecordRelations row={site} />
-      <RecordChatter table="sites" id={siteId} />
+      <div className="record-workspace-layout">
+        <RecordChatter table="sites" id={siteId} />
+        <div className="master-record space-y-6 p-6">
+          {related.error && <ErrorState message={related.error.message} />}
+          <Tabs defaultValue="operations">
+            <TabsList className="flex w-full flex-wrap justify-start">
+              <TabsTrigger value="operations">Operations</TabsTrigger>
+              <TabsTrigger value="safety">Safety & environmental</TabsTrigger>
+              <TabsTrigger value="related">Related work</TabsTrigger>
+            </TabsList>
 
-      <div className="master-record space-y-6 p-6">
-        {related.error && <ErrorState message={related.error.message} />}
-        <Tabs defaultValue="operations">
-          <TabsList className="flex w-full flex-wrap justify-start">
-            <TabsTrigger value="operations">Operations</TabsTrigger>
-            <TabsTrigger value="safety">Safety & environmental</TabsTrigger>
-            <TabsTrigger value="related">Related work</TabsTrigger>
-          </TabsList>
+            <TabsContent forceMount value="operations" className="mt-4 space-y-6">
+              {canWrite ? (
+                <RecordForm
+                  presentation="record"
+                  open
+                  onOpenChange={() => undefined}
+                  title="Site details"
+                  table="sites"
+                  recordId={siteId}
+                  initialValues={site}
+                  fields={siteFields.filter(
+                    (field) =>
+                      !["route_notes", "parking_notes", "special_instructions"].includes(
+                        field.name,
+                      ),
+                  )}
+                  invalidateKeys={[["site", siteId]]}
+                />
+              ) : (
+                <>
+                  <Panel title="Getting in and out">
+                    <FieldGrid>
+                      <Field label="Operating hours">{orDash(site.operating_hours)}</Field>
+                      <Field label="Emergency contact">{orDash(site.emergency_contact)}</Field>
+                      <Field label="Appointment required">
+                        {site.appointment_required ? "Yes" : "No"}
+                      </Field>
+                      <Field label="Access requirements" full>
+                        {orDash(site.access_requirements)}
+                      </Field>
+                      <Field label="Security requirements" full>
+                        {orDash(site.security_requirements)}
+                      </Field>
+                    </FieldGrid>
+                  </Panel>
+                  <Panel title="Loading and unloading">
+                    <FieldGrid columns={2}>
+                      <Field label="Loading instructions">
+                        {orDash(site.loading_requirements)}
+                      </Field>
+                      <Field label="Unloading instructions">
+                        {orDash(site.unloading_requirements)}
+                      </Field>
+                    </FieldGrid>
+                  </Panel>
+                </>
+              )}
+            </TabsContent>
 
-          <TabsContent forceMount value="operations" className="mt-4 space-y-6">
-            {canWrite ? (
-              <RecordForm
-                presentation="record"
-                open
-                onOpenChange={() => undefined}
-                title="Site details"
-                table="sites"
-                recordId={siteId}
-                initialValues={site}
-                fields={siteFields.filter(
-                  (field) =>
-                    !["route_notes", "parking_notes", "special_instructions"].includes(field.name),
-                )}
-                invalidateKeys={[["site", siteId]]}
-              />
-            ) : (
-              <>
-                <Panel title="Getting in and out">
-                  <FieldGrid>
-                    <Field label="Operating hours">{orDash(site.operating_hours)}</Field>
-                    <Field label="Emergency contact">{orDash(site.emergency_contact)}</Field>
-                    <Field label="Appointment required">
-                      {site.appointment_required ? "Yes" : "No"}
-                    </Field>
-                    <Field label="Access requirements" full>
-                      {orDash(site.access_requirements)}
-                    </Field>
-                    <Field label="Security requirements" full>
-                      {orDash(site.security_requirements)}
-                    </Field>
-                  </FieldGrid>
+            <TabsContent value="safety" className="mt-4 space-y-6">
+              <Panel title="Safety and environmental">
+                <FieldGrid columns={2}>
+                  <Field label="PPE required">{orDash(site.ppe_requirements)}</Field>
+                  <Field label="Safety requirements">{orDash(site.safety_requirements)}</Field>
+                  <Field label="Environmental requirements">
+                    {orDash(site.environmental_requirements)}
+                  </Field>
+                </FieldGrid>
+              </Panel>
+              {canViewSafety && (
+                <Panel title="Incidents at this site">
+                  <DataTable
+                    columns={[
+                      {
+                        key: "incident_date",
+                        header: "Date",
+                        render: (row) => formatDate(row.incident_date),
+                      },
+                      { key: "incident_type", header: "Type" },
+                      {
+                        key: "severity",
+                        header: "Severity",
+                        render: (row) => <StatusBadge status={row.severity} />,
+                      },
+                      {
+                        key: "status",
+                        header: "Status",
+                        render: (row) => <StatusBadge status={row.status} />,
+                      },
+                    ]}
+                    recordTable="incidents"
+                    rows={data?.incidents ?? []}
+                    isLoading={related.isLoading}
+                    emptyTitle="No incidents recorded at this site"
+                  />
                 </Panel>
-                <Panel title="Loading and unloading">
-                  <FieldGrid columns={2}>
-                    <Field label="Loading instructions">{orDash(site.loading_requirements)}</Field>
-                    <Field label="Unloading instructions">
-                      {orDash(site.unloading_requirements)}
-                    </Field>
-                  </FieldGrid>
-                </Panel>
-              </>
-            )}
-          </TabsContent>
+              )}
 
-          <TabsContent value="safety" className="mt-4 space-y-6">
-            <Panel title="Safety and environmental">
-              <FieldGrid columns={2}>
-                <Field label="PPE required">{orDash(site.ppe_requirements)}</Field>
-                <Field label="Safety requirements">{orDash(site.safety_requirements)}</Field>
-                <Field label="Environmental requirements">
-                  {orDash(site.environmental_requirements)}
-                </Field>
-              </FieldGrid>
-            </Panel>
-            {canViewSafety && (
-              <Panel title="Incidents at this site">
+              <Panel
+                title="Site requirements"
+                actions={addButton("Add requirement", "requirements", requirementFields)}
+              >
                 <DataTable
                   columns={[
+                    { key: "requirement", header: "Requirement" },
+                    { key: "category", header: "Category" },
                     {
-                      key: "incident_date",
-                      header: "Date",
-                      render: (row) => formatDate(row.incident_date),
+                      key: "mandatory",
+                      header: "Mandatory",
+                      render: (row) => (row.mandatory ? "Yes" : "No"),
                     },
-                    { key: "incident_type", header: "Type" },
                     {
-                      key: "severity",
-                      header: "Severity",
-                      render: (row) => <StatusBadge status={row.severity} />,
+                      key: "expiration_date",
+                      header: "Expires",
+                      render: (row) => formatDate(row.expiration_date),
+                    },
+                  ]}
+                  recordTable="requirements"
+                  rows={data?.requirements ?? []}
+                  isLoading={related.isLoading}
+                  emptyTitle="No site requirements recorded"
+                />
+              </Panel>
+
+              <Panel
+                title="Site assessments"
+                actions={addButton("Add assessment", "site_assessments", assessmentFields)}
+              >
+                <DataTable
+                  columns={[
+                    { key: "assessment_type", header: "Type" },
+                    {
+                      key: "assessment_date",
+                      header: "Assessed",
+                      render: (row) => formatDate(row.assessment_date),
+                    },
+                    {
+                      key: "next_review_date",
+                      header: "Next review",
+                      render: (row) => formatDate(row.next_review_date),
                     },
                     {
                       key: "status",
                       header: "Status",
                       render: (row) => <StatusBadge status={row.status} />,
                     },
+                    { key: "assessor", header: "Assessed by" },
                   ]}
-                  recordTable="incidents"
-                  rows={data?.incidents ?? []}
+                  recordTable="site_assessments"
+                  rows={data?.assessments ?? []}
                   isLoading={related.isLoading}
-                  emptyTitle="No incidents recorded at this site"
+                  emptyTitle="No assessments on file"
+                  emptyDescription="Assessments record what HEG verified at this location and when it needs review."
                 />
               </Panel>
+            </TabsContent>
+
+            <TabsContent value="related" className="mt-4 space-y-6">
+              <Panel
+                title="Documents"
+                actions={addButton("Add document", "documents", documentFields)}
+              >
+                <DataTable
+                  columns={[
+                    { key: "document_name", header: "Document" },
+                    { key: "document_type", header: "Type" },
+                    {
+                      key: "expiration_date",
+                      header: "Expires",
+                      render: (row) => formatDate(row.expiration_date),
+                    },
+                  ]}
+                  recordTable="documents"
+                  rows={data?.documents ?? []}
+                  isLoading={related.isLoading}
+                  emptyTitle="No documents recorded"
+                />
+              </Panel>
+
+              <Panel title="Products linked through site rates">
+                <DataTable
+                  recordTable="products"
+                  rows={data?.products ?? []}
+                  error={related.error}
+                  columns={[{ key: "product_name", header: "Product" }]}
+                  emptyTitle="No products linked through rates"
+                />
+              </Panel>
+              <Panel title="Origin and destination lanes">
+                <DataTable
+                  recordTable="lanes"
+                  rows={data?.lanes ?? []}
+                  error={related.error}
+                  columns={[
+                    { key: "lane_name", header: "Lane" },
+                    { key: "origin_description", header: "Origin" },
+                    { key: "destination_description", header: "Destination" },
+                  ]}
+                />
+              </Panel>
+              <Panel title="Current equipment assignments">
+                <DataTable
+                  recordTable="equipment_assignments"
+                  rows={data?.equipment ?? []}
+                  error={related.error}
+                  columns={[
+                    { key: "assignment_type", header: "Assignment" },
+                    {
+                      key: "start_date",
+                      header: "Start",
+                      render: (row) => formatDate(row.start_date),
+                    },
+                  ]}
+                />
+              </Panel>
+            </TabsContent>
+          </Tabs>
+          <section aria-label="Notes" className="pt-4">
+            {canWrite ? (
+              <RecordForm
+                presentation="record"
+                open
+                onOpenChange={() => undefined}
+                title="Notes"
+                table="sites"
+                recordId={siteId}
+                initialValues={site}
+                fields={siteFields.filter((field) =>
+                  ["route_notes", "parking_notes", "special_instructions"].includes(field.name),
+                )}
+                invalidateKeys={[["site", siteId]]}
+              />
+            ) : (
+              <Panel title="Notes">
+                <FieldGrid>
+                  <Field label="Route">{orDash(site.route_notes)}</Field>
+                  <Field label="Parking">{orDash(site.parking_notes)}</Field>
+                  <Field label="Special instructions">{orDash(site.special_instructions)}</Field>
+                </FieldGrid>
+              </Panel>
             )}
-
-            <Panel
-              title="Site requirements"
-              actions={addButton("Add requirement", "requirements", requirementFields)}
-            >
-              <DataTable
-                columns={[
-                  { key: "requirement", header: "Requirement" },
-                  { key: "category", header: "Category" },
-                  {
-                    key: "mandatory",
-                    header: "Mandatory",
-                    render: (row) => (row.mandatory ? "Yes" : "No"),
-                  },
-                  {
-                    key: "expiration_date",
-                    header: "Expires",
-                    render: (row) => formatDate(row.expiration_date),
-                  },
-                ]}
-                recordTable="requirements"
-                rows={data?.requirements ?? []}
-                isLoading={related.isLoading}
-                emptyTitle="No site requirements recorded"
-              />
-            </Panel>
-
-            <Panel
-              title="Site assessments"
-              actions={addButton("Add assessment", "site_assessments", assessmentFields)}
-            >
-              <DataTable
-                columns={[
-                  { key: "assessment_type", header: "Type" },
-                  {
-                    key: "assessment_date",
-                    header: "Assessed",
-                    render: (row) => formatDate(row.assessment_date),
-                  },
-                  {
-                    key: "next_review_date",
-                    header: "Next review",
-                    render: (row) => formatDate(row.next_review_date),
-                  },
-                  {
-                    key: "status",
-                    header: "Status",
-                    render: (row) => <StatusBadge status={row.status} />,
-                  },
-                  { key: "assessor", header: "Assessed by" },
-                ]}
-                recordTable="site_assessments"
-                rows={data?.assessments ?? []}
-                isLoading={related.isLoading}
-                emptyTitle="No assessments on file"
-                emptyDescription="Assessments record what HEG verified at this location and when it needs review."
-              />
-            </Panel>
-          </TabsContent>
-
-          <TabsContent value="related" className="mt-4 space-y-6">
-            <Panel
-              title="Documents"
-              actions={addButton("Add document", "documents", documentFields)}
-            >
-              <DataTable
-                columns={[
-                  { key: "document_name", header: "Document" },
-                  { key: "document_type", header: "Type" },
-                  {
-                    key: "expiration_date",
-                    header: "Expires",
-                    render: (row) => formatDate(row.expiration_date),
-                  },
-                ]}
-                recordTable="documents"
-                rows={data?.documents ?? []}
-                isLoading={related.isLoading}
-                emptyTitle="No documents recorded"
-              />
-            </Panel>
-
-            <Panel title="Products linked through site rates">
-              <DataTable
-                recordTable="products"
-                rows={data?.products ?? []}
-                error={related.error}
-                columns={[{ key: "product_name", header: "Product" }]}
-                emptyTitle="No products linked through rates"
-              />
-            </Panel>
-            <Panel title="Origin and destination lanes">
-              <DataTable
-                recordTable="lanes"
-                rows={data?.lanes ?? []}
-                error={related.error}
-                columns={[
-                  { key: "lane_name", header: "Lane" },
-                  { key: "origin_description", header: "Origin" },
-                  { key: "destination_description", header: "Destination" },
-                ]}
-              />
-            </Panel>
-            <Panel title="Current equipment assignments">
-              <DataTable
-                recordTable="equipment_assignments"
-                rows={data?.equipment ?? []}
-                error={related.error}
-                columns={[
-                  { key: "assignment_type", header: "Assignment" },
-                  {
-                    key: "start_date",
-                    header: "Start",
-                    render: (row) => formatDate(row.start_date),
-                  },
-                ]}
-              />
-            </Panel>
-          </TabsContent>
-        </Tabs>
-        <section aria-label="Notes" className="pt-4">
-          {canWrite ? (
-            <RecordForm
-              presentation="record"
-              open
-              onOpenChange={() => undefined}
-              title="Notes"
-              table="sites"
-              recordId={siteId}
-              initialValues={site}
-              fields={siteFields.filter((field) =>
-                ["route_notes", "parking_notes", "special_instructions"].includes(field.name),
-              )}
-              invalidateKeys={[["site", siteId]]}
-            />
-          ) : (
-            <Panel title="Notes">
-              <FieldGrid>
-                <Field label="Route">{orDash(site.route_notes)}</Field>
-                <Field label="Parking">{orDash(site.parking_notes)}</Field>
-                <Field label="Special instructions">{orDash(site.special_instructions)}</Field>
-              </FieldGrid>
-            </Panel>
-          )}
-        </section>
+          </section>
+        </div>
       </div>
 
       {creator && (

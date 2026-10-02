@@ -1062,3 +1062,253 @@
 .inline-record-editor { box-shadow: none; }
 .field-label { letter-spacing: 0; }
 .dark .app-desktop { background: #211e25; }
+.record-list-workspace {
+  min-height: calc(100vh - 150px);
+  background: var(--surface);
+}
+.record-list-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.record-list-search {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 180px;
+  max-width: 560px;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--muted-foreground);
+}
+.record-list-search:focus-within {
+  border-color: var(--primary);
+}
+.record-list-search input {
+  flex: 1;
+  min-width: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 13px;
+}
+.record-list-search select {
+  max-width: 140px;
+  border-left: 1px solid var(--border);
+  padding-left: 8px;
+  font-size: 12px;
+  color: var(--foreground);
+  background: transparent;
+}
+.record-list-control-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-foreground);
+}
+.record-list-control-group select {
+  max-width: 140px;
+  padding: 6px 5px;
+  border-radius: 3px;
+  color: var(--foreground);
+  background: transparent;
+  font-size: 12px;
+}
+.record-list-control-group select:hover {
+  background: var(--muted);
+}
+.record-list-view {
+  display: flex;
+  margin-left: auto;
+  border-left: 1px solid var(--border);
+  padding-left: 8px;
+}
+.record-list-view button,
+.record-list-pager button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 3px;
+  color: var(--muted-foreground);
+}
+.record-list-view button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--primary);
+}
+.record-list-view button:hover,
+.record-list-pager button:hover:not(:disabled) {
+  background: var(--muted);
+}
+.record-list-pager {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 7px 24px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+.record-list-pager button:disabled {
+  opacity: 0.3;
+}
+.record-list-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1px;
+  background: var(--border);
+}
+.record-list-card {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-height: 132px;
+  padding: 16px 20px;
+  background: var(--surface);
+  font-size: 13px;
+}
+.record-list-card:hover {
+  background: var(--muted);
+}
+.record-list-card strong {
+  font-size: 14px;
+  color: var(--primary);
+}
+.record-list-card span {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.record-list-card small {
+  color: var(--muted-foreground);
+}
+.record-list-group-heading {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 10px 20px;
+  background: var(--muted);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+.record-list-group-row th {
+  padding: 9px 16px;
+  background: var(--muted);
+  color: var(--primary);
+  text-align: left;
+  font-size: 12px;
+  font-weight: 600;
+}
+.workspace-table {
+  overflow: visible;
+}
+.table-search-options {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 4px);
+  left: 0;
+  width: min(360px, 90vw);
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: 0 10px 24px #23172520;
+}
+.table-search-options label {
+  display: grid;
+  gap: 4px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+.table-search-options select {
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  background: var(--surface);
+  color: var(--foreground);
+  font-size: 13px;
+}
+.record-workspace-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
+  align-items: start;
+  min-height: calc(100vh - 180px);
+  background: var(--surface);
+}
+.record-workspace-layout:not(:has(> .record-chatter)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+.record-workspace-layout > .record-chatter {
+  grid-column: 2;
+  grid-row: 1;
+  position: sticky;
+  top: 48px;
+  max-height: calc(100vh - 48px);
+  overflow: auto;
+  border-left: 1px solid var(--border);
+  border-bottom: 0;
+  padding: 20px;
+}
+.record-workspace-layout > .master-record,
+.record-workspace-layout > .record-workspace-main {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  max-width: none;
+  min-width: 0;
+}
+.record-workspace-layout .record-chatter h2 {
+  font-size: 13px;
+}
+.record-workspace-layout .record-chatter button {
+  padding-inline: 7px;
+  font-size: 12px;
+}
+.record-workspace-layout .record-chatter ol {
+  margin-top: 18px;
+}
+.table-active-filters { display: flex; flex-wrap: wrap; gap: 6px; padding: 5px 12px 8px; border-bottom: 1px solid var(--border); background: var(--surface); }
+.table-active-filters button { padding: 3px 7px; border-radius: 3px; background: var(--accent); color: var(--accent-foreground); font-size: 11px; }
+.table-active-filters button:hover { background: var(--muted); }
+.record-list-actions { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 3px; color: var(--muted-foreground); }
+.record-list-actions:hover { background: var(--muted); color: var(--foreground); }
+@media (max-width: 1100px) {
+  .record-workspace-layout {
+    display: flex;
+    flex-direction: column;
+  }
+  .record-workspace-layout > .record-chatter {
+    position: static;
+    order: 1;
+    width: 100%;
+    max-height: none;
+    border-left: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .record-workspace-layout > .master-record,
+  .record-workspace-layout > .record-workspace-main {
+    order: 2;
+  }
+}
+@media (max-width: 760px) {
+  .record-list-controls {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+  }
+  .record-list-search {
+    max-width: none;
+    flex-basis: 100%;
+  }
+  .record-list-control-group {
+    overflow-x: auto;
+    max-width: calc(100% - 80px);
+  }
+}

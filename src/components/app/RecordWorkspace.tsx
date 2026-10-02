@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "./StatusBadge";
 import { formatDate } from "@/lib/format";
@@ -13,7 +13,12 @@ import {
   editableRelationKeys,
   relationDependsOnCustomer,
 } from "@/lib/record-registry";
-import { isRecordId, loadRecordList } from "@/lib/record-lists";
+import {
+  isRecordId,
+  loadRecordListPage,
+  recordListFields,
+  type RecordPageRequest,
+} from "@/lib/record-lists";
 import { useSession } from "@/hooks/use-session";
 import { PageHeader } from "./PageHeader";
 import { DataTable } from "./DataTable";
@@ -24,22 +29,79 @@ import { SmartButtons } from "./SmartButtons";
 import { RecordForm, type FieldConfig } from "./RecordForm";
 import { RefusedLoadForm, toFormState } from "./RefusedLoadForm";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { downloadCsv } from "@/lib/csv";
+import {
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  LayoutGrid,
+  List,
+  Search,
+  Settings2,
+  SlidersHorizontal,
+} from "lucide-react";
+
+type ListState = RecordPageRequest & { view?: "list" | "cards" };
+type ListPatch = {
+  q?: string;
+  field?: string;
+  filterField?: string;
+  filterValue?: string;
+  groupBy?: string;
+  view?: "list" | "cards";
+  page?: number;
+};
 
 export function RecordListPage({
   table,
   parent,
   parentId,
+  state = {},
+  onChange,
 }: {
   table: string;
   parent?: string | undefined;
   parentId?: string | undefined;
+  state?: ListState;
+  onChange?: (patch: ListPatch) => void;
 }) {
   const definition = recordDefinition(table);
+  const fields = recordListFields(table);
+  const [searchInput, setSearchInput] = useState(state.search ?? "");
+  useEffect(() => setSearchInput(state.search ?? ""), [state.search]);
+  useEffect(() => {
+    if (searchInput === (state.search ?? "") || !onChange) return;
+    const timer = window.setTimeout(() => onChange({ q: searchInput, page: 0 }), 300);
+    return () => window.clearTimeout(timer);
+  }, [searchInput, state.search, onChange]);
+  const page = state.page ?? 0;
   const rows = useQuery({
-    queryKey: ["record-list", table, parent, parentId],
-    queryFn: () => loadRecordList(table, parent, parentId),
+    queryKey: [
+      "record-list-page",
+      table,
+      parent,
+      parentId,
+      state.search,
+      state.searchField,
+      state.filterField,
+      state.filterValue,
+      state.groupBy,
+      page,
+    ],
+    queryFn: () => loadRecordListPage(table, parent, parentId, state),
     enabled: Boolean(definition),
   });
+  useEffect(() => {
+    if (page > 0 && rows.data && page * 25 >= rows.data.count) {
+      onChange?.({ page: Math.max(0, Math.ceil(rows.data.count / 25) - 1) });
+    }
+  }, [page, rows.data, onChange]);
   if (!definition)
     return (
       <div className="p-6">
@@ -63,17 +125,190 @@ export function RecordListPage({
           { label: definition.label },
         ]}
       />
-      <div className="p-6">
-        <DataTable
-          recordTable={table}
-          columns={definition.columns.map((key) => ({ key, header: fieldLabel(key) }))}
-          rows={rows.data ?? []}
-          isLoading={rows.isLoading}
-          error={rows.error}
-          exportName={`heg-${table}`}
-          searchPlaceholder={`Search ${definition.label.toLowerCase()}`}
-          emptyTitle={`No ${definition.label.toLowerCase()} found`}
-        />
+      <div className="record-list-workspace">
+        <div className="record-list-controls">
+          <div className="record-list-search">
+            <Search className="h-4 w-4" aria-hidden />
+            <input
+              aria-label={`Search ${definition.label}`}
+              placeholder={`Search ${definition.label.toLowerCase()}…`}
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+            />
+            {fields.search.length > 1 && (
+              <select
+                aria-label="Search field"
+                value={state.searchField ?? fields.search[0]}
+                onChange={(event) => onChange?.({ field: event.target.value, page: 0 })}
+              >
+                {fields.search.map((name) => (
+                  <option key={name} value={name}>
+                    {fieldLabel(name)}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div className="record-list-control-group">
+            <SlidersHorizontal className="h-4 w-4" aria-hidden />
+            <select
+              aria-label="Filter field"
+              value={state.filterField ?? ""}
+              onChange={(event) =>
+                onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
+              }
+            >
+              <option value="">Filter</option>
+              {fields.filter.map((name) => (
+                <option key={name} value={name}>
+                  {fieldLabel(name)}
+                </option>
+              ))}
+            </select>
+            {state.filterField && (
+              <select
+                aria-label="Filter value"
+                value={state.filterValue ?? ""}
+                onChange={(event) => onChange?.({ filterValue: event.target.value, page: 0 })}
+              >
+                <option value="">All</option>
+                {definition.fields
+                  .find((field) => field.name === state.filterField)
+                  ?.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+              </select>
+            )}
+            <select
+              aria-label="Group by"
+              value={state.groupBy ?? ""}
+              onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
+            >
+              <option value="">Group by</option>
+              {fields.filter.map((name) => (
+                <option key={name} value={name}>
+                  {fieldLabel(name)}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="record-list-view" aria-label="View mode">
+            <button
+              type="button"
+              aria-label="List view"
+              aria-pressed={state.view !== "cards"}
+              onClick={() => onChange?.({ view: "list" })}
+            >
+              <List className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Card view"
+              aria-pressed={state.view === "cards"}
+              onClick={() => onChange?.({ view: "cards" })}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="record-list-actions" aria-label="List actions">
+                <Settings2 className="h-4 w-4" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                disabled={!rows.data?.rows.length}
+                onSelect={() =>
+                  downloadCsv(
+                    `heg-${table}-page-${page + 1}`,
+                    definition.columns.map(fieldLabel),
+                    (rows.data?.rows ?? []).map((row) =>
+                      definition.columns.map((key) => row[key] ?? ""),
+                    ),
+                  )
+                }
+              >
+                <Download className="h-4 w-4" /> Export this page
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+        {rows.isLoading ? (
+          <LoadingState />
+        ) : rows.error ? (
+          <ErrorState message={rows.error.message} />
+        ) : (
+          <>
+            {state.view === "cards" ? (
+              rows.data?.rows.length ? (
+                <div className="record-list-cards">
+                  {rows.data.rows.map((row, index) => (
+                    <div key={row.id} className="contents">
+                      {state.groupBy &&
+                        (index === 0 ||
+                          rows.data.rows[index - 1]?.[state.groupBy] !== row[state.groupBy]) && (
+                          <h3 className="record-list-group-heading">
+                            {fieldLabel(state.groupBy)}: {String(row[state.groupBy] ?? "Not set")}
+                          </h3>
+                        )}
+                      <a href={recordHref(table, row.id)} className="record-list-card">
+                        <strong>{recordLabel(table, row)}</strong>
+                        {definition.columns.slice(1, 4).map((key) => (
+                          <span key={key}>
+                            <small>{fieldLabel(key)}</small>
+                            {String(row[key] ?? "—")}
+                          </span>
+                        ))}
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState title={`No ${definition.label.toLowerCase()} found`} />
+              )
+            ) : (
+              <DataTable
+                bare
+                recordTable={table}
+                groupingField={state.groupBy}
+                columns={[
+                  ...definition.columns,
+                  ...(state.groupBy && !definition.columns.includes(state.groupBy)
+                    ? [state.groupBy]
+                    : []),
+                ].map((key) => ({ key, header: fieldLabel(key), sortable: false }))}
+                rows={rows.data?.rows ?? []}
+                emptyTitle={`No ${definition.label.toLowerCase()} found`}
+              />
+            )}
+            <div className="record-list-pager">
+              <span aria-live="polite">
+                {rows.data?.count
+                  ? `${page * 25 + 1}–${Math.min(rows.data.count, (page + 1) * 25)} of ${rows.data.count}`
+                  : "0 records"}
+              </span>
+              <button
+                type="button"
+                aria-label="Previous page"
+                disabled={page === 0}
+                onClick={() => onChange?.({ page: page - 1 })}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                aria-label="Next page"
+                disabled={!rows.data || (page + 1) * 25 >= rows.data.count}
+                onClick={() => onChange?.({ page: page + 1 })}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );
@@ -178,73 +413,75 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
         ]}
       />
       <RecordRelations row={row} />
-      <RecordChatter table={table} id={id} />
-      <div className="space-y-6 px-3 pb-6 sm:px-6">
-        {editing && table === "refused_loads" ? (
-          <RefusedLoadForm
-            recordId={id}
-            initial={toFormState(row)}
-            onCancel={() => setEditing(false)}
-            onSaved={() => {
-              setEditing(false);
-              void record.refetch();
-            }}
-          />
-        ) : canEdit(table) && table !== "refused_loads" ? (
-          <RecordEditor table={table} row={row} />
-        ) : editing ? (
-          <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
-        ) : (
-          <article className="record-sheet" aria-label="Record details">
-            {[...grouped].map(([section, fields]) => (
-              <section
-                className={`record-section ${section === "Notes" || section === "Record information" ? "record-section-wide" : ""}`}
-                key={section}
-              >
-                <h2>{section}</h2>
-                <dl className="grid gap-x-12">
-                  {fields.map(([key, value]) => (
-                    <div key={key} className="record-field">
-                      <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
-                      <dd>
-                        {table === "refused_loads" && canEdit(table) ? (
-                          <button
-                            type="button"
-                            className="record-edit-value"
-                            onClick={() => setEditing(true)}
-                            aria-label={`Edit ${labels.get(key) ?? fieldLabel(key)}`}
-                          >
-                            {displayValue(key, value)}
-                          </button>
-                        ) : (
-                          displayValue(key, value)
-                        )}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </section>
-            ))}
-          </article>
-        )}
-        {table === "rates" && (
-          <section aria-label="Rate history">
-            <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
-            <DataTable
-              rows={history.data ?? []}
-              isLoading={history.isLoading}
-              error={history.error}
-              columns={[
-                { key: "created_at", header: "Changed" },
-                { key: "previous_amount", header: "Previous amount" },
-                { key: "new_amount", header: "New amount" },
-                { key: "effective_date", header: "Effective" },
-                { key: "reason", header: "Reason" },
-              ]}
-              emptyTitle="No revisions recorded"
+      <div className="record-workspace-layout">
+        <RecordChatter table={table} id={id} />
+        <div className="record-workspace-main space-y-6 px-3 pb-6 sm:px-6">
+          {editing && table === "refused_loads" ? (
+            <RefusedLoadForm
+              recordId={id}
+              initial={toFormState(row)}
+              onCancel={() => setEditing(false)}
+              onSaved={() => {
+                setEditing(false);
+                void record.refetch();
+              }}
             />
-          </section>
-        )}
+          ) : canEdit(table) && table !== "refused_loads" ? (
+            <RecordEditor table={table} row={row} />
+          ) : editing ? (
+            <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
+          ) : (
+            <article className="record-sheet" aria-label="Record details">
+              {[...grouped].map(([section, fields]) => (
+                <section
+                  className={`record-section ${section === "Notes" || section === "Record information" ? "record-section-wide" : ""}`}
+                  key={section}
+                >
+                  <h2>{section}</h2>
+                  <dl className="grid gap-x-12">
+                    {fields.map(([key, value]) => (
+                      <div key={key} className="record-field">
+                        <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
+                        <dd>
+                          {table === "refused_loads" && canEdit(table) ? (
+                            <button
+                              type="button"
+                              className="record-edit-value"
+                              onClick={() => setEditing(true)}
+                              aria-label={`Edit ${labels.get(key) ?? fieldLabel(key)}`}
+                            >
+                              {displayValue(key, value)}
+                            </button>
+                          ) : (
+                            displayValue(key, value)
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              ))}
+            </article>
+          )}
+          {table === "rates" && (
+            <section aria-label="Rate history">
+              <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
+              <DataTable
+                rows={history.data ?? []}
+                isLoading={history.isLoading}
+                error={history.error}
+                columns={[
+                  { key: "created_at", header: "Changed" },
+                  { key: "previous_amount", header: "Previous amount" },
+                  { key: "new_amount", header: "New amount" },
+                  { key: "effective_date", header: "Effective" },
+                  { key: "reason", header: "Reason" },
+                ]}
+                emptyTitle="No revisions recorded"
+              />
+            </section>
+          )}
+        </div>
       </div>
     </>
   );
