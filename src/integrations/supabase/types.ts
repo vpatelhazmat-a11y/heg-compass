@@ -450,6 +450,8 @@ export type Database = {
           document_type: string | null
           effective_date: string | null
           expiration_date: string | null
+          file_path: string | null
+          file_name: string | null
           id: string
           linked_bid_fk: string | null
           linked_contract_fk: string | null
@@ -477,6 +479,8 @@ export type Database = {
           document_type?: string | null
           effective_date?: string | null
           expiration_date?: string | null
+          file_path?: string | null
+          file_name?: string | null
           id?: string
           linked_bid_fk?: string | null
           linked_contract_fk?: string | null
@@ -504,6 +508,8 @@ export type Database = {
           document_type?: string | null
           effective_date?: string | null
           expiration_date?: string | null
+          file_path?: string | null
+          file_name?: string | null
           id?: string
           linked_bid_fk?: string | null
           linked_contract_fk?: string | null

@@ -7,8 +7,8 @@ This tracks the user's ten-phase HEG Hub rebuild plan against the running applic
 | 1. Navigation and shell | App launcher, plum top bar, module navigation, global search, and reorderable apps are live. | Signed-in visual review and final responsive polish. |
 | 2. Navigable records | Registered lists, record pages, relational links, smart buttons, and filtered related lists are live. | Audit every relation and module-specific list for parity. |
 | 3. Chatter | Messages, internal notes, scheduled tasks, and field-change entries exist. | Mention picker, followers, notification delivery, typed activities, assignees, and overdue/today states. |
-| 4. Notes and attachments | Customer, site, and equipment Notes sections use plain text. | Shared rich-text editor, sanitized storage, all-record coverage, file upload and document registration. |
-| 5. Documents | A flat document record list exists. | File storage, folder-style record tree, upload, filters, signed downloads, expiry alerts. |
+| 4. Notes and attachments | Customer, site, and equipment Notes sections use plain text. Document records can hold one private file. | Shared rich-text editor, sanitized storage, all-record notes coverage, and attachment entry points throughout records. |
+| 5. Documents | A flat document record list and private file upload with short-lived signed downloads exist. | Folder-style record tree, richer filters, file replacement/versioning, and expiry alerts. |
 | 6. Import/export | List export exists. Import batch and staging tables exist. | Templates, mapping, validation preview, upsert matching, batch provenance, rejects download, and complete per-module export. |
 | 7. Reporting | Fixed report summaries and Refused Loads analysis exist. | Report definition model, editable filters/grouping/measures, saved and shared views, pivot/charts/kanban, XLSX export. |
 | 8. Notifications/digests | The top-bar activity menu shows assigned tasks and approaching bid, document, and contract deadlines. | Mention notifications, subscriptions, email provider, schedule, delivery logs, and cross-device preferences. |

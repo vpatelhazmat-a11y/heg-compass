@@ -26,11 +26,13 @@ import { SavedViews } from "./SavedViews";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordRelations } from "./RecordLink";
 import { RecordChatter } from "./RecordChatter";
+import { DocumentFile } from "./DocumentFile";
 import { ArchiveVisibility, RecordArchiveActions } from "./RecordArchiveActions";
 import { SmartButtons } from "./SmartButtons";
 import { RecordForm, type FieldConfig } from "./RecordForm";
 import { RefusedLoadForm, toFormState } from "./RefusedLoadForm";
 import { Button } from "@/components/ui/button";
+import { documentFields } from "@/lib/entities";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,6 +46,7 @@ import {
   Download,
   LayoutGrid,
   List,
+  Plus,
   Search,
   Settings2,
   SlidersHorizontal,
@@ -74,10 +77,11 @@ export function RecordListPage({
   state?: ListState;
   onChange?: (patch: ListPatch) => void;
 }) {
-  const { session } = useSession();
+  const { session, canEdit } = useSession();
   const definition = recordDefinition(table);
   const fields = recordListFields(table);
   const [searchInput, setSearchInput] = useState(state.search ?? "");
+  const [creatingDocument, setCreatingDocument] = useState(false);
   useEffect(() => setSearchInput(state.search ?? ""), [state.search]);
   useEffect(() => {
     if (searchInput === (state.search ?? "") || !onChange) return;
@@ -117,6 +121,13 @@ export function RecordListPage({
     <>
       <PageHeader
         title={definition.label}
+        actions={
+          table === "documents" && canEdit("documents") ? (
+            <Button onClick={() => setCreatingDocument(true)}>
+              <Plus className="h-4 w-4" /> New document
+            </Button>
+          ) : undefined
+        }
         description={
           parent
             ? "Records linked to the selected record."
@@ -356,6 +367,25 @@ export function RecordListPage({
           </>
         )}
       </div>
+      {table === "documents" && (
+        <RecordForm
+          open={creatingDocument}
+          onOpenChange={setCreatingDocument}
+          title="New document"
+          table="documents"
+          fields={documentFields}
+          onSaved={(saved) => window.location.assign(recordHref("documents", saved.id))}
+          defaults={
+            parent && parentId
+              ? {
+                  linked_entity_type:
+                    parent === "opportunities" ? "opportunity" : parent.replace(/s$/, ""),
+                  linked_entity_id: parentId,
+                }
+              : undefined
+          }
+        />
+      )}
     </>
   );
 }
@@ -370,6 +400,8 @@ const hidden = new Set([
   "entity_id",
   "import_batch_id",
   "source_row_id",
+  "file_path",
+  "file_name",
 ]);
 
 export function RecordDetailPage({ table, id }: { table: string; id: string }) {
@@ -543,6 +575,7 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
               />
             </section>
           )}
+          {table === "documents" && <DocumentFile document={row} />}
         </div>
       </div>
     </>
