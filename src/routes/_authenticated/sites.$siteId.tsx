@@ -1,7 +1,6 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
-import { RichTextView } from "@/components/app/RichText";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -179,8 +178,9 @@ function SiteDetail() {
             </TabsList>
 
             <TabsContent forceMount value="operations" className="mt-4 space-y-6">
-              {canWrite ? (
+              {
                 <RecordForm
+                  readOnly={!canWrite}
                   presentation="record"
                   open
                   onOpenChange={() => undefined}
@@ -196,35 +196,7 @@ function SiteDetail() {
                   )}
                   invalidateKeys={[["site", siteId]]}
                 />
-              ) : (
-                <>
-                  <Panel title="Getting in and out">
-                    <FieldGrid>
-                      <Field label="Operating hours">{orDash(site.operating_hours)}</Field>
-                      <Field label="Emergency contact">{orDash(site.emergency_contact)}</Field>
-                      <Field label="Appointment required">
-                        {site.appointment_required ? "Yes" : "No"}
-                      </Field>
-                      <Field label="Access requirements" full>
-                        {orDash(site.access_requirements)}
-                      </Field>
-                      <Field label="Security requirements" full>
-                        {orDash(site.security_requirements)}
-                      </Field>
-                    </FieldGrid>
-                  </Panel>
-                  <Panel title="Loading and unloading">
-                    <FieldGrid columns={2}>
-                      <Field label="Loading instructions">
-                        {orDash(site.loading_requirements)}
-                      </Field>
-                      <Field label="Unloading instructions">
-                        {orDash(site.unloading_requirements)}
-                      </Field>
-                    </FieldGrid>
-                  </Panel>
-                </>
-              )}
+              }
             </TabsContent>
 
             <TabsContent value="safety" className="mt-4 space-y-6">
@@ -386,8 +358,9 @@ function SiteDetail() {
             </TabsContent>
           </Tabs>
           <section aria-label="Notes" className="pt-4">
-            {canWrite ? (
+            {
               <RecordForm
+                readOnly={!canWrite}
                 presentation="record"
                 open
                 onOpenChange={() => undefined}
@@ -400,27 +373,7 @@ function SiteDetail() {
                 )}
                 invalidateKeys={[["site", siteId]]}
               />
-            ) : (
-              <Panel title="Notes">
-                <FieldGrid>
-                  <Field label="Route">
-                    <RichTextView document={site.rich_text?.route_notes} text={site.route_notes} />
-                  </Field>
-                  <Field label="Parking">
-                    <RichTextView
-                      document={site.rich_text?.parking_notes}
-                      text={site.parking_notes}
-                    />
-                  </Field>
-                  <Field label="Special instructions">
-                    <RichTextView
-                      document={site.rich_text?.special_instructions}
-                      text={site.special_instructions}
-                    />
-                  </Field>
-                </FieldGrid>
-              </Panel>
-            )}
+            }
           </section>
         </div>
       </div>

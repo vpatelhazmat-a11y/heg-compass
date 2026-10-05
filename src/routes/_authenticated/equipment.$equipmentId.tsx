@@ -1,13 +1,12 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
-import { RichTextView } from "@/components/app/RichText";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { PageHeader, MetaItem } from "@/components/app/PageHeader";
-import { Panel, Field, FieldGrid } from "@/components/app/Panels";
+import { Panel } from "@/components/app/Panels";
 import { EmptyState, ErrorState, LoadingState } from "@/components/app/EmptyState";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import { DataTable } from "@/components/app/DataTable";
@@ -237,8 +236,9 @@ function EquipmentDetail() {
             </TabsList>
 
             <TabsContent forceMount value="specification" className="mt-4 space-y-6">
-              {canWrite ? (
+              {
                 <RecordForm
+                  readOnly={!canWrite}
                   presentation="record"
                   open
                   onOpenChange={() => undefined}
@@ -249,25 +249,7 @@ function EquipmentDetail() {
                   fields={equipmentFields.filter((field) => field.name !== "notes")}
                   invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
                 />
-              ) : (
-                <>
-                  <Panel title="Unit details">
-                    <FieldGrid>
-                      <Field label="Unit number">{unit.unit_number}</Field>
-                      <Field label="Category">{orDash(unit.category)}</Field>
-                      <Field label="Type">{orDash(unit.equipment_type)}</Field>
-                      <Field label="Year">{orDash(unit.model_year)}</Field>
-                      <Field label="Make">{orDash(unit.make)}</Field>
-                      <Field label="Color">{orDash(unit.color)}</Field>
-                      <Field label="Capacity">{orDash(unit.capacity)}</Field>
-                      <Field label="Certified weight">{orDash(unit.certified_weight)}</Field>
-                      <Field label="VIN">{orDash(unit.vin)}</Field>
-                      <Field label="Serial number">{orDash(unit.serial_number)}</Field>
-                      <Field label="Plate number">{orDash(unit.plate_number)}</Field>
-                    </FieldGrid>
-                  </Panel>
-                </>
-              )}
+              }
             </TabsContent>
 
             <TabsContent value="rates" className="mt-4 space-y-6">
@@ -465,8 +447,9 @@ function EquipmentDetail() {
             </TabsContent>
           </Tabs>
           <section aria-label="Notes" className="pt-4">
-            {canWrite ? (
+            {
               <RecordForm
+                readOnly={!canWrite}
                 presentation="record"
                 open
                 onOpenChange={() => undefined}
@@ -477,11 +460,7 @@ function EquipmentDetail() {
                 fields={equipmentFields.filter((field) => field.name === "notes")}
                 invalidateKeys={[["equipment-unit", equipmentId], ["equipment"]]}
               />
-            ) : (
-              <Panel title="Notes">
-                <RichTextView document={unit.rich_text?.notes} text={unit.notes} />
-              </Panel>
-            )}
+            }
           </section>
         </div>
       </div>

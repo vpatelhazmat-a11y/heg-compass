@@ -17,8 +17,19 @@ import { ModuleNavigation } from "./ModuleNavigation";
 import { activeModule } from "@/lib/modules";
 import { CommandPalette } from "./CommandPalette";
 import { ActivityMenu } from "./ActivityMenu";
+import { DraftProtection } from "./DraftProtection";
+import { useHasDrafts } from "@/hooks/use-draft-protection";
 
 export function AppShell({ children }: { children: ReactNode }) {
+  return (
+    <DraftProtection>
+      <ShellLayout>{children}</ShellLayout>
+    </DraftProtection>
+  );
+}
+
+function ShellLayout({ children }: { children: ReactNode }) {
+  const hasDrafts = useHasDrafts();
   const { session, roles } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -162,8 +173,9 @@ export function AppShell({ children }: { children: ReactNode }) {
                 Administration
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onSelect={signOut}>
-              <LogOut className="h-4 w-4" aria-hidden /> Sign out
+            <DropdownMenuItem onSelect={signOut} disabled={hasDrafts}>
+              <LogOut className="h-4 w-4" aria-hidden />{" "}
+              {hasDrafts ? "Save or discard edits to sign out" : "Sign out"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

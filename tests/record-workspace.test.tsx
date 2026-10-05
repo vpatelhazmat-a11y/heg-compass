@@ -188,7 +188,7 @@ test("rate editor requires a fresh reason and uses the versioned RPC without ide
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   expect(await screen.findByText("Reason for change is required")).toBeTruthy();
   expect(mocks.rpc).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: /^Edit Reason for change:/ }));
+  expect(screen.getByLabelText(/Reason for change/)).toBe(document.activeElement);
   fireEvent.change(screen.getByLabelText(/Reason for change/), {
     target: { value: "Annual review" },
   });
@@ -257,7 +257,7 @@ test("equipment revisions use the saved version and require a new reason for eac
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   expect(await screen.findByText("Reason for change is required")).toBeTruthy();
   expect(mocks.update).toHaveBeenCalledOnce();
-  fireEvent.click(screen.getByRole("button", { name: /^Edit Reason for change:/ }));
+  expect(screen.getByLabelText(/Reason for change/)).toBe(document.activeElement);
   fireEvent.change(screen.getByLabelText(/Reason for change/), { target: { value: "Adjustment" } });
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
@@ -325,6 +325,75 @@ test("unknown record routes cannot read arbitrary database tables", () => {
   mount(<RecordDetailPage table="user_roles" id={id} />);
   expect(screen.getByText("Record not found")).toBeTruthy();
   expect(mocks.getRow).not.toHaveBeenCalled();
+});
+
+test("ordinary record saves carry the loaded version and keep failed edits", async () => {
+  mocks.update.mockRejectedValue(new Error("This record changed. Refresh before saving."));
+  mount(
+    <RecordForm
+      presentation="record"
+      open
+      onOpenChange={() => undefined}
+      title="Customer details"
+      table="customers"
+      recordId={customer}
+      initialValues={{ legal_name: "Before", updated_at: "2026-10-05T12:00:00Z" }}
+      fields={[{ name: "legal_name", label: "Legal name", required: true }]}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Legal name:/ }));
+  fireEvent.change(screen.getByLabelText(/Legal name/), { target: { value: "My draft" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await screen.findByRole("alert");
+  expect(mocks.update).toHaveBeenCalledWith(
+    "customers",
+    customer,
+    { legal_name: "My draft" },
+    "2026-10-05T12:00:00Z",
+  );
+  expect(screen.getByLabelText(/Legal name/)).toHaveProperty("value", "My draft");
+  fireEvent.click(screen.getByRole("button", { name: "Discard" }));
+  expect(screen.queryByRole("alert")).toBeNull();
+});
+
+test("closing a creation drawer retains the draft until discarded explicitly", async () => {
+  const close = vi.fn();
+  mount(
+    <RecordForm
+      open
+      onOpenChange={close}
+      title="New customer"
+      table="customers"
+      fields={[{ name: "legal_name", label: "Legal name", required: true }]}
+    />,
+  );
+  fireEvent.change(screen.getByLabelText(/Legal name/), { target: { value: "Keep this draft" } });
+  fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  await screen.findByRole("alertdialog");
+  expect(close).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Keep editing" }));
+  expect(screen.getByLabelText(/Legal name/)).toHaveProperty("value", "Keep this draft");
+  fireEvent.click(screen.getByRole("button", { name: "Close" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Discard draft" }));
+  expect(close).toHaveBeenCalledWith(false);
+});
+
+test("read-only record sheets show data without editing or save controls", () => {
+  mount(
+    <RecordForm
+      presentation="record"
+      readOnly
+      open
+      onOpenChange={() => undefined}
+      title="Customer details"
+      table="customers"
+      initialValues={{ legal_name: "Read-only customer" }}
+      fields={[{ name: "legal_name", label: "Legal name" }]}
+    />,
+  );
+  expect(screen.getByText("Read-only customer")).toBeTruthy();
+  expect(screen.queryByRole("button", { name: /^Edit / })).toBeNull();
+  expect(screen.queryByRole("button", { name: "Create" })).toBeNull();
 });
 
 test("direct record editing discards changes without changing the stored rate", async () => {

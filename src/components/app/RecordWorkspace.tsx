@@ -580,6 +580,7 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
           {editing && table === "refused_loads" ? (
             <RefusedLoadForm
               recordId={id}
+              expectedUpdatedAt={row.updated_at}
               initial={toFormState(row)}
               onCancel={() => setEditing(false)}
               onSaved={() => {

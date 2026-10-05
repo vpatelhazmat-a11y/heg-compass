@@ -1,7 +1,7 @@
 import { useSession } from "@/hooks/use-session";
 import { formPayload, validateFields } from "@/lib/form-values";
 import { supabase } from "@/integrations/supabase/client";
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -17,10 +17,21 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { insertRow, updateRow, type Row } from "@/lib/data";
 import { formatDate } from "@/lib/format";
 import { noteDocument, parseNoteValue } from "@/lib/rich-text";
 import { RichTextView } from "./RichText";
+import { useDraftProtection } from "@/hooks/use-draft-protection";
 const RichTextEditor = lazy(() => import("./RichTextEditor"));
 
 export type FieldType =
@@ -66,8 +77,10 @@ export function RecordForm({
   invalidateKeys = [],
   onSaved,
   presentation = "sheet",
+  readOnly = false,
 }: {
   presentation?: "sheet" | "inline" | "record";
+  readOnly?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -81,6 +94,7 @@ export function RecordForm({
   onSaved?: (row: Row) => void;
 }) {
   const queryClient = useQueryClient();
+  const formId = useId();
   const { canEdit } = useSession();
   const [values, setValues] = useState<Row>(() => startingValues(fields, initialValues, defaults));
   const [baseline, setBaseline] = useState<Row>(() =>
@@ -88,12 +102,14 @@ export function RecordForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeField, setActiveField] = useState<string | null>(null);
+  const [closeRequested, setCloseRequested] = useState(false);
   const [expectedUpdatedAt, setExpectedUpdatedAt] = useState<string | undefined>(
     initialValues?.updated_at,
   );
   const dirty = fields.some(
     (field) => String(values[field.name] ?? "") !== String(baseline[field.name] ?? ""),
   );
+  const clearDraft = useDraftProtection(open && dirty, title);
 
   useEffect(() => {
     if (!open) return;
@@ -105,6 +121,16 @@ export function RecordForm({
     setExpectedUpdatedAt(initialValues?.updated_at);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, recordId]);
+
+  useEffect(() => {
+    if (!open || dirty || initialValues?.updated_at === expectedUpdatedAt) return;
+    const next = startingValues(fields, initialValues, defaults);
+    setValues(next);
+    setBaseline(next);
+    setExpectedUpdatedAt(initialValues?.updated_at);
+    // A refreshed version can update clean editors; an active draft keeps its original version.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialValues?.updated_at]);
 
   const sections = useMemo(() => {
     const grouped = new Map<string, FieldConfig[]>();
@@ -136,16 +162,12 @@ export function RecordForm({
         saved = Array.isArray(data) ? data[0] : data;
       } else
         saved = recordId
-          ? await updateRow(
-              table,
-              recordId,
-              payload,
-              table === "equipment_leases" ? expectedUpdatedAt : undefined,
-            )
+          ? await updateRow(table, recordId, payload, expectedUpdatedAt)
           : await insertRow(table, payload);
       return saved;
     },
     onSuccess: (saved) => {
+      clearDraft();
       setExpectedUpdatedAt(saved.updated_at);
       toast.success(recordId ? "Changes saved" : "Record created");
       queryClient.invalidateQueries();
@@ -166,7 +188,12 @@ export function RecordForm({
   const submit = () => {
     const nextErrors = validateFields(fields, values);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      const first = Object.keys(nextErrors)[0]!;
+      setActiveField(first);
+      window.setTimeout(() => document.getElementById(`${formId}-field-${first}`)?.focus(), 0);
+      return;
+    }
     mutation.mutate();
   };
 
@@ -205,12 +232,12 @@ export function RecordForm({
                   }
                 >
                   {sectionFields.map((field) => {
-                    const id = `field-${field.name}`;
+                    const id = `${formId}-field-${field.name}`;
                     const error = errors[field.name];
                     const isDisplayValue =
                       presentation === "record" &&
                       field.type !== "checkbox" &&
-                      activeField !== field.name;
+                      (readOnly || activeField !== field.name);
                     const rawValue = values[field.name];
                     const displayValue =
                       field.type === "select"
@@ -224,7 +251,9 @@ export function RecordForm({
                         key={field.name}
                         className={
                           [
-                            presentation === "record" ? "record-data-field" : "",
+                            presentation === "record"
+                              ? `record-data-field ${field.type === "richtext" || field.type === "textarea" ? "record-data-field-long" : ""}`
+                              : "",
                             presentation === "sheet" && (field.full || field.type === "textarea")
                               ? "sm:col-span-2"
                               : "",
@@ -245,6 +274,7 @@ export function RecordForm({
                             <Checkbox
                               id={id}
                               checked={Boolean(values[field.name])}
+                              disabled={readOnly}
                               onCheckedChange={(checked) =>
                                 setValues((prev: Row) => ({
                                   ...prev,
@@ -266,13 +296,15 @@ export function RecordForm({
                               isDisplayValue ? (
                                 <div
                                   id={id}
-                                  role="button"
-                                  tabIndex={0}
+                                  role={readOnly ? "document" : "button"}
+                                  tabIndex={readOnly ? undefined : 0}
                                   className="record-data-value"
-                                  aria-label={`Edit ${field.label}`}
-                                  onClick={() => setActiveField(field.name)}
+                                  aria-label={readOnly ? field.label : `Edit ${field.label}`}
+                                  onClick={() => {
+                                    if (!readOnly) setActiveField(field.name);
+                                  }}
                                   onKeyDown={(event) => {
-                                    if (event.key === "Enter" || event.key === " ") {
+                                    if (!readOnly && (event.key === "Enter" || event.key === " ")) {
                                       event.preventDefault();
                                       setActiveField(field.name);
                                     }
@@ -304,8 +336,9 @@ export function RecordForm({
                               <button
                                 id={id}
                                 type="button"
+                                disabled={readOnly}
                                 className="record-data-value"
-                                aria-label={`Edit ${field.label}: ${String(displayValue ?? "").trim() || "empty"}`}
+                                aria-label={`${readOnly ? "" : "Edit "}${field.label}: ${String(displayValue ?? "").trim() || "empty"}`}
                                 onClick={() => setActiveField(field.name)}
                               >
                                 {String(displayValue ?? "").trim() || (
@@ -315,6 +348,9 @@ export function RecordForm({
                             ) : field.type === "textarea" ? (
                               <Textarea
                                 id={id}
+                                aria-invalid={Boolean(error)}
+                                aria-required={field.required}
+                                aria-describedby={error || field.help ? `${id}-message` : undefined}
                                 autoFocus={presentation === "record"}
                                 rows={3}
                                 value={values[field.name] ?? ""}
@@ -334,6 +370,9 @@ export function RecordForm({
                             ) : field.type === "select" ? (
                               <select
                                 id={id}
+                                aria-invalid={Boolean(error)}
+                                aria-required={field.required}
+                                aria-describedby={error || field.help ? `${id}-message` : undefined}
                                 autoFocus={presentation === "record"}
                                 value={values[field.name] ?? ""}
                                 onChange={(event) =>
@@ -365,6 +404,8 @@ export function RecordForm({
                             ) : (
                               <Input
                                 id={id}
+                                aria-required={field.required}
+                                aria-describedby={error || field.help ? `${id}-message` : undefined}
                                 autoFocus={presentation === "record"}
                                 type={
                                   field.type === "date"
@@ -386,9 +427,22 @@ export function RecordForm({
                               />
                             )}
                             {field.help && !error && (
-                              <p className="mt-1 text-xs text-muted-foreground">{field.help}</p>
+                              <p
+                                id={`${id}-message`}
+                                className="mt-1 text-xs text-muted-foreground"
+                              >
+                                {field.help}
+                              </p>
                             )}
-                            {error && <p className="mt-1 text-xs text-danger">{error}</p>}
+                            {error && (
+                              <p
+                                id={`${id}-message`}
+                                role="alert"
+                                className="mt-1 text-xs text-danger"
+                              >
+                                {error}
+                              </p>
+                            )}
                           </>
                         )}
                       </div>
@@ -401,16 +455,27 @@ export function RecordForm({
         </div>
       </div>
 
-      {(presentation !== "record" || dirty) && (
+      {mutation.isError && (
+        <p role="alert" className="form-save-error px-6 py-2 text-sm text-destructive">
+          {mutation.error.message}
+        </p>
+      )}
+      {!readOnly && (presentation !== "record" || dirty) && (
         <SheetFooter className="form-savebar flex-row justify-end gap-2 border-t border-border px-6 py-4">
           <Button
             variant="outline"
+            disabled={mutation.isPending}
             onClick={() => {
               if (presentation === "record") {
+                clearDraft();
+                mutation.reset();
                 setValues(baseline);
                 setErrors({});
                 setActiveField(null);
-              } else onOpenChange(false);
+              } else {
+                clearDraft();
+                onOpenChange(false);
+              }
             }}
           >
             {presentation === "record" ? "Discard" : "Cancel"}
@@ -432,10 +497,42 @@ export function RecordForm({
       </section>
     ) : null;
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="record-editor flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
-        {contents}
-      </SheetContent>
-    </Sheet>
+    <>
+      <Sheet
+        open={open}
+        onOpenChange={(next) => {
+          if (next) onOpenChange(true);
+          else if (mutation.isPending) return;
+          else if (dirty) setCloseRequested(true);
+          else onOpenChange(false);
+        }}
+      >
+        <SheetContent className="record-editor flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+          {contents}
+        </SheetContent>
+      </Sheet>
+      <AlertDialog open={closeRequested} onOpenChange={setCloseRequested}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Discard this draft?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your changes to {title.toLowerCase()} haven’t been saved.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep editing</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                clearDraft();
+                setCloseRequested(false);
+                onOpenChange(false);
+              }}
+            >
+              Discard draft
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
