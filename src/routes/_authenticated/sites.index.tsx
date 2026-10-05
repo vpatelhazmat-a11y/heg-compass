@@ -1,13 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { PageHeader } from "@/components/app/PageHeader";
-import { DataTable, type Column } from "@/components/app/DataTable";
-import { StatusBadge } from "@/components/app/StatusBadge";
-import { listRows } from "@/lib/data";
-import { useState } from "react";
-import { ArchiveVisibility } from "@/components/app/RecordArchiveActions";
+import { createFileRoute } from "@tanstack/react-router";
+import { MasterRecordList } from "@/components/app/MasterRecordList";
+import { parseRecordListSearch } from "@/lib/record-lists";
 
 export const Route = createFileRoute("/_authenticated/sites/")({
+  validateSearch: parseRecordListSearch,
   head: () => ({
     meta: [
       { title: "Sites — HEG Commercial Intelligence Hub" },
@@ -26,58 +22,15 @@ export const Route = createFileRoute("/_authenticated/sites/")({
 });
 
 function SitesPage() {
-  const navigate = useNavigate();
-  const [archived, setArchived] = useState(false);
-  const {
-    data = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["sites-all", archived],
-    queryFn: () =>
-      listRows("sites", {
-        archivedOnly: archived,
-        select: "*, customers(legal_name)",
-        order: { column: "site_name", ascending: true },
-      }),
-  });
-
-  const columns: Column[] = [
-    { key: "site_name", header: "Site" },
-    { key: "customer", header: "Customer", value: (row) => row.customers?.legal_name ?? "" },
-    { key: "city", header: "City" },
-    { key: "state", header: "State" },
-    { key: "site_type", header: "Type" },
-    {
-      key: "status",
-      header: "Status",
-      render: (row) => <StatusBadge status={row.archived_at ? "Archived" : row.status} />,
-    },
-  ];
-
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   return (
-    <>
-      <PageHeader
-        title="Sites"
-        description="Locations HEG picks up from and delivers to, including access, safety and routing knowledge."
-        actions={<ArchiveVisibility archived={archived} onChange={setArchived} />}
-      />
-      <div className="p-6">
-        <DataTable
-          columns={columns}
-          recordTable="sites"
-          rows={data}
-          isLoading={isLoading}
-          error={error}
-          searchPlaceholder="Search sites, cities, customers"
-          exportName="heg-sites"
-          onRowClick={(row) =>
-            navigate({ to: "/sites/$siteId", params: { siteId: row.id as string } })
-          }
-          emptyTitle="No sites yet"
-          emptyDescription="Sites are added from a customer's record so they always stay linked to the right customer."
-        />
-      </div>
-    </>
+    <MasterRecordList
+      table="sites"
+      search={search}
+      onChange={(patch) => {
+        void navigate({ search: (previous) => ({ ...previous, ...patch }) });
+      }}
+    />
   );
 }

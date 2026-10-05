@@ -1,3 +1,4 @@
+import type { SearchSchemaInput } from "@tanstack/react-router";
 import { countRows, getRow, listRows, listRowsPage } from "./data";
 import { recordDefinition, relatedFilters, relatedList } from "./record-registry";
 
@@ -122,4 +123,21 @@ export async function countRelatedRecords(table: string, parent: string, parentI
   const filters: Record<string, string | null> = relatedFilters(relation, parentId);
   if (["customers", "sites", "equipment"].includes(table)) filters["archived_at"] = null;
   return countRows(table, filters);
+}
+
+export function parseRecordListSearch(search: Record<string, unknown> & SearchSchemaInput) {
+  return {
+    q: typeof search["q"] === "string" ? search["q"].slice(0, 120) : undefined,
+    field: typeof search["field"] === "string" ? search["field"] : undefined,
+    filterField: typeof search["filterField"] === "string" ? search["filterField"] : undefined,
+    filterValue:
+      typeof search["filterValue"] === "string" ? search["filterValue"].slice(0, 120) : undefined,
+    groupBy: typeof search["groupBy"] === "string" ? search["groupBy"] : undefined,
+    view: search["view"] === "cards" ? ("cards" as const) : ("list" as const),
+    archived: search["archived"] === true,
+    page:
+      typeof search["page"] === "number" && Number.isInteger(search["page"]) && search["page"] >= 0
+        ? search["page"]
+        : 0,
+  };
 }

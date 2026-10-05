@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { MasterRecordList } from "../src/components/app/MasterRecordList";
+import { parseRecordListSearch } from "../src/lib/record-lists";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -481,4 +483,36 @@ test("list controls filter, group, and switch views without changing the underly
   expect(screen.queryByText("Beta")).toBeNull();
   fireEvent.click(screen.getByRole("button", { name: "List view" }));
   expect(screen.getByRole("cell", { name: "Gamma" })).toBeTruthy();
+});
+
+test("master lists preserve creation permissions and display customer dates consistently", async () => {
+  mocks.listRowsPage.mockResolvedValue({
+    rows: [
+      {
+        id: customer,
+        legal_name: "Example customer",
+        customer_since: "2026-09-18",
+        status: "Active",
+      },
+    ],
+    count: 1,
+  });
+  mount(
+    <MasterRecordList table="customers" search={parseRecordListSearch({})} onChange={vi.fn()} />,
+  );
+  await screen.findByText("Sep 18, 2026");
+  fireEvent.click(screen.getByRole("button", { name: "New", exact: true }));
+  expect(await screen.findByRole("heading", { name: "New customer" })).toBeTruthy();
+});
+test("read-only master lists show search and views without creation controls", async () => {
+  mocks.canEdit.mockReturnValue(false);
+  mount(
+    <MasterRecordList
+      table="equipment"
+      search={parseRecordListSearch({ view: "cards" })}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(screen.getByRole("textbox", { name: "Search Equipment" })).toBeTruthy();
+  expect(screen.queryByRole("button", { name: "New", exact: true })).toBeNull();
 });

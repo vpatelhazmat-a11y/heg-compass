@@ -14,7 +14,7 @@ import {
 
 vi.mock("../src/lib/data", () => ({ listRows: vi.fn(), getRow: vi.fn(), listRowsPage: vi.fn() }));
 import { listRows, getRow, listRowsPage } from "../src/lib/data";
-import { loadRecordList, loadRecordListPage } from "../src/lib/record-lists";
+import { loadRecordList, loadRecordListPage, parseRecordListSearch } from "../src/lib/record-lists";
 
 const id = "11111111-1111-4111-8111-111111111111";
 describe("record navigation contract", () => {
@@ -167,5 +167,25 @@ describe("record navigation contract", () => {
     expect(relationDependsOnCustomer("lanes", "destination_site_id")).toBe(false);
     expect(relationDependsOnCustomer("contacts", "site_id")).toBe(true);
     expect(relationDependsOnCustomer("bids", "opportunity_id")).toBe(true);
+  });
+});
+
+test("module URL state rejects malformed paging and bounds search while preserving supported views", () => {
+  const parsed = parseRecordListSearch({
+    q: "x".repeat(180),
+    page: -1,
+    view: "calendar",
+    archived: "true",
+    filterValue: "y".repeat(180),
+  });
+  expect(parsed.q).toHaveLength(120);
+  expect(parsed.filterValue).toHaveLength(120);
+  expect(parsed.page).toBe(0);
+  expect(parsed.view).toBe("list");
+  expect(parsed.archived).toBe(false);
+  expect(parseRecordListSearch({ page: 2, view: "cards", archived: true })).toMatchObject({
+    page: 2,
+    view: "cards",
+    archived: true,
   });
 });
