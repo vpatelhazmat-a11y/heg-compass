@@ -1,8 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { ChevronDown, LogOut, Plus, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { LogOut, Search, Settings } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,17 +16,15 @@ import { CompassIcon } from "./CompassIcon";
 import { ModuleNavigation } from "./ModuleNavigation";
 import { activeModule } from "@/lib/modules";
 import { CommandPalette } from "./CommandPalette";
-import { QuickCreate, type QuickCreateKind } from "./QuickCreate";
 import { ActivityMenu } from "./ActivityMenu";
 
 export function AppShell({ children }: { children: ReactNode }) {
-  const { session, roles, canWrite, canEdit } = useSession();
+  const { session, roles } = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState("");
-  const [quickCreate, setQuickCreate] = useState<QuickCreateKind | null>(null);
   const module = activeModule(pathname);
 
   useEffect(() => {
@@ -87,11 +84,14 @@ export function AppShell({ children }: { children: ReactNode }) {
         >
           <CompassIcon name="Compass" className="h-7 w-7" />
         </Link>
-        <nav aria-label="Workspace breadcrumb" className="flex min-w-0 items-center gap-2 text-sm">
-          <Link to="/command-center" className="hidden font-semibold hover:underline sm:inline">
+        <nav aria-label="Current application" className="flex min-w-0 items-center gap-2 text-sm">
+          <Link
+            to="/command-center"
+            className={module ? "hidden" : "hidden font-semibold hover:underline sm:inline"}
+          >
             HEG Compass
           </Link>
-          {module && <span className="truncate font-medium sm:hidden">{module.label}</span>}
+          {module && <span className="truncate font-semibold">{module.label}</span>}
           {!module && (
             <span className="font-semibold sm:hidden">
               {pathname === "/overview" ? "Overview" : "Apps"}
@@ -119,37 +119,13 @@ export function AppShell({ children }: { children: ReactNode }) {
           </kbd>
         </button>
         <ActivityMenu />
-        {canWrite && pathname !== "/command-center" && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" className="header-create inline-flex">
-                <Plus className="h-4 w-4" aria-hidden /> New
-                <ChevronDown className="h-3.5 w-3.5 opacity-70" aria-hidden />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-52">
-              <DropdownMenuLabel>Create</DropdownMenuLabel>
-              {(
-                [
-                  ["customer", "Customer", "customers"],
-                  ["opportunity", "Opportunity", "opportunities"],
-                  ["bid", "Bid", "bids"],
-                  ["equipment", "Equipment", "equipment"],
-                  ["task", "Task", "tasks"],
-                  ["document", "Document", "documents"],
-                ] as const
-              ).map(([kind, label, table]) => (
-                <DropdownMenuItem
-                  key={kind}
-                  disabled={!canEdit(table)}
-                  onSelect={() => setQuickCreate(kind)}
-                >
-                  {label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
+        <Link
+          to="/settings"
+          aria-label="Settings"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md hover:bg-white/10"
+        >
+          <Settings className="h-4 w-4" aria-hidden />
+        </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
@@ -203,7 +179,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         onOpenChange={setPaletteOpen}
         initialQuery={paletteQuery}
       />
-      <QuickCreate kind={quickCreate} onClose={() => setQuickCreate(null)} />
     </div>
   );
 }

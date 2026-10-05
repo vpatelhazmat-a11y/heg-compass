@@ -656,8 +656,8 @@
   border: 0;
   border-left: 1px solid var(--border);
   border-radius: 0;
-  min-height: 52px;
-  padding: 10px 18px;
+  min-height: 42px;
+  padding: 8px 12px;
   font-size: 12px;
 }
 .related-buttons strong {
@@ -823,6 +823,28 @@
 .desktop-module-menu .module-navigation a[aria-current="page"] {
   color: #fff;
   box-shadow: inset 0 -3px #d5b5cb;
+}
+.module-navigation .module-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: stretch;
+  padding: 0 8px;
+  white-space: nowrap;
+  font-size: 13px;
+  color: inherit;
+  border-radius: 0;
+}
+.module-navigation .module-more[data-active] {
+  box-shadow: inset 0 -3px currentColor;
+}
+.module-navigation .module-more:focus-visible,
+.module-navigation a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -3px;
+}
+.desktop-module-menu .module-more {
+  color: #f0e4ed;
 }
 .desktop-module-menu .module-navigation .overview-link {
   display: none;
@@ -1028,13 +1050,13 @@
 .app-grid { gap: 14px 20px; }
 .launcher-actions {
   align-items: center;
-  justify-content: center;
+  justify-content: flex-end;
   gap: 10px;
   margin-bottom: 20px;
   color: #857a85;
   font-size: 11px;
 }
-.launcher-actions button { text-decoration: underline; text-underline-offset: 2px; }
+.launcher-actions button { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 4px; }
 .app-position { border-radius: 10px; cursor: grab; touch-action: none; }
 .app-position:active { cursor: grabbing; }
 .app-position.is-dragging { opacity: .35; }
