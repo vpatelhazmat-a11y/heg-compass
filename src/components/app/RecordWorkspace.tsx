@@ -9,6 +9,8 @@ import {
   recordLabel,
   recordHref,
   recordListHref,
+  recordReturnHref,
+  recordReturnLabel,
   fieldLabel,
   RELATION_TARGETS,
   editableRelationKeys,
@@ -90,6 +92,8 @@ export function RecordListPage({
   const navigate = useNavigate();
   const definition = recordDefinition(table);
   const fields = recordListFields(table);
+  const returnTo =
+    typeof window === "undefined" ? undefined : window.location.pathname + window.location.search;
   const labelFor = (name: string) =>
     definition?.fields.find((field) => field.name === name)?.label ?? fieldLabel(name);
   const [searchInput, setSearchInput] = useState(state.search ?? "");
@@ -365,7 +369,7 @@ export function RecordListPage({
                         )}
                       <article className="record-list-card">
                         <Link
-                          to={recordHref(table, row.id)}
+                          to={recordHref(table, row.id, returnTo)}
                           className="font-semibold hover:text-primary hover:underline"
                         >
                           <strong>{recordLabel(table, row)}</strong>
@@ -389,6 +393,7 @@ export function RecordListPage({
               <DataTable
                 bare
                 recordTable={table}
+                returnTo={returnTo}
                 groupingField={state.groupBy}
                 columns={[
                   ...definition.columns,
@@ -495,7 +500,15 @@ const hidden = new Set([
   "change_reason",
 ]);
 
-export function RecordDetailPage({ table, id }: { table: string; id: string }) {
+export function RecordDetailPage({
+  table,
+  id,
+  returnTo,
+}: {
+  table: string;
+  id: string;
+  returnTo?: string | undefined;
+}) {
   const definition = recordDefinition(table);
   const { canEdit } = useSession();
   const [editing, setEditing] = useState(false);
@@ -600,7 +613,7 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
         related={<SmartButtons table={table} id={id} />}
         breadcrumbs={[
           { label: "Apps", to: "/command-center" },
-          { label: definition.label, to: recordListHref(table) },
+          { label: recordReturnLabel(table, returnTo), to: recordReturnHref(table, returnTo) },
           { label: recordLabel(table, row) },
         ]}
       />

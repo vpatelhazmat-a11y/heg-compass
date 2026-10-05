@@ -53,7 +53,7 @@ export function MasterRecordList({
           ) : undefined
         }
       />
-      {table !== "sites" && (
+      {creatable && (
         <RecordForm
           open={creating}
           onOpenChange={setCreating}

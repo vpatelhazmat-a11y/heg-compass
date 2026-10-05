@@ -1,3 +1,5 @@
+import { parseRecordReturn } from "@/lib/record-return";
+import { recordReturnHref, recordReturnLabel } from "@/lib/record-registry";
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
@@ -22,6 +24,7 @@ import { useSession } from "@/hooks/use-session";
 import { RecordArchiveActions } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/sites/$siteId")({
+  validateSearch: parseRecordReturn,
   head: () => ({
     meta: [
       { title: "Site — HEG Commercial Intelligence Hub" },
@@ -39,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/sites/$siteId")({
 type Creator = { table: string; title: string; fields: FieldConfig[] } | null;
 
 function SiteDetail() {
+  const { returnTo } = Route.useSearch();
   const { siteId } = Route.useParams();
   const { canEdit, canViewSafety } = useSession();
   const canWrite = canEdit("sites");
@@ -139,16 +143,7 @@ function SiteDetail() {
           undefined
         }
         breadcrumbs={[
-          { label: "Customers", to: "/customers" },
-          ...(site.customers
-            ? [
-                {
-                  label: site.customers.legal_name,
-                  to: "/customers/$customerId",
-                  params: { customerId: site.customers.id },
-                },
-              ]
-            : []),
+          { label: recordReturnLabel("sites", returnTo), to: recordReturnHref("sites", returnTo) },
           { label: site.site_name },
         ]}
         meta={

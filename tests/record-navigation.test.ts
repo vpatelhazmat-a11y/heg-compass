@@ -7,6 +7,8 @@ import {
   RELATED_LISTS,
   recordDefinition,
   recordHref,
+  recordReturnHref,
+  recordReturnLabel,
   relatedList,
   editableRelationKeys,
   relationDependsOnCustomer,
@@ -188,4 +190,23 @@ test("module URL state rejects malformed paging and bounds search while preservi
     view: "cards",
     archived: true,
   });
+});
+
+test("record breadcrumbs retain collection state and reject external or unknown destinations", () => {
+  const origin = "/customers?q=Cascade&view=cards&page=2";
+  const href = recordHref("customers", id, origin);
+  expect(new URL(href, "https://test.invalid").searchParams.get("returnTo")).toBe(origin);
+  expect(recordReturnHref("customers", origin)).toBe(origin);
+  expect(recordReturnHref("rates", `/customers/${id}`)).toBe(`/customers/${id}`);
+  expect(recordReturnLabel("rates", `/customers/${id}`)).toBe("Customer");
+  expect(recordReturnLabel("corrective_actions", "/safety?section=actions")).toBe(
+    "Corrective actions",
+  );
+  for (const value of [
+    "https://bad.invalid/customers",
+    "//bad.invalid/customers",
+    "/unknown",
+    "/records/__proto__",
+  ])
+    expect(recordReturnHref("customers", value)).toBe("/customers");
 });

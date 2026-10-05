@@ -1,3 +1,5 @@
+import { parseRecordReturn } from "@/lib/record-return";
+import { recordReturnHref, recordReturnLabel } from "@/lib/record-registry";
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
@@ -34,6 +36,7 @@ import { useSession } from "@/hooks/use-session";
 import { RecordArchiveActions } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/customers/$customerId")({
+  validateSearch: parseRecordReturn,
   head: () => ({
     meta: [
       { title: "Customer — HEG Commercial Intelligence Hub" },
@@ -51,6 +54,7 @@ export const Route = createFileRoute("/_authenticated/customers/$customerId")({
 type Creator = { table: string; title: string; fields: FieldConfig[] } | null;
 
 function CustomerDetail() {
+  const { returnTo } = Route.useSearch();
   const { customerId } = Route.useParams();
   const navigate = useNavigate();
   const { canEdit } = useSession();
@@ -218,7 +222,13 @@ function CustomerDetail() {
           />
         }
         description={customer.dba_name ? `Doing business as ${customer.dba_name}` : undefined}
-        breadcrumbs={[{ label: "Customers", to: "/customers" }, { label: customer.legal_name }]}
+        breadcrumbs={[
+          {
+            label: recordReturnLabel("customers", returnTo),
+            to: recordReturnHref("customers", returnTo),
+          },
+          { label: customer.legal_name },
+        ]}
         meta={
           <>
             <MetaItem label="Status">
