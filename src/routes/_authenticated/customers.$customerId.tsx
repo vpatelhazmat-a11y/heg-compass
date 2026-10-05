@@ -1,13 +1,12 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
-import { RichTextView } from "@/components/app/RichText";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
 import { PageHeader, MetaItem } from "@/components/app/PageHeader";
-import { Panel, Field, FieldGrid, StatTile } from "@/components/app/Panels";
+import { Panel, Field, FieldGrid } from "@/components/app/Panels";
 import { EmptyState, ErrorState, LoadingState } from "@/components/app/EmptyState";
 import { StatusBadge } from "@/components/app/StatusBadge";
 import { DataTable, type Column } from "@/components/app/DataTable";
@@ -147,8 +146,6 @@ function CustomerDetail() {
   }
 
   const data = related.data;
-  const openOpps = (data?.opportunities ?? []).filter((o) => !["Won", "Lost"].includes(o.stage));
-  const activeRates = (data?.rates ?? []).filter((r) => r.status === "Active");
 
   const create = (table: string, title: string, fields: FieldConfig[]) => {
     const relationships: FieldConfig[] = [];
@@ -246,8 +243,9 @@ function CustomerDetail() {
               <TabsTrigger value="history">History</TabsTrigger>
             </TabsList>
             <TabsContent forceMount value="overview" className="mt-4 space-y-6">
-              {canWrite ? (
+              {
                 <RecordForm
+                  readOnly={!canWrite}
                   presentation="record"
                   open
                   onOpenChange={() => undefined}
@@ -263,60 +261,18 @@ function CustomerDetail() {
                   )}
                   invalidateKeys={[["customer", customerId], ["customers"]]}
                 />
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                    <StatTile label="Sites" value={data?.sites.length ?? "—"} />
-                    <StatTile label="Contacts" value={data?.contacts.length ?? "—"} />
-                    <StatTile label="Active rates" value={activeRates.length} />
-                    <StatTile label="Open opportunities" value={openOpps.length} />
-                    <StatTile
-                      label="Lost business records"
-                      value={data?.lost.length ?? "—"}
-                      tone={data?.lost.length ? "warning" : "neutral"}
-                    />
-                  </div>
-                  <Panel title="Customer profile">
-                    <FieldGrid>
-                      <Field label="Legal name">{customer.legal_name}</Field>
-                      <Field label="Doing business as">{orDash(customer.dba_name)}</Field>
-                      <Field label="Customer type">{orDash(customer.customer_type)}</Field>
-                      <Field label="Industry">{orDash(customer.industry)}</Field>
-                      <Field label="Website">{orDash(customer.website)}</Field>
-                      <Field label="Strategic priority">
-                        {orDash(customer.strategic_priority)}
-                      </Field>
-                      <Field label="Headquarters" full>
-                        {orDash(customer.headquarters_address)}
-                      </Field>
-                    </FieldGrid>
-                  </Panel>
-                  <Panel
-                    title="Where this information came from"
-                    description="Provenance is kept so the record can always be traced back"
-                  >
-                    <FieldGrid columns={4}>
-                      <Field label="Source system">{orDash(customer.source_system)}</Field>
-                      <Field label="Source file">{orDash(customer.source_file)}</Field>
-                      <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
-                      <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
-                    </FieldGrid>
-                  </Panel>
-                </>
-              )}
-              {canWrite && (
-                <details className="rounded border border-border bg-surface px-4 py-3 text-sm">
-                  <summary className="cursor-pointer font-medium">Source information</summary>
-                  <div className="mt-4">
-                    <FieldGrid columns={4}>
-                      <Field label="Source system">{orDash(customer.source_system)}</Field>
-                      <Field label="Source file">{orDash(customer.source_file)}</Field>
-                      <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
-                      <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
-                    </FieldGrid>
-                  </div>
-                </details>
-              )}
+              }
+              <details className="rounded border border-border bg-surface px-4 py-3 text-sm">
+                <summary className="cursor-pointer font-medium">Source information</summary>
+                <div className="mt-4">
+                  <FieldGrid columns={4}>
+                    <Field label="Source system">{orDash(customer.source_system)}</Field>
+                    <Field label="Source file">{orDash(customer.source_file)}</Field>
+                    <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
+                    <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
+                  </FieldGrid>
+                </div>
+              </details>
             </TabsContent>
             <TabsContent value="operations" className="mt-4 space-y-6">
               <Panel title="Sites" actions={addButton("Add site", "sites", siteFields)}>
@@ -661,8 +617,9 @@ function CustomerDetail() {
             </TabsContent>
           </Tabs>
           <section aria-label="Notes" className="pt-4">
-            {canWrite ? (
+            {
               <RecordForm
+                readOnly={!canWrite}
                 presentation="record"
                 open
                 onOpenChange={() => undefined}
@@ -675,30 +632,7 @@ function CustomerDetail() {
                 )}
                 invalidateKeys={[["customer", customerId], ["customers"]]}
               />
-            ) : (
-              <Panel title="Notes">
-                <FieldGrid>
-                  <Field label="Qualification">
-                    <RichTextView
-                      document={customer.rich_text?.qualification_notes}
-                      text={customer.qualification_notes}
-                    />
-                  </Field>
-                  <Field label="Commercial">
-                    <RichTextView
-                      document={customer.rich_text?.commercial_notes}
-                      text={customer.commercial_notes}
-                    />
-                  </Field>
-                  <Field label="Risk">
-                    <RichTextView
-                      document={customer.rich_text?.risk_notes}
-                      text={customer.risk_notes}
-                    />
-                  </Field>
-                </FieldGrid>
-              </Panel>
-            )}
+            }
           </section>
         </div>
       </div>

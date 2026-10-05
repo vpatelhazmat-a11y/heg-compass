@@ -26,6 +26,7 @@ import { insertRow, listRows, updateRow, type Row } from "@/lib/data";
 import { useLookup, usePeople } from "@/lib/lookups";
 import { useSession } from "@/hooks/use-session";
 import { todayISO } from "@/lib/format";
+import { useDraftProtection } from "@/hooks/use-draft-protection";
 
 const NONE = "__none__";
 
@@ -110,17 +111,24 @@ export function toFormState(row: Row): RefusedLoadFormState {
 export function RefusedLoadForm({
   recordId,
   initial,
+  expectedUpdatedAt,
   onSaved,
   onCancel,
 }: {
   recordId?: string | undefined;
   initial?: RefusedLoadFormState | undefined;
+  expectedUpdatedAt?: string | undefined;
   onSaved?: ((row: Row, mode: "again" | "view") => void) | undefined;
   onCancel?: (() => void) | undefined;
 }) {
   const { canEdit } = useSession();
   const queryClient = useQueryClient();
   const [form, setForm] = useState<RefusedLoadFormState>(initial ?? empty);
+  const [baseline, setBaseline] = useState<RefusedLoadFormState>(initial ?? empty);
+  const clearDraft = useDraftProtection(
+    JSON.stringify(form) !== JSON.stringify(baseline),
+    "Refused load",
+  );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [intent, setIntent] = useState<"again" | "view">("view");
 
@@ -230,15 +238,20 @@ export function RefusedLoadForm({
           form.estimated_lost_revenue === "" ? null : Number(form.estimated_lost_revenue),
       };
       if (recordId) {
-        return updateRow("refused_loads", recordId, payload);
+        return updateRow("refused_loads", recordId, payload, expectedUpdatedAt);
       }
       return insertRow("refused_loads", payload);
     },
     onSuccess: (row) => {
+      clearDraft();
       queryClient.invalidateQueries();
       toast.success(recordId ? "Refused load updated" : "Refused load recorded");
-      if (intent === "again")
-        setForm({ ...empty, cs_rep: form.cs_rep, call_in_date: form.call_in_date });
+      const next =
+        intent === "again"
+          ? { ...empty, cs_rep: form.cs_rep, call_in_date: form.call_in_date }
+          : form;
+      setBaseline(next);
+      if (intent === "again") setForm(next);
       onSaved?.(row, intent);
     },
     onError: (error: Error) => toast.error(error.message),
@@ -468,9 +481,22 @@ export function RefusedLoadForm({
         />
       </Field>
 
+      {save.error && (
+        <p role="alert" className="text-sm text-destructive md:col-span-2">
+          {save.error.message}
+        </p>
+      )}
       <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
         {onCancel && (
-          <Button type="button" variant="outline" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={save.isPending}
+            onClick={() => {
+              clearDraft();
+              onCancel();
+            }}
+          >
             Cancel
           </Button>
         )}

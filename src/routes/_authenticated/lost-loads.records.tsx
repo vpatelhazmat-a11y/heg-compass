@@ -205,6 +205,7 @@ function LostLoadRecords() {
           >
             <RefusedLoadForm
               recordId={editing.id}
+              expectedUpdatedAt={editing.updated_at}
               initial={toFormState(editing)}
               onSaved={() => setEditing(null)}
               onCancel={() => setEditing(null)}

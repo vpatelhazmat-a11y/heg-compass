@@ -60,3 +60,9 @@ Official Odoo references for interaction anatomy, not copied branding or artwork
 - https://www.odoo.com/documentation/19.0/applications/studio/views.html
 - https://www.odoo.com/documentation/19.0/developer/reference/user_interface/view_architectures.html
 - https://www.odoo.com/documentation/19.0/applications/essentials/search.html
+
+## Current implementation and acceptance evidence
+
+- PR #31 implements one click-and-hold pointer interaction for the Home launcher, moving preview, cancellation, ordinary click protection, and retained user order. Four behavior tests cover pickup/drop/cancel. Production mouse/touch/reload acceptance is pending publication. GitHub runner assignment is currently delayed by its Actions incident.
+- Record framework pass: shared read-only master sheets, compact horizontal label/value rows, hidden inactive mounted tabs, per-section save bars, inline save failures and validation focus, unique control IDs, stale-write checks, draft protection across navigation and browser exit, and creation-drawer close confirmation. Automated suite currently has 99 cases; final production visual acceptance remains pending.
+- No schema or permission changes are introduced in these passes. Broader module, control-panel, visual-system and production gates above remain open.
