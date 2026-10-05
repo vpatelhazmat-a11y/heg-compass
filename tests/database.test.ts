@@ -73,6 +73,7 @@ test("every configured form field exists in the migrated database", async () => 
     lostBusinessFields: "lost_business",
     correctiveActionFields: "corrective_actions",
     equipmentAssignmentFields: "equipment_assignments",
+    equipmentLeaseFields: "equipment_leases",
     equipmentComplianceFields: "equipment_compliance",
     equipmentTechnologyFields: "equipment_technology",
   };
@@ -86,6 +87,87 @@ test("every configured form field exists in the migrated database", async () => 
     for (const field of forms[config])
       expect(columns, `${table}.${field.name}`).toContain(field.name);
   }
+});
+
+test("equipment rate terms preserve attributed history and require fresh revision reasons", async () => {
+  const unit = (
+    await db.query("insert into equipment(unit_number) values('RATE-HISTORY') returning id")
+  ).rows[0].id;
+  const term = (
+    await asRole(
+      "operations",
+      "insert into equipment_leases(equipment_id,rate,effective_date,change_reason) values($1,250,'2026-10-01','creation') returning *",
+      [unit],
+    )
+  ).rows[0];
+  expect(term.change_reason).toBeNull();
+  await expect(
+    asRole("operations", "update equipment_leases set rate=300 where id=$1", [term.id]),
+  ).rejects.toThrow("require a reason");
+  await asRole(
+    "operations",
+    "update equipment_leases set rate=300,currency_code='CAD',change_reason='Renewal' where id=$1",
+    [term.id],
+  );
+  const history = (
+    await asRole(
+      "operations",
+      "select * from equipment_rate_history where rate_term_id=$1 order by event_type",
+      [term.id],
+    )
+  ).rows;
+  expect(history).toHaveLength(2);
+  expect(history[1].previous_record.rate).toBe(250);
+  expect(history[1].new_record.rate).toBe(300);
+  expect(history[1].changed_by).toBe(users.operations);
+  expect(history[1].reason).toBe("Renewal");
+  await expect(
+    asRole("operations", "update equipment_leases set rate=350 where id=$1", [term.id]),
+  ).rejects.toThrow("require a reason");
+  await expect(
+    asRole("admin", "delete from equipment_rate_history where rate_term_id=$1", [term.id]),
+  ).rejects.toThrow();
+  await expect(
+    asRole("admin", "delete from equipment_leases where id=$1", [term.id]),
+  ).rejects.toThrow();
+});
+
+test("equipment rate terms enforce dates, units, amounts and operation permissions", async () => {
+  const unit = (
+    await db.query("insert into equipment(unit_number) values('RATE-VALIDATION') returning id")
+  ).rows[0].id;
+  for (const values of [
+    "-1,'Per month','2026-10-01','2026-10-31'",
+    "'NaN','Per month','2026-10-01','2026-10-31'",
+    "'Infinity','Per month','2026-10-01','2026-10-31'",
+    "1,'Unknown','2026-10-01','2026-10-31'",
+    "1,'Per month','2026-10-31','2026-10-01'",
+  ]) {
+    await expect(
+      asRole(
+        "operations",
+        `insert into equipment_leases(equipment_id,rate,rate_unit,effective_date,expiration_date) values($1,${values})`,
+        [unit],
+      ),
+    ).rejects.toThrow();
+  }
+  await expect(
+    asRole("sales", "insert into equipment_leases(equipment_id,rate) values($1,1)", [unit]),
+  ).rejects.toThrow();
+  const term = (
+    await asRole(
+      "operations",
+      "insert into equipment_leases(equipment_id,rate_kind,rate,rate_unit,effective_date) values($1,'Maintenance',0,'Per mile','2026-10-01') returning id",
+      [unit],
+    )
+  ).rows[0];
+  expect(
+    (
+      await asRole("read_only", "select * from equipment_rate_history where rate_term_id=$1", [
+        term.id,
+      ])
+    ).rows,
+  ).toHaveLength(1);
 });
 test("all public base tables have RLS enabled", async () => {
   expect(

@@ -13,6 +13,6 @@ This tracks the user's ten-phase HEG Hub rebuild plan against the running applic
 | 7. Reporting | Fixed report summaries and Refused Loads analysis exist. | Report definition model, editable filters/grouping/measures, saved and shared views, pivot/charts/kanban, XLSX export. |
 | 8. Notifications/digests | The top-bar activity menu shows assigned tasks and approaching bid, document, and contract deadlines. | Mention notifications, subscriptions, email provider, schedule, delivery logs, and cross-device preferences. |
 | 9. General Settings | Personal Settings and separate Administration page exist. | Unified module settings, granular permission management, lookup/template/type management, audit and data quality views, backend health. |
-| 10. Equipment rates | Equipment leases can store one rate. | Lease/maintenance rate terms, currency/unit/effective/expiry dates, contract/customer link, history, reporting. |
+| 10. Equipment rates | Lease and maintenance terms have amount/unit/currency, effective/expiry dates, customer/contract links, protected revision history, and equipment/list CSV export. | Reporting engine integration, signed-in workflow review, and remaining rate-view polish. |
 
 Cross-cutting: personal saved searches now work on the current device. Customers, sites, and equipment have archive/restore controls and archived list filters. Team-shared views, cross-device sync, archive support for other record types, record tags, and a complete related-record audit remain. Global keyboard search exists.

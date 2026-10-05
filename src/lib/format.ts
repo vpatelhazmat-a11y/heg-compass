@@ -5,15 +5,24 @@ export function formatDate(value?: string | null): string {
   return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-export function formatMoney(value?: number | string | null): string {
+export function formatMoney(
+  value?: number | string | null,
+  currency = "USD",
+  fractionDigits = 0,
+): string {
   if (value === null || value === undefined || value === "") return "—";
   const num = Number(value);
   if (Number.isNaN(num)) return "—";
-  return num.toLocaleString("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  });
+  try {
+    return num.toLocaleString("en-US", {
+      style: "currency",
+      currency,
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits,
+    });
+  } catch {
+    return `${currency} ${num.toLocaleString("en-US")}`;
+  }
 }
 
 export function formatNumber(value?: number | string | null): string {

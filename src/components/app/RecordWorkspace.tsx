@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "./StatusBadge";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { getRow, listRows, type Row } from "@/lib/data";
 import {
   recordDefinition,
@@ -426,6 +426,7 @@ const hidden = new Set([
   "source_row_id",
   "file_path",
   "file_name",
+  "change_reason",
 ]);
 
 export function RecordDetailPage({ table, id }: { table: string; id: string }) {
@@ -439,9 +440,15 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
     enabled: valid,
   });
   const history = useQuery({
-    queryKey: ["rate-history", id],
-    queryFn: () => listRows("rate_history", { filters: { rate_id: id } }),
-    enabled: valid && table === "rates",
+    queryKey: ["rate-history", table, id],
+    queryFn: () =>
+      table === "equipment_leases"
+        ? listRows("equipment_rate_history", {
+            filters: { rate_term_id: id },
+            order: { column: "changed_at" },
+          })
+        : listRows("rate_history", { filters: { rate_id: id } }),
+    enabled: valid && ["rates", "equipment_leases"].includes(table),
   });
   if (!valid || !definition)
     return (
@@ -492,12 +499,11 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
     if (typeof value === "boolean") return value ? "Yes" : "No";
     const field = definition.fields.find((field) => field.name === key);
     if (field?.type === "money")
-      return Number(value).toLocaleString("en-US", {
-        style: "currency",
-        currency: "USD",
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 4,
-      });
+      return formatMoney(
+        Number(value),
+        table === "equipment_leases" ? row.currency_code : "USD",
+        2,
+      );
     if (field?.type === "date" || key === "created_at" || key === "updated_at")
       return formatDate(String(value));
     return String(value);
@@ -599,6 +605,45 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
               />
             </section>
           )}
+          {table === "equipment_leases" && (
+            <section aria-label="Equipment rate history">
+              <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
+              <DataTable
+                rows={history.data ?? []}
+                isLoading={history.isLoading}
+                error={history.error}
+                columns={[
+                  {
+                    key: "changed_at",
+                    header: "Changed",
+                    render: (entry) => formatDate(entry.changed_at),
+                  },
+                  { key: "event_type", header: "Event" },
+                  {
+                    key: "previous_rate",
+                    header: "Previous",
+                    value: (entry) => entry.previous_record?.rate,
+                    render: (entry) =>
+                      formatMoney(
+                        entry.previous_record?.rate,
+                        entry.previous_record?.currency_code,
+                        2,
+                      ),
+                  },
+                  {
+                    key: "rate",
+                    header: "New amount",
+                    value: (entry) => entry.new_record?.rate,
+                    render: (entry) =>
+                      formatMoney(entry.new_record?.rate, entry.new_record?.currency_code, 2),
+                  },
+                  { key: "unit", header: "Unit", value: (entry) => entry.new_record?.rate_unit },
+                  { key: "reason", header: "Reason" },
+                ]}
+                emptyTitle="No rate history"
+              />
+            </section>
+          )}
           {table === "documents" && <DocumentFile document={row} />}
         </div>
       </div>
@@ -662,7 +707,7 @@ function RecordEditor({ table, row, onClose }: { table: string; row: Row; onClos
       };
     });
   const editFields = [...relationFields, ...definition.fields.filter((field) => field.name in row)];
-  if (table === "rates")
+  if (["rates", "equipment_leases"].includes(table))
     editFields.push({
       name: "change_reason",
       label: "Reason for change",

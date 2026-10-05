@@ -4,7 +4,7 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 
 /** Mirrors database policy for controls; Postgres remains the authority. */
 export function canEditTable(roles: AppRole[], table: string): boolean {
-  if (roles.includes("admin")) return table !== "rate_history";
+  if (roles.includes("admin")) return !["rate_history", "equipment_rate_history"].includes(table);
   let allowed: AppRole[] = [];
   if (
     [

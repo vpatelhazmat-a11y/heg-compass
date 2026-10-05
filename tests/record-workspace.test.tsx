@@ -4,6 +4,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecordDetailPage } from "../src/components/app/RecordWorkspace";
 import { DataTable } from "../src/components/app/DataTable";
+import { RecordForm } from "../src/components/app/RecordForm";
 import { SmartButtons } from "../src/components/app/SmartButtons";
 import { AppLauncher } from "../src/components/app/AppLauncher";
 
@@ -168,6 +169,68 @@ test("rate editor requires a fresh reason and uses the versioned RPC without ide
     },
   });
   expect(mocks.update).not.toHaveBeenCalled();
+});
+
+test("equipment revisions use the saved version and require a new reason for each save", async () => {
+  const firstVersion = "2026-10-01T12:00:00Z";
+  const secondVersion = "2026-10-01T13:00:00Z";
+  mocks.update.mockImplementation(async (_table, _id, values) => ({
+    ...values,
+    id,
+    updated_at: secondVersion,
+    change_reason: null,
+  }));
+  mount(
+    <RecordForm
+      presentation="record"
+      open
+      onOpenChange={() => undefined}
+      title="Rate term"
+      table="equipment_leases"
+      recordId={id}
+      initialValues={{ id, rate: 100, updated_at: firstVersion }}
+      fields={[
+        { name: "rate", label: "Amount", type: "money", required: true },
+        {
+          name: "change_reason",
+          label: "Reason for change",
+          type: "textarea",
+          required: true,
+          section: "Revision",
+        },
+      ]}
+    />,
+  );
+  const revise = (amount: string) => {
+    fireEvent.click(screen.getByRole("button", { name: /^Edit Amount:/ }));
+    fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: amount } });
+    fireEvent.click(screen.getByRole("button", { name: /^Edit Reason for change:/ }));
+    fireEvent.change(screen.getByLabelText(/Reason for change/), { target: { value: "Renewal" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  };
+  revise("125");
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull());
+  expect(mocks.update).toHaveBeenLastCalledWith(
+    "equipment_leases",
+    id,
+    { rate: 125, change_reason: "Renewal" },
+    firstVersion,
+  );
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Amount:/ }));
+  fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "150" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  expect(await screen.findByText("Reason for change is required")).toBeTruthy();
+  expect(mocks.update).toHaveBeenCalledOnce();
+  fireEvent.click(screen.getByRole("button", { name: /^Edit Reason for change:/ }));
+  fireEvent.change(screen.getByLabelText(/Reason for change/), { target: { value: "Adjustment" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(2));
+  expect(mocks.update).toHaveBeenLastCalledWith(
+    "equipment_leases",
+    id,
+    { rate: 150, change_reason: "Adjustment" },
+    secondVersion,
+  );
 });
 
 test("stale rate save keeps the editor open and displays the refresh error", async () => {

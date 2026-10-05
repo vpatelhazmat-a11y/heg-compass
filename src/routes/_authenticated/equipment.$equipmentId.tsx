@@ -14,15 +14,15 @@ import { RecordForm, type FieldConfig } from "@/components/app/RecordForm";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getRow, listRows, type Row } from "@/lib/data";
-import { scopeDefaults } from "@/lib/relations";
 
 import {
   equipmentAssignmentFields,
   equipmentComplianceFields,
   equipmentFields,
+  equipmentLeaseFields,
   equipmentTechnologyFields,
 } from "@/lib/entities";
-import { formatDate, orDash } from "@/lib/format";
+import { formatDate, formatMoney, orDash, todayISO } from "@/lib/format";
 import { useSession } from "@/hooks/use-session";
 import { RecordArchiveActions } from "@/components/app/RecordArchiveActions";
 
@@ -41,19 +41,24 @@ export const Route = createFileRoute("/_authenticated/equipment/$equipmentId")({
   component: EquipmentDetail,
 });
 
-type Creator = { table: string; title: string; fields: FieldConfig[] } | null;
+type Creator = { table: string; title: string; fields: FieldConfig[]; defaults?: Row } | null;
 
 function EquipmentDetail() {
   const { equipmentId } = Route.useParams();
   const { canEdit } = useSession();
   const canWrite = canEdit("equipment");
   const [editingAssignment, setEditingAssignment] = useState<Row | null>(null);
+  const [editingRate, setEditingRate] = useState<Row | null>(null);
   const [creator, setCreator] = useState<Creator>(null);
   const assignmentParents = useQuery({
     queryKey: ["assignment-parent-options"],
     queryFn: async () => {
-      const [customers, sites] = await Promise.all([listRows("customers"), listRows("sites")]);
-      return { customers, sites };
+      const [customers, sites, contracts] = await Promise.all([
+        listRows("customers", { includeArchived: true }),
+        listRows("sites"),
+        listRows("contracts"),
+      ]);
+      return { customers, sites, contracts };
     },
     enabled: canWrite,
   });
@@ -63,10 +68,12 @@ function EquipmentDetail() {
       label: "Customer",
       type: "select",
       section: "Assignment",
-      options: (assignmentParents.data?.customers ?? []).map((row) => ({
-        value: row.id,
-        label: row.legal_name,
-      })),
+      options: (assignmentParents.data?.customers ?? [])
+        .filter((row) => !row.archived_at)
+        .map((row) => ({
+          value: row.id,
+          label: row.legal_name,
+        })),
     },
     {
       name: "site_id",
@@ -81,6 +88,33 @@ function EquipmentDetail() {
       })),
     },
     ...equipmentAssignmentFields,
+  ];
+  const rateFields: FieldConfig[] = [
+    {
+      name: "customer_id",
+      label: "Customer",
+      type: "select",
+      section: "Agreement",
+      options: (assignmentParents.data?.customers ?? [])
+        .filter((row) => !row.archived_at || row.id === editingRate?.customer_id)
+        .map((row) => ({
+          value: row.id,
+          label: row.legal_name,
+        })),
+    },
+    {
+      name: "contract_id",
+      label: "Contract",
+      type: "select",
+      section: "Agreement",
+      dependsOn: "customer_id",
+      options: (assignmentParents.data?.contracts ?? []).map((row) => ({
+        value: row.id,
+        label: row.contract_name,
+        parentValue: row.customer_id,
+      })),
+    },
+    ...equipmentLeaseFields,
   ];
 
   const unitQuery = useQuery({
@@ -105,7 +139,19 @@ function EquipmentDetail() {
         listRows("equipment_leases", { filters }),
         listRows("incidents", { filters }),
       ]);
-      return { assignments, compliance, technology, leases, incidents };
+      const rateHistory = (
+        await Promise.all(
+          leases.map((lease) =>
+            listRows("equipment_rate_history", {
+              filters: { rate_term_id: lease.id },
+              order: { column: "changed_at" },
+            }),
+          ),
+        )
+      )
+        .flat()
+        .sort((a, b) => String(b.changed_at).localeCompare(String(a.changed_at)));
+      return { assignments, compliance, technology, leases, rateHistory, incidents };
     },
   });
 
@@ -133,12 +179,12 @@ function EquipmentDetail() {
   }
 
   const data = related.data;
-  const addButton = (label: string, table: string, fields: FieldConfig[]) =>
+  const addButton = (label: string, table: string, fields: FieldConfig[], defaults?: Row) =>
     canEdit(table) ? (
       <Button
         size="sm"
         variant="outline"
-        onClick={() => setCreator({ table, title: label, fields })}
+        onClick={() => setCreator({ table, title: label, fields, defaults })}
       >
         <Plus className="h-4 w-4" aria-hidden />
         {label}
@@ -185,6 +231,7 @@ function EquipmentDetail() {
             <TabsList className="flex w-full flex-wrap justify-start">
               <TabsTrigger value="specification">Specification</TabsTrigger>
               <TabsTrigger value="assignments">Assignments</TabsTrigger>
+              <TabsTrigger value="rates">Rates</TabsTrigger>
               <TabsTrigger value="compliance">Compliance & safety</TabsTrigger>
             </TabsList>
 
@@ -220,6 +267,88 @@ function EquipmentDetail() {
                   </Panel>
                 </>
               )}
+            </TabsContent>
+
+            <TabsContent value="rates" className="mt-4 space-y-6">
+              <Panel
+                title="Lease and maintenance rates"
+                actions={addButton("Add rate", "equipment_leases", rateFields, {
+                  rate_kind: "Lease",
+                  rate_unit: "Per month",
+                  currency_code: "USD",
+                  effective_date: todayISO(),
+                })}
+              >
+                <DataTable
+                  columns={[
+                    { key: "rate_kind", header: "Type" },
+                    {
+                      key: "rate",
+                      header: "Amount",
+                      render: (row) => formatMoney(row.rate, row.currency_code, 2),
+                    },
+                    { key: "rate_unit", header: "Unit" },
+                    { key: "currency_code", header: "Currency" },
+                    {
+                      key: "effective_date",
+                      header: "Effective",
+                      render: (row) => formatDate(row.effective_date),
+                    },
+                    {
+                      key: "expiration_date",
+                      header: "Expires",
+                      render: (row) => formatDate(row.expiration_date),
+                    },
+                    {
+                      key: "status",
+                      header: "Status",
+                      render: (row) => <StatusBadge status={row.status} />,
+                    },
+                  ]}
+                  recordTable="equipment_leases"
+                  rows={data?.leases ?? []}
+                  onRowClick={canEdit("equipment_leases") ? setEditingRate : undefined}
+                  isLoading={related.isLoading}
+                  emptyTitle="No rates recorded"
+                  emptyDescription="Add a lease or maintenance rate with its unit and effective dates."
+                  exportName={`equipment-${unit.unit_number}-rates`}
+                />
+              </Panel>
+              <Panel title="Rate history">
+                <DataTable
+                  columns={[
+                    {
+                      key: "changed_at",
+                      header: "Changed",
+                      render: (row) => formatDate(row.changed_at),
+                    },
+                    { key: "event_type", header: "Event" },
+                    { key: "rate_kind", header: "Type", value: (row) => row.new_record?.rate_kind },
+                    {
+                      key: "previous_rate",
+                      header: "Previous",
+                      value: (row) => row.previous_record?.rate,
+                      render: (row) =>
+                        formatMoney(
+                          row.previous_record?.rate,
+                          row.previous_record?.currency_code,
+                          2,
+                        ),
+                    },
+                    {
+                      key: "rate",
+                      header: "New amount",
+                      value: (row) => row.new_record?.rate,
+                      render: (row) =>
+                        formatMoney(row.new_record?.rate, row.new_record?.currency_code, 2),
+                    },
+                    { key: "reason", header: "Reason" },
+                  ]}
+                  rows={data?.rateHistory ?? []}
+                  isLoading={related.isLoading}
+                  emptyTitle="No rate history yet"
+                />
+              </Panel>
             </TabsContent>
 
             <TabsContent value="assignments" className="mt-4">
@@ -371,6 +500,30 @@ function EquipmentDetail() {
         />
       )}
 
+      {editingRate && (
+        <RecordForm
+          open
+          onOpenChange={(open) => {
+            if (!open) setEditingRate(null);
+          }}
+          title="Update rate term"
+          table="equipment_leases"
+          recordId={editingRate.id}
+          initialValues={editingRate}
+          fields={[
+            ...rateFields,
+            {
+              name: "change_reason",
+              label: "Reason for change",
+              type: "textarea",
+              required: true,
+              section: "Revision",
+            },
+          ]}
+          invalidateKeys={[["equipment-related", equipmentId]]}
+        />
+      )}
+
       {creator && (
         <RecordForm
           open
@@ -380,7 +533,7 @@ function EquipmentDetail() {
           title={creator.title}
           table={creator.table}
           fields={creator.fields}
-          defaults={{ equipment_id: equipmentId }}
+          defaults={{ equipment_id: equipmentId, ...creator.defaults }}
           invalidateKeys={[["equipment-related", equipmentId]]}
         />
       )}
