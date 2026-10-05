@@ -1176,14 +1176,18 @@
   background: transparent;
 }
 .record-list-control-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  gap: 8px;
   color: var(--muted-foreground);
 }
+.record-search-options { display: grid; gap: 12px; width: 320px; max-width: calc(100vw - 32px); }
+.record-search-options select { width: 100%; min-width: 0; padding: 8px; border: 1px solid var(--border); background: var(--surface); border-radius: 3px; color: var(--foreground); font-size: 13px; }
+.record-search-options-trigger { display: grid; place-items: center; flex: none; width: 28px; height: 28px; border-radius: 3px; }
+.record-search-options-trigger:hover { background: var(--muted); }
+.record-search-options-trigger:focus-visible { outline: 2px solid var(--primary); }
 .record-list-control-group select {
-  max-width: 140px;
-  padding: 6px 5px;
+  max-width: none;
+  padding: 8px;
   border-radius: 3px;
   color: var(--foreground);
   background: transparent;
@@ -1435,7 +1439,6 @@
     flex-basis: 100%;
   }
   .record-list-control-group {
-    overflow-x: auto;
-    max-width: calc(100% - 80px);
+    max-width: none;
   }
 }

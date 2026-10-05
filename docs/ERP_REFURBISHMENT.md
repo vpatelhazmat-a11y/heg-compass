@@ -33,7 +33,7 @@ App launcher → module list → record → linked record is the main journey. B
 
 ## Delivery order and release gates
 
-1. **Shell and navigation:** remove global creation, eliminate repeated overview links, complete module menus, keep header compact. Current implementation begins here; visual acceptance remains pending.
+1. **Shell and navigation:** remove global creation, eliminate repeated overview links, complete module menus, keep header compact. PR #29 is published; signed-in header verified. Full responsive and navigation acceptance remains pending.
 2. **Shared control panel:** unify module lists before revising individual pages. Audit search, filters, grouping, favorites, selection, export, and browser history. Unsupported view/action controls are not displayed.
 3. **Record framework:** reconcile customer/site/equipment and generic forms into the same header/smart-buttons/sheet/chatter/Notes anatomy. Audit direct editing, save/cancel, stale writes, read-only roles, and relation links.
 4. **Module pass:** Customers, Sites, Equipment, Bids, Refused Loads, Safety, Documents, Knowledge, Tasks, Reporting, Settings. Each gets a recorded screen inventory and journey checklist; dashboard cards must earn their place through a task they support.
@@ -50,6 +50,7 @@ For each stage: capture before/after screens; verify keyboard and pointer intera
 - Application identity was hidden on desktop while the brand occupied the same space.
 - Multiple late CSS overrides complicate spacing and visual consistency; consolidating them requires screen verification.
 - Signed-in production visual acceptance has not been completed. Existing 87 tests validate important behavior, not the complete interface or all workflows.
+- Signed-in related Sites review exposed a search field squeezed by separate field/filter/group controls. The next pass places these in a searchable-view options popover, keeps active filter/group chips visible, and retains URL state. Relationship links and document-save navigation also needed router transitions.
 
 ## References
 
