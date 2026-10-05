@@ -93,7 +93,7 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
   return (
     <section
       aria-label="Chatter"
-      className="record-chatter border-b border-border bg-surface px-6 py-5"
+      className="record-chatter border-b border-border bg-surface px-6 py-3"
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-sm font-semibold">Chatter</h2>

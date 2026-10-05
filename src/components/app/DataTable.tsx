@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Fragment, useMemo, useState, type ReactNode } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowDown,
   ArrowUp,
@@ -75,6 +76,7 @@ export function DataTable({
   groupingField?: string | undefined;
 }) {
   const { session } = useSession();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; asc: boolean } | null>(null);
   const [page, setPage] = useState(0);
@@ -89,7 +91,7 @@ export function DataTable({
   const selectedColumns = columns.filter((column) => !hiddenColumns.includes(column.key));
   const visibleColumns = selectedColumns.length ? selectedColumns : columns;
   const openRow = recordTable
-    ? (row: Row) => window.location.assign(recordHref(recordTable, row.id))
+    ? (row: Row) => navigate({ to: recordHref(recordTable, row.id) })
     : onRowClick;
 
   const cellValue = (row: Row, column: Column) => {
@@ -412,7 +414,7 @@ export function DataTable({
                   </h3>
                 )}
                 {recordTable ? (
-                  <a className="record-list-card" href={recordHref(recordTable, row.id)}>
+                  <Link className="record-list-card" to={recordHref(recordTable, row.id)}>
                     <strong>{recordLabel(recordTable, row)}</strong>
                     {visibleColumns.slice(1, 5).map((column) => (
                       <span key={column.key}>
@@ -420,7 +422,7 @@ export function DataTable({
                         {cellValue(row, column) || "—"}
                       </span>
                     ))}
-                  </a>
+                  </Link>
                 ) : onRowClick ? (
                   <button
                     type="button"
@@ -580,14 +582,14 @@ export function DataTable({
                       ))}
                       {recordTable && (
                         <td className="px-4 py-2.5 text-right">
-                          <a
-                            href={recordHref(recordTable, row.id)}
+                          <Link
+                            to={recordHref(recordTable, row.id)}
                             aria-label={`Open record: ${recordLabel(recordTable, row)}`}
                             onClick={(event) => event.stopPropagation()}
                             className="text-sm font-medium text-primary hover:underline"
                           >
                             Open<span className="sr-only"> record</span> ↗
-                          </a>
+                          </Link>
                         </td>
                       )}
                     </tr>

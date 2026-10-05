@@ -13,6 +13,7 @@ import {
   shiftApp,
 } from "@/lib/launcher-order";
 import { CompassIcon } from "./CompassIcon";
+import { RotateCcw } from "lucide-react";
 
 export function AppLauncher() {
   const { session } = useSession();
@@ -99,13 +100,15 @@ export function AppLauncher() {
   return (
     <section aria-label="Applications" className="app-desktop">
       <div className="launcher-actions">
-        <span>Hold and drag an app to move it</span>
+        <span className="sr-only">Hold and drag an app to move it, or use Alt and arrow keys.</span>
         <button
           type="button"
+          aria-label="Reset app order"
+          title="Reset app order"
           disabled={!userId}
           onClick={() => updateOrder(userId ? resetAppOrder(userId) : normalizeAppOrder(null))}
         >
-          Reset order
+          <RotateCcw className="h-4 w-4" aria-hidden />
         </button>
       </div>
       {syncError && (

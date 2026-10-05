@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   rpc: vi.fn(),
   canEdit: vi.fn(),
   toastError: vi.fn(),
+  navigate: vi.fn(),
 }));
 vi.mock("../src/lib/data", () => ({
   getRow: mocks.getRow,
@@ -30,21 +31,33 @@ vi.mock("../src/hooks/use-session", () => ({
 vi.mock("../src/integrations/supabase/client", () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: mocks.toastError } }));
 vi.mock("@tanstack/react-router", () => ({
+  useNavigate: () => mocks.navigate,
   Link: ({
     to,
     params,
+    search,
     children,
     ...props
   }: {
     to: string;
     params?: Record<string, string>;
+    search?: Record<string, unknown>;
     children: React.ReactNode;
   }) => (
     <a
-      href={Object.entries(params ?? {}).reduce(
-        (path, [key, value]) => path.replace(`$${key}`, value),
-        to,
-      )}
+      href={
+        Object.entries(params ?? {}).reduce(
+          (path, [key, value]) => path.replace(`$${key}`, value),
+          to,
+        ) +
+        (search
+          ? `?${new URLSearchParams(
+              Object.entries(search)
+                .filter(([, value]) => value !== undefined)
+                .map(([key, value]) => [key, String(value)]),
+            )}`
+          : "")
+      }
       {...props}
     >
       {children}
@@ -104,7 +117,7 @@ test("launcher exposes all twelve workspaces with usable destinations", () => {
     altKey: true,
   });
   expect(screen.getAllByRole("link")[0]?.textContent).toContain("Sites");
-  fireEvent.click(screen.getByRole("button", { name: "Reset order" }));
+  fireEvent.click(screen.getByRole("button", { name: "Reset app order" }));
   expect(screen.getAllByRole("link")[0]?.textContent).toContain("Customers");
 });
 
@@ -254,9 +267,15 @@ test("stale rate save keeps the editor open and displays the refresh error", asy
 test("smart buttons count and link to the same scoped records", async () => {
   mount(<SmartButtons table="customers" id={customer} />);
   await waitFor(() => expect(screen.getByRole("link", { name: /3 Sites/ })).toBeTruthy());
-  expect(screen.getByRole("link", { name: /3 Sites/ }).getAttribute("href")).toBe(
-    `/records/sites?parent=customers&parentId=${customer}`,
+  const target = new URL(
+    screen.getByRole("link", { name: /3 Sites/ }).getAttribute("href")!,
+    "https://heg.test",
   );
+  expect(target.pathname).toBe("/records/sites");
+  expect(target.searchParams.get("parent")).toBe("customers");
+  expect(target.searchParams.get("parentId")).toBe(customer);
+  expect(target.searchParams.get("page")).toBe("0");
+  expect(target.searchParams.has("filterValue")).toBe(false);
   expect(mocks.countRows).toHaveBeenCalledWith("sites", {
     customer_id: customer,
     archived_at: null,
@@ -265,6 +284,18 @@ test("smart buttons count and link to the same scoped records", async () => {
     linked_entity_type: "customer",
     linked_entity_id: customer,
   });
+});
+
+test("record row opening uses application navigation without reloading the document", () => {
+  mount(
+    <DataTable
+      recordTable="customers"
+      columns={[{ key: "legal_name", header: "Customer" }]}
+      rows={[{ id: customer, legal_name: "Navigation customer" }]}
+    />,
+  );
+  fireEvent.click(screen.getByText("Navigation customer"));
+  expect(mocks.navigate).toHaveBeenCalledWith({ to: `/customers/${customer}` });
 });
 
 test("unknown record routes cannot read arbitrary database tables", () => {
