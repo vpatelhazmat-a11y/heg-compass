@@ -1061,6 +1061,7 @@
 .app-position:active { cursor: grabbing; }
 .app-position.is-dragging { opacity: .35; }
 .app-position.is-drop-target { background: #e6dce5; outline: 1px dashed #987b91; }
+.launcher-drag-preview { position: fixed; z-index: 100; pointer-events: none; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 12px 4px; transform: scale(1.04); filter: drop-shadow(0 8px 10px #30203530); }
 .app-tile { padding: 12px 4px; user-select: none; }
 .app-icon { box-shadow: inset 0 1px 0 #ffffff55, 0 2px 4px #2f203012; }
 .workspace-control { background: var(--surface); }

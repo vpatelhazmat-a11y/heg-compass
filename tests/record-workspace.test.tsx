@@ -134,7 +134,7 @@ test("launcher exposes all twelve workspaces with usable destinations", () => {
   expect(screen.getByRole("link", { name: /Refused Loads/ }).getAttribute("href")).toBe(
     "/lost-loads",
   );
-  expect(links[0]?.parentElement?.getAttribute("draggable")).toBe("true");
+  expect(links[0]?.getAttribute("draggable")).toBe("false");
   fireEvent.keyDown(screen.getByRole("link", { name: /Sites/ }), {
     key: "ArrowLeft",
     altKey: true,

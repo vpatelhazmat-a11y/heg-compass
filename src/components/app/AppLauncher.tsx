@@ -14,17 +14,12 @@ import {
 } from "@/lib/launcher-order";
 import { CompassIcon } from "./CompassIcon";
 import { RotateCcw } from "lucide-react";
+import { useAppReorder } from "@/hooks/use-app-reorder";
 
 export function AppLauncher() {
   const { session } = useSession();
   const userId = session?.userId;
   const [order, setOrder] = useState(() => normalizeAppOrder(null));
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [dropTarget, setDropTarget] = useState<string | null>(null);
-  const touchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const touchDrag = useRef<string | null>(null);
-  const touchTarget = useRef<string | null>(null);
-  const suppressClick = useRef(false);
   const [syncError, setSyncError] = useState(false);
   const changeNumber = useRef(0);
   const saveQueue = useRef(Promise.resolve());
@@ -75,32 +70,16 @@ export function AppLauncher() {
     }
   };
 
-  const stopTouch = () => {
-    if (touchTimer.current) clearTimeout(touchTimer.current);
-    touchTimer.current = null;
-  };
-
-  const endTouch = () => {
-    stopTouch();
-    if (touchDrag.current && touchTarget.current && touchDrag.current !== touchTarget.current) {
-      updateOrder(moveApp(order, touchDrag.current, touchTarget.current));
-    }
-    if (touchDrag.current) {
-      suppressClick.current = true;
-      window.setTimeout(() => {
-        suppressClick.current = false;
-      }, 350);
-    }
-    touchDrag.current = null;
-    touchTarget.current = null;
-    setDragging(null);
-    setDropTarget(null);
-  };
+  const reorder = useAppReorder((id, target) => updateOrder(moveApp(order, id, target)));
+  const draggedModule = HUB_MODULES.find((module) => module.id === reorder.drag?.id);
 
   return (
     <section aria-label="Applications" className="app-desktop">
       <div className="launcher-actions">
-        <span className="sr-only">Hold and drag an app to move it, or use Alt and arrow keys.</span>
+        <span id="launcher-reorder-help" className="sr-only">
+          Click and hold an app to drag it. Escape cancels. Alt and arrow keys rearrange apps with
+          the keyboard.
+        </span>
         <button
           type="button"
           aria-label="Reset app order"
@@ -121,58 +100,22 @@ export function AppLauncher() {
           <div
             key={id}
             data-app-id={id}
-            className={`app-position ${dragging === id ? "is-dragging" : ""} ${dropTarget === id ? "is-drop-target" : ""}`}
-            draggable
-            onDragStart={(event) => {
-              setDragging(id);
-              event.dataTransfer.effectAllowed = "move";
-              event.dataTransfer.setData("text/plain", id);
-            }}
-            onDragOver={(event) => {
-              if (dragging && dragging !== id) {
-                event.preventDefault();
-                setDropTarget(id);
-              }
-            }}
-            onDrop={(event) => {
-              event.preventDefault();
-              if (dragging) updateOrder(moveApp(order, dragging, id));
-              setDragging(null);
-              setDropTarget(null);
-            }}
-            onDragEnd={() => {
-              setDragging(null);
-              setDropTarget(null);
-            }}
-            onPointerDown={(event) => {
-              if (event.pointerType === "mouse") return;
-              stopTouch();
-              const tile = event.currentTarget;
-              const pointerId = event.pointerId;
-              touchTimer.current = setTimeout(() => {
-                touchDrag.current = id;
-                setDragging(id);
-                tile.setPointerCapture(pointerId);
-              }, 280);
-            }}
-            onPointerMove={(event) => {
-              if (!touchDrag.current) return;
-              const target =
-                document
-                  .elementFromPoint(event.clientX, event.clientY)
-                  ?.closest<HTMLElement>("[data-app-id]")?.dataset["appId"] ?? null;
-              touchTarget.current = target;
-              setDropTarget(target);
-            }}
-            onPointerUp={endTouch}
-            onPointerCancel={endTouch}
+            className={`app-position ${reorder.drag?.id === id ? "is-dragging" : ""} ${reorder.drag?.target === id ? "is-drop-target" : ""}`}
+            onDragStart={(event) => event.preventDefault()}
+            onPointerDown={(event) => reorder.onPointerDown(id, event)}
+            onPointerMove={reorder.onPointerMove}
+            onPointerUp={reorder.onPointerUp}
+            onPointerCancel={reorder.onPointerCancel}
+            onLostPointerCapture={reorder.onLostPointerCapture}
           >
             <Link
               to={to}
               className="app-tile"
               title={description}
+              draggable={false}
+              aria-describedby="launcher-reorder-help"
               onClick={(event) => {
-                if (suppressClick.current) event.preventDefault();
+                if (reorder.suppressClick()) event.preventDefault();
               }}
               onKeyDown={(event) => {
                 if (
@@ -195,6 +138,18 @@ export function AppLauncher() {
           </div>
         ))}
       </div>
+      {reorder.drag && draggedModule && (
+        <div
+          className="launcher-drag-preview"
+          aria-hidden
+          style={{ left: reorder.drag.x, top: reorder.drag.y, width: reorder.drag.width }}
+        >
+          <span className="app-icon" data-app={draggedModule.label}>
+            <CompassIcon name={draggedModule.label} />
+          </span>
+          <span className="app-label">{draggedModule.label}</span>
+        </div>
+      )}
     </section>
   );
 }

@@ -18,7 +18,7 @@ App launcher → module list → record → linked record is the main journey. B
 | Buttons | One primary action per context; secondary actions quiet; destructive actions in contextual menu | Keyboard accessible, permission checked, pending state prevents duplicate submission |
 | Icons | Original colorful app icons; consistent monochrome functional icons | Accessible names for every icon-only control; no decorative icon on every field |
 | Header | Launcher, application name, up to three primary menus, overflow menu, global utilities | Stable at desktop and mobile widths; active page remains identifiable |
-| Launcher | Uncluttered app grid; hold/drag with visible destination; keyboard alternative | Touch, mouse, keyboard, reload, and separate-user checks |
+| Launcher | Uncluttered app grid; simple click-and-hold followed by free dragging with an icon that follows the pointer and a visible destination; no reorder mode or drag handle; keyboard alternative | Mouse, touch, pen, ordinary click, canceled drag, keyboard, reload, and separate-user checks; hold/drop must never open an app |
 | List control panel | Breadcrumb/title and New; module search; filters/group/favorites; supported view switch; pager | Same query scope across views; filter state survives record/back journey |
 | Record header | Breadcrumb/title/status; contextual actions; centered related smart buttons | No duplicated record title or unrelated action; related counts agree with destination |
 | Form sheet | Quiet values edited directly; meaningful field groups and tabs; Notes last | Required, invalid, saving, saved, stale, and read-only states visible without boxed display fields |
@@ -34,6 +34,7 @@ App launcher → module list → record → linked record is the main journey. B
 ## Delivery order and release gates
 
 1. **Shell and navigation:** remove global creation, eliminate repeated overview links, complete module menus, keep header compact. PR #29 is published; signed-in header verified. Full responsive and navigation acceptance remains pending.
+   **Explicit launcher requirement:** implement click-and-hold movement with the same pointer interaction on mouse, touch, and pen. Show the moving icon, persist the resulting app order, and let Escape/cancel retain the original order. Ordinary clicks still open apps. Added from the user's latest instruction; this is required for completion.
 2. **Shared control panel:** unify module lists before revising individual pages. Audit search, filters, grouping, favorites, selection, export, and browser history. Unsupported view/action controls are not displayed.
 3. **Record framework:** reconcile customer/site/equipment and generic forms into the same header/smart-buttons/sheet/chatter/Notes anatomy. Audit direct editing, save/cancel, stale writes, read-only roles, and relation links.
 4. **Module pass:** Customers, Sites, Equipment, Bids, Refused Loads, Safety, Documents, Knowledge, Tasks, Reporting, Settings. Each gets a recorded screen inventory and journey checklist; dashboard cards must earn their place through a task they support.
