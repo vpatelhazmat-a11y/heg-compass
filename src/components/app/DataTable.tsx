@@ -49,6 +49,7 @@ export function DataTable({
   error,
   onRowClick,
   recordTable,
+  returnTo,
   emptyTitle = "Nothing here yet",
   emptyDescription,
   emptyAction,
@@ -66,6 +67,7 @@ export function DataTable({
   error?: unknown;
   onRowClick?: ((row: Row) => void) | undefined;
   recordTable?: string | undefined;
+  returnTo?: string | undefined;
   emptyTitle?: string;
   emptyDescription?: string;
   emptyAction?: ReactNode;
@@ -92,6 +94,11 @@ export function DataTable({
   const activeGroupBy = bare ? (groupingField ?? "") : groupBy;
   const selectedColumns = columns.filter((column) => !hiddenColumns.includes(column.key));
   const visibleColumns = selectedColumns.length ? selectedColumns : columns;
+  const originHref =
+    returnTo ??
+    (embedded && typeof window !== "undefined"
+      ? window.location.pathname + window.location.search
+      : undefined);
   const primaryLink = Boolean(
     recordTable &&
     visibleColumns[0] &&
@@ -100,7 +107,7 @@ export function DataTable({
     ],
   );
   const openRow = recordTable
-    ? (row: Row) => navigate({ to: recordHref(recordTable, row.id) })
+    ? (row: Row) => navigate({ to: recordHref(recordTable, row.id, originHref) })
     : onRowClick;
 
   const cellValue = (row: Row, column: Column) => {
@@ -431,7 +438,10 @@ export function DataTable({
                   </h3>
                 )}
                 {recordTable ? (
-                  <Link className="record-list-card" to={recordHref(recordTable, row.id)}>
+                  <Link
+                    className="record-list-card"
+                    to={recordHref(recordTable, row.id, originHref)}
+                  >
                     <strong>{recordLabel(recordTable, row)}</strong>
                     {visibleColumns.slice(1, 5).map((column) => (
                       <span key={column.key}>
@@ -579,7 +589,7 @@ export function DataTable({
                         >
                           {primaryLink && recordTable && column === visibleColumns[0] ? (
                             <Link
-                              to={recordHref(recordTable, row.id)}
+                              to={recordHref(recordTable, row.id, originHref)}
                               aria-label={`Open record: ${recordLabel(recordTable, row)}`}
                               onClick={(event) => event.stopPropagation()}
                               className="font-medium text-foreground hover:text-primary hover:underline"
@@ -617,7 +627,7 @@ export function DataTable({
                       {recordTable && !primaryLink && (
                         <td className="px-4 py-2.5 text-right">
                           <Link
-                            to={recordHref(recordTable, row.id)}
+                            to={recordHref(recordTable, row.id, originHref)}
                             aria-label={`Open record: ${recordLabel(recordTable, row)}`}
                             onClick={(event) => event.stopPropagation()}
                             className="text-sm font-medium text-primary hover:underline"

@@ -314,11 +314,12 @@ export function recordLabel(table: string, row: Record<string, unknown>): string
       .join(" · ") || `${definition?.singular ?? "Record"} ${String(row["id"] ?? "").slice(0, 8)}`
   );
 }
-export function recordHref(table: string, id: string): string {
+export function recordHref(table: string, id: string, returnTo?: string): string {
   if (!recordDefinition(table)) return "/command-center";
-  return ["customers", "sites", "equipment"].includes(table)
+  const href = ["customers", "sites", "equipment"].includes(table)
     ? `/${table}/${encodeURIComponent(id)}`
     : `/records/${encodeURIComponent(table)}/${encodeURIComponent(id)}`;
+  return returnTo ? `${href}?returnTo=${encodeURIComponent(returnTo)}` : href;
 }
 
 export function recordListHref(table: string): string {
@@ -374,4 +375,65 @@ export function relatedFilters(relation: RelatedList, id: string): Record<string
   if (relation.entityType) return { linked_entity_type: relation.entityType, linked_entity_id: id };
   if (relation.column) return { [relation.column]: id };
   throw new Error("This relationship needs its dedicated loader.");
+}
+
+export function recordReturnHref(table: string, value?: string): string {
+  const fallback = recordListHref(table);
+  if (!value || value.length > 2000 || !value.startsWith("/") || value.startsWith("//"))
+    return fallback;
+  try {
+    const url = new URL(value, "https://heg.invalid");
+    const allowed = [
+      fallback,
+      "/records/" + table,
+      "/records/" + table + "/",
+      "/customers",
+      "/sites",
+      "/equipment",
+      "/sales",
+      "/safety",
+      "/bids",
+      "/tasks",
+      "/knowledge",
+      "/lost-loads/records",
+    ];
+    const masterRecord = /^\/(customers|sites|equipment)\/[0-9a-f-]{36}$/i.test(url.pathname);
+    const genericRecord = /^\/records\/([a-z_]+)(?:\/([0-9a-f-]{36}))?\/?$/i.exec(url.pathname);
+    const knownRecord = Boolean(genericRecord && recordDefinition(genericRecord[1]!));
+    if (table === "corrective_actions") allowed.push("/safety");
+    if (table === "lost_business") allowed.push("/sales");
+    return url.origin === "https://heg.invalid" &&
+      (allowed.includes(url.pathname) || masterRecord || knownRecord)
+      ? url.pathname + url.search
+      : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+export function recordReturnLabel(table: string, value?: string): string {
+  const url = new URL(recordReturnHref(table, value), "https://heg.invalid");
+  const generic = /^\/records\/([a-z_]+)(?:\/([^/]+))?/.exec(url.pathname);
+  const master = /^\/(customers|sites|equipment)(?:\/([^/]+))?/.exec(url.pathname);
+  const match = generic ?? master;
+  if (match) {
+    const definition = recordDefinition(match[1]!);
+    return (match[2] ? definition?.singular : definition?.label) ?? "Records";
+  }
+  if (url.pathname === "/sales")
+    return url.searchParams.get("section") === "lost" ? "Lost business" : "Opportunities";
+  if (url.pathname === "/safety")
+    return url.searchParams.get("section") === "actions" ? "Corrective actions" : "Incidents";
+  return (
+    (
+      {
+        "/bids": "Bids / RFPs",
+        "/tasks": "Tasks",
+        "/knowledge": "Knowledge",
+        "/lost-loads/records": "Refused Loads",
+      } as Record<string, string>
+    )[url.pathname] ??
+    recordDefinition(table)?.label ??
+    "Records"
+  );
 }

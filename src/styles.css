@@ -1856,3 +1856,6 @@
     max-width: none;
   }
 }
+
+/* Wide table content scrolls within its frame; the application canvas stays viewport-wide. */
+html { overflow-x: clip; }

@@ -1,3 +1,5 @@
+import { parseRecordReturn } from "@/lib/record-return";
+import { recordReturnHref, recordReturnLabel } from "@/lib/record-registry";
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
@@ -27,6 +29,7 @@ import { useSession } from "@/hooks/use-session";
 import { RecordArchiveActions } from "@/components/app/RecordArchiveActions";
 
 export const Route = createFileRoute("/_authenticated/equipment/$equipmentId")({
+  validateSearch: parseRecordReturn,
   head: () => ({
     meta: [
       { title: "Equipment unit — HEG Commercial Intelligence Hub" },
@@ -44,6 +47,7 @@ export const Route = createFileRoute("/_authenticated/equipment/$equipmentId")({
 type Creator = { table: string; title: string; fields: FieldConfig[]; defaults?: Row } | null;
 
 function EquipmentDetail() {
+  const { returnTo } = Route.useSearch();
   const { equipmentId } = Route.useParams();
   const { canEdit } = useSession();
   const canWrite = canEdit("equipment");
@@ -207,7 +211,10 @@ function EquipmentDetail() {
           [unit.model_year, unit.make, unit.equipment_type].filter(Boolean).join(" ") || undefined
         }
         breadcrumbs={[
-          { label: "Equipment", to: "/equipment" },
+          {
+            label: recordReturnLabel("equipment", returnTo),
+            to: recordReturnHref("equipment", returnTo),
+          },
           { label: `Unit ${unit.unit_number}` },
         ]}
         meta={
