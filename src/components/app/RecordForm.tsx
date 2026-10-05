@@ -79,6 +79,9 @@ export function RecordForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeField, setActiveField] = useState<string | null>(null);
+  const [expectedUpdatedAt, setExpectedUpdatedAt] = useState<string | undefined>(
+    initialValues?.updated_at,
+  );
   const dirty = fields.some(
     (field) => String(values[field.name] ?? "") !== String(baseline[field.name] ?? ""),
   );
@@ -90,6 +93,7 @@ export function RecordForm({
     setBaseline(base);
     setErrors({});
     setActiveField(null);
+    setExpectedUpdatedAt(initialValues?.updated_at);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, recordId]);
 
@@ -114,24 +118,30 @@ export function RecordForm({
       if (table === "rates" && recordId) {
         const { data, error } = await supabase.rpc("revise_rate", {
           _id: recordId,
-          _expected_updated_at: initialValues.updated_at,
+          _expected_updated_at: expectedUpdatedAt!,
           _values: payload,
         });
         if (error) throw new Error(error.message);
         saved = Array.isArray(data) ? data[0] : data;
       } else
         saved = recordId
-          ? await updateRow(table, recordId, payload)
+          ? await updateRow(
+              table,
+              recordId,
+              payload,
+              table === "equipment_leases" ? expectedUpdatedAt : undefined,
+            )
           : await insertRow(table, payload);
       return saved;
     },
     onSuccess: (saved) => {
+      setExpectedUpdatedAt(saved.updated_at);
       toast.success(recordId ? "Changes saved" : "Record created");
       queryClient.invalidateQueries();
       for (const key of invalidateKeys) queryClient.invalidateQueries({ queryKey: key });
       if (presentation === "record") {
         const next = startingValues(fields, saved, defaults);
-        if (table === "rates") next.change_reason = "";
+        if (["rates", "equipment_leases"].includes(table)) next.change_reason = "";
         setBaseline(next);
         setValues(next);
         setErrors({});

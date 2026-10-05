@@ -128,12 +128,17 @@ export async function insertRow(table: string, values: Row): Promise<Row> {
   return data as Row;
 }
 
-export async function updateRow(table: string, id: string, values: Row): Promise<Row> {
-  const { data, error } = await (supabase.from(table as never) as Row)
-    .update(values)
-    .eq("id", id)
-    .select()
-    .single();
+export async function updateRow(
+  table: string,
+  id: string,
+  values: Row,
+  expectedUpdatedAt?: string,
+): Promise<Row> {
+  let query = (supabase.from(table as never) as Row).update(values).eq("id", id);
+  if (expectedUpdatedAt) query = query.eq("updated_at", expectedUpdatedAt);
+  const { data, error } = await query.select().single();
+  if (error && expectedUpdatedAt && error.code === "PGRST116")
+    throw new Error("This record changed while you were editing. Refresh it before saving again.");
   if (error) throw new Error(friendlyError(error.message));
   return data as Row;
 }
@@ -173,6 +178,11 @@ export async function countRows(
 }
 
 export function friendlyError(message: string): string {
+  if (/equipment_rate_dates_valid/i.test(message))
+    return "The rate expiry date must be on or after its effective date.";
+  if (/equipment_lease_dates_valid/i.test(message))
+    return "The agreement end date must be on or after its start date.";
+  if (/equipment_rate_amount_valid/i.test(message)) return "Enter a finite amount of zero or more.";
   if (/row-level security|permission denied/i.test(message)) {
     return "You don't have permission to make this change. Ask an administrator to update your role.";
   }

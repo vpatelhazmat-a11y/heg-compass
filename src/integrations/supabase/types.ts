@@ -1014,8 +1014,62 @@ export type Database = {
           },
         ]
       }
+      equipment_rate_history: {
+        Row: {
+          id: string
+          rate_term_id: string
+          event_type: string
+          previous_record: Json | null
+          new_record: Json
+          reason: string | null
+          changed_by: string | null
+          changed_at: string
+        }
+        Insert: {
+          id?: string
+          rate_term_id: string
+          event_type: string
+          previous_record?: Json | null
+          new_record: Json
+          reason?: string | null
+          changed_by?: string | null
+          changed_at?: string
+        }
+        Update: {
+          id?: string
+          rate_term_id?: string
+          event_type?: string
+          previous_record?: Json | null
+          new_record?: Json
+          reason?: string | null
+          changed_by?: string | null
+          changed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_rate_history_rate_term_id_fkey"
+            columns: ["rate_term_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_leases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "equipment_rate_history_changed_by_fkey"
+            columns: ["changed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       equipment_leases: {
         Row: {
+          change_reason: string | null
+          currency_code: string
+          effective_date: string | null
+          expiration_date: string | null
+          rate_kind: string
+          rate_unit: string
           contract_id: string | null
           created_at: string
           customer_id: string | null
@@ -1030,6 +1084,12 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          change_reason?: string | null
+          currency_code?: string
+          effective_date?: string | null
+          expiration_date?: string | null
+          rate_kind?: string
+          rate_unit?: string
           contract_id?: string | null
           created_at?: string
           customer_id?: string | null
@@ -1044,6 +1104,12 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          change_reason?: string | null
+          currency_code?: string
+          effective_date?: string | null
+          expiration_date?: string | null
+          rate_kind?: string
+          rate_unit?: string
           contract_id?: string | null
           created_at?: string
           customer_id?: string | null

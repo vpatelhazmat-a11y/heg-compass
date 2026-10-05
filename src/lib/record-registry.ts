@@ -178,6 +178,22 @@ export const RECORDS: Record<string, RecordDefinition> = {
     fields.equipmentAssignmentFields,
     ["equipment_id", "customer_id", "site_id", "lane_id", "product_id"],
   ),
+  equipment_leases: define(
+    "Equipment Rates",
+    "Equipment rate",
+    ["rate_kind", "rate_unit"],
+    [
+      "equipment_id",
+      "rate_kind",
+      "rate",
+      "rate_unit",
+      "currency_code",
+      "effective_date",
+      "expiration_date",
+    ],
+    fields.equipmentLeaseFields,
+    ["equipment_id", "customer_id", "contract_id"],
+  ),
   equipment_compliance: define(
     "Equipment Compliance",
     "Compliance record",
@@ -254,7 +270,7 @@ export function relationDependsOnCustomer(table: string, key: string): boolean {
   // Lane endpoints are physical locations and may belong to different customers.
   return (
     Boolean(recordDefinition(table)?.relations.includes("customer_id")) &&
-    ["site_id", "lane_id", "product_id", "opportunity_id"].includes(key)
+    ["site_id", "lane_id", "product_id", "opportunity_id", "contract_id"].includes(key)
   );
 }
 export function fieldLabel(name: string): string {
@@ -318,6 +334,7 @@ export const RELATED_LISTS: Record<string, RelatedList[]> = {
   ],
   equipment: [
     { table: "equipment_assignments", label: "Assignments", column: "equipment_id" },
+    { table: "equipment_leases", label: "Rates", column: "equipment_id" },
     { table: "incidents", label: "Incidents", column: "equipment_id" },
     { table: "documents", label: "Documents", entityType: "equipment" },
   ],
