@@ -1,10 +1,15 @@
 import type { FieldConfig } from "@/components/app/RecordForm";
+import { notePlainText, parseNoteValue } from "./rich-text";
 
 export function validateFields(fields: FieldConfig[], values: Record<string, unknown>) {
   const errors: Record<string, string> = {};
   for (const field of fields) {
     const raw = values[field.name];
-    const blank = raw === null || raw === undefined || (typeof raw === "string" && !raw.trim());
+    const blank =
+      raw === null ||
+      raw === undefined ||
+      (typeof raw === "string" && !raw.trim()) ||
+      (field.type === "richtext" && !notePlainText(parseNoteValue(raw)).trim());
     if (field.required && blank) errors[field.name] = `${field.label} is required`;
     if (
       !blank &&
@@ -32,7 +37,16 @@ export function formPayload(
   const payload: Record<string, unknown> = {};
   for (const field of fields) {
     const raw = values[field.name];
-    if (field.type === "checkbox") payload[field.name] = Boolean(raw);
+    if (field.type === "richtext") {
+      const document = parseNoteValue(raw);
+      const text = notePlainText(document);
+      if (!text.trim() && !editing) continue;
+      payload[field.name] = text.trim() ? text : null;
+      payload["rich_text"] = {
+        ...((payload["rich_text"] as Record<string, unknown>) ?? {}),
+        [field.name]: text.trim() ? document : null,
+      };
+    } else if (field.type === "checkbox") payload[field.name] = Boolean(raw);
     else if (raw === undefined || raw === null || (typeof raw === "string" && !raw.trim())) {
       // Omitting blank optional values on INSERT lets database defaults apply.
       if (editing) payload[field.name] = null;

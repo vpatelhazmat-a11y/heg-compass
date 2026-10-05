@@ -1,6 +1,7 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
+import { RichTextView } from "@/components/app/RichText";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -677,9 +678,24 @@ function CustomerDetail() {
             ) : (
               <Panel title="Notes">
                 <FieldGrid>
-                  <Field label="Qualification">{orDash(customer.qualification_notes)}</Field>
-                  <Field label="Commercial">{orDash(customer.commercial_notes)}</Field>
-                  <Field label="Risk">{orDash(customer.risk_notes)}</Field>
+                  <Field label="Qualification">
+                    <RichTextView
+                      document={customer.rich_text?.qualification_notes}
+                      text={customer.qualification_notes}
+                    />
+                  </Field>
+                  <Field label="Commercial">
+                    <RichTextView
+                      document={customer.rich_text?.commercial_notes}
+                      text={customer.commercial_notes}
+                    />
+                  </Field>
+                  <Field label="Risk">
+                    <RichTextView
+                      document={customer.rich_text?.risk_notes}
+                      text={customer.risk_notes}
+                    />
+                  </Field>
                 </FieldGrid>
               </Panel>
             )}

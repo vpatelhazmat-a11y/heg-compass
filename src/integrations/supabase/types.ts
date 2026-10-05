@@ -52,6 +52,7 @@ export type Database = {
       }
       bids: {
         Row: {
+          rich_text: Json
           bid_name: string
           bid_type: string | null
           created_at: string
@@ -75,6 +76,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           bid_name: string
           bid_type?: string | null
           created_at?: string
@@ -98,6 +100,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           bid_name?: string
           bid_type?: string | null
           created_at?: string
@@ -146,6 +149,7 @@ export type Database = {
       }
       contacts: {
         Row: {
+          rich_text: Json
           active: boolean
           contact_type: string | null
           created_at: string
@@ -164,6 +168,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           active?: boolean
           contact_type?: string | null
           created_at?: string
@@ -182,6 +187,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           active?: boolean
           contact_type?: string | null
           created_at?: string
@@ -225,6 +231,7 @@ export type Database = {
       }
       contracts: {
         Row: {
+          rich_text: Json
           commercial_terms_summary: string | null
           contract_name: string | null
           contract_number: string | null
@@ -240,6 +247,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           commercial_terms_summary?: string | null
           contract_name?: string | null
           contract_number?: string | null
@@ -255,6 +263,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           commercial_terms_summary?: string | null
           contract_name?: string | null
           contract_number?: string | null
@@ -281,6 +290,7 @@ export type Database = {
       }
       corrective_actions: {
         Row: {
+          rich_text: Json
           action: string
           completion_date: string | null
           completion_evidence: string | null
@@ -294,6 +304,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           action: string
           completion_date?: string | null
           completion_evidence?: string | null
@@ -307,6 +318,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           action?: string
           completion_date?: string | null
           completion_evidence?: string | null
@@ -331,6 +343,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          rich_text: Json
           account_owner: string | null
           archived_at: string | null
           commercial_notes: string | null
@@ -365,6 +378,7 @@ export type Database = {
           website: string | null
         }
         Insert: {
+          rich_text?: Json
           account_owner?: string | null
           archived_at?: string | null
           commercial_notes?: string | null
@@ -399,6 +413,7 @@ export type Database = {
           website?: string | null
         }
         Update: {
+          rich_text?: Json
           account_owner?: string | null
           archived_at?: string | null
           commercial_notes?: string | null
@@ -444,6 +459,7 @@ export type Database = {
       }
       documents: {
         Row: {
+          rich_text: Json
           classification: string | null
           created_at: string
           document_name: string
@@ -473,6 +489,7 @@ export type Database = {
           version: string | null
         }
         Insert: {
+          rich_text?: Json
           classification?: string | null
           created_at?: string
           document_name: string
@@ -502,6 +519,7 @@ export type Database = {
           version?: string | null
         }
         Update: {
+          rich_text?: Json
           classification?: string | null
           created_at?: string
           document_name?: string
@@ -598,6 +616,7 @@ export type Database = {
       }
       driver_qualifications: {
         Row: {
+          rich_text: Json
           created_at: string
           driver_id: string
           expiration_date: string | null
@@ -611,6 +630,7 @@ export type Database = {
           verification_source: string | null
         }
         Insert: {
+          rich_text?: Json
           created_at?: string
           driver_id: string
           expiration_date?: string | null
@@ -624,6 +644,7 @@ export type Database = {
           verification_source?: string | null
         }
         Update: {
+          rich_text?: Json
           created_at?: string
           driver_id?: string
           expiration_date?: string | null
@@ -648,6 +669,7 @@ export type Database = {
       }
       driver_safety_events: {
         Row: {
+          rich_text: Json
           category: string | null
           created_at: string
           driver_id: string
@@ -662,6 +684,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           category?: string | null
           created_at?: string
           driver_id: string
@@ -676,6 +699,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           category?: string | null
           created_at?: string
           driver_id?: string
@@ -701,6 +725,7 @@ export type Database = {
       }
       drivers: {
         Row: {
+          rich_text: Json
           created_at: string
           employee_reference: string | null
           general_notes: string | null
@@ -711,6 +736,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           created_at?: string
           employee_reference?: string | null
           general_notes?: string | null
@@ -721,6 +747,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           created_at?: string
           employee_reference?: string | null
           general_notes?: string | null
@@ -734,6 +761,7 @@ export type Database = {
       }
       equipment: {
         Row: {
+          rich_text: Json
           archived_at: string | null
           capacity: string | null
           category: string | null
@@ -766,6 +794,7 @@ export type Database = {
           vin: string | null
         }
         Insert: {
+          rich_text?: Json
           archived_at?: string | null
           capacity?: string | null
           category?: string | null
@@ -798,6 +827,7 @@ export type Database = {
           vin?: string | null
         }
         Update: {
+          rich_text?: Json
           archived_at?: string | null
           capacity?: string | null
           category?: string | null
@@ -855,6 +885,7 @@ export type Database = {
       }
       equipment_assignments: {
         Row: {
+          rich_text: Json
           assignment_type: string | null
           created_at: string
           customer_id: string | null
@@ -870,6 +901,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           assignment_type?: string | null
           created_at?: string
           customer_id?: string | null
@@ -885,6 +917,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           assignment_type?: string | null
           created_at?: string
           customer_id?: string | null
@@ -960,6 +993,7 @@ export type Database = {
       }
       equipment_compliance: {
         Row: {
+          rich_text: Json
           created_at: string
           effective_date: string | null
           equipment_id: string
@@ -975,6 +1009,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           created_at?: string
           effective_date?: string | null
           equipment_id: string
@@ -990,6 +1025,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           created_at?: string
           effective_date?: string | null
           equipment_id?: string
@@ -1064,6 +1100,7 @@ export type Database = {
       }
       equipment_leases: {
         Row: {
+          rich_text: Json
           change_reason: string | null
           currency_code: string
           effective_date: string | null
@@ -1084,6 +1121,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           change_reason?: string | null
           currency_code?: string
           effective_date?: string | null
@@ -1104,6 +1142,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           change_reason?: string | null
           currency_code?: string
           effective_date?: string | null
@@ -1156,6 +1195,7 @@ export type Database = {
       }
       equipment_technology: {
         Row: {
+          rich_text: Json
           cable_id: string | null
           created_at: string
           device_id: string | null
@@ -1169,6 +1209,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           cable_id?: string | null
           created_at?: string
           device_id?: string | null
@@ -1182,6 +1223,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           cable_id?: string | null
           created_at?: string
           device_id?: string | null
@@ -1206,6 +1248,7 @@ export type Database = {
       }
       import_batches: {
         Row: {
+          rich_text: Json
           created_at: string
           filename: string | null
           id: string
@@ -1223,6 +1266,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           created_at?: string
           filename?: string | null
           id?: string
@@ -1240,6 +1284,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           created_at?: string
           filename?: string | null
           id?: string
@@ -1260,6 +1305,7 @@ export type Database = {
       }
       import_staging: {
         Row: {
+          rich_text: Json
           batch_id: string | null
           confidence: string | null
           created_at: string
@@ -1277,6 +1323,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           batch_id?: string | null
           confidence?: string | null
           created_at?: string
@@ -1294,6 +1341,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           batch_id?: string | null
           confidence?: string | null
           created_at?: string
@@ -1322,6 +1370,7 @@ export type Database = {
       }
       incidents: {
         Row: {
+          rich_text: Json
           closed_date: string | null
           corrective_action: string | null
           created_at: string
@@ -1348,6 +1397,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           closed_date?: string | null
           corrective_action?: string | null
           created_at?: string
@@ -1374,6 +1424,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           closed_date?: string | null
           corrective_action?: string | null
           created_at?: string
@@ -1453,6 +1504,7 @@ export type Database = {
       }
       knowledge_articles: {
         Row: {
+          rich_text: Json
           category: string | null
           content: string | null
           created_at: string
@@ -1469,6 +1521,7 @@ export type Database = {
           version: string | null
         }
         Insert: {
+          rich_text?: Json
           category?: string | null
           content?: string | null
           created_at?: string
@@ -1485,6 +1538,7 @@ export type Database = {
           version?: string | null
         }
         Update: {
+          rich_text?: Json
           category?: string | null
           content?: string | null
           created_at?: string
@@ -1519,6 +1573,7 @@ export type Database = {
       }
       lanes: {
         Row: {
+          rich_text: Json
           active: boolean
           created_at: string
           customer_id: string | null
@@ -1541,6 +1596,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           active?: boolean
           created_at?: string
           customer_id?: string | null
@@ -1563,6 +1619,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           active?: boolean
           created_at?: string
           customer_id?: string | null
@@ -1643,6 +1700,7 @@ export type Database = {
       }
       lost_business: {
         Row: {
+          rich_text: Json
           capacity_issue: boolean | null
           competitor: string | null
           created_at: string
@@ -1672,6 +1730,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           capacity_issue?: boolean | null
           competitor?: string | null
           created_at?: string
@@ -1701,6 +1760,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           capacity_issue?: boolean | null
           competitor?: string | null
           created_at?: string
@@ -1869,6 +1929,7 @@ export type Database = {
       }
       meetings: {
         Row: {
+          rich_text: Json
           created_at: string
           created_by: string | null
           decisions: string | null
@@ -1881,6 +1942,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           created_at?: string
           created_by?: string | null
           decisions?: string | null
@@ -1893,6 +1955,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           created_at?: string
           created_by?: string | null
           decisions?: string | null
@@ -1908,6 +1971,7 @@ export type Database = {
       }
       opportunities: {
         Row: {
+          rich_text: Json
           capacity_status: string | null
           competitor: string | null
           created_at: string
@@ -1930,6 +1994,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           capacity_status?: string | null
           competitor?: string | null
           created_at?: string
@@ -1952,6 +2017,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           capacity_status?: string | null
           competitor?: string | null
           created_at?: string
@@ -1999,6 +2065,7 @@ export type Database = {
       }
       products: {
         Row: {
+          rich_text: Json
           active: boolean
           created_at: string
           customer_id: string | null
@@ -2021,6 +2088,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           active?: boolean
           created_at?: string
           customer_id?: string | null
@@ -2043,6 +2111,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           active?: boolean
           created_at?: string
           customer_id?: string | null
@@ -2112,6 +2181,7 @@ export type Database = {
       }
       rate_history: {
         Row: {
+          rich_text: Json
           approved_by: string | null
           changed_by: string | null
           created_at: string
@@ -2128,6 +2198,7 @@ export type Database = {
           source: string | null
         }
         Insert: {
+          rich_text?: Json
           approved_by?: string | null
           changed_by?: string | null
           created_at?: string
@@ -2144,6 +2215,7 @@ export type Database = {
           source?: string | null
         }
         Update: {
+          rich_text?: Json
           approved_by?: string | null
           changed_by?: string | null
           created_at?: string
@@ -2171,6 +2243,7 @@ export type Database = {
       }
       rates: {
         Row: {
+          rich_text: Json
           accessorials: string | null
           amount: number | null
           approval_date: string | null
@@ -2200,6 +2273,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          rich_text?: Json
           accessorials?: string | null
           amount?: number | null
           approval_date?: string | null
@@ -2229,6 +2303,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          rich_text?: Json
           accessorials?: string | null
           amount?: number | null
           approval_date?: string | null
@@ -2325,6 +2400,7 @@ export type Database = {
       }
       refused_loads: {
         Row: {
+          rich_text: Json
           bid_id: string | null
           call_in_date: string
           contact_id: string | null
@@ -2361,6 +2437,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          rich_text?: Json
           bid_id?: string | null
           call_in_date?: string
           contact_id?: string | null
@@ -2397,6 +2474,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          rich_text?: Json
           bid_id?: string | null
           call_in_date?: string
           contact_id?: string | null
@@ -2549,6 +2627,7 @@ export type Database = {
       }
       requirements: {
         Row: {
+          rich_text: Json
           category: string
           created_at: string
           description: string | null
@@ -2575,6 +2654,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           category?: string
           created_at?: string
           description?: string | null
@@ -2601,6 +2681,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           category?: string
           created_at?: string
           description?: string | null
@@ -2694,6 +2775,7 @@ export type Database = {
       }
       site_assessments: {
         Row: {
+          rich_text: Json
           approval_status: string | null
           assessment_date: string | null
           assessment_type: string | null
@@ -2710,6 +2792,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          rich_text?: Json
           approval_status?: string | null
           assessment_date?: string | null
           assessment_type?: string | null
@@ -2726,6 +2809,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          rich_text?: Json
           approval_status?: string | null
           assessment_date?: string | null
           assessment_type?: string | null
@@ -2753,6 +2837,7 @@ export type Database = {
       }
       sites: {
         Row: {
+          rich_text: Json
           access_requirements: string | null
           active: boolean
           address: string | null
@@ -2795,6 +2880,7 @@ export type Database = {
           updated_by: string | null
         }
         Insert: {
+          rich_text?: Json
           access_requirements?: string | null
           active?: boolean
           address?: string | null
@@ -2837,6 +2923,7 @@ export type Database = {
           updated_by?: string | null
         }
         Update: {
+          rich_text?: Json
           access_requirements?: string | null
           active?: boolean
           address?: string | null

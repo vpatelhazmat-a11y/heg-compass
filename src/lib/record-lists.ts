@@ -24,7 +24,7 @@ export function recordListFields(table: string) {
         .filter(
           (field) =>
             !field.name.endsWith("_id") &&
-            (!field.type || ["text", "textarea", "select"].includes(field.type)),
+            (!field.type || ["text", "textarea", "richtext", "select"].includes(field.type)),
         )
         .map((field) => field.name),
     ),

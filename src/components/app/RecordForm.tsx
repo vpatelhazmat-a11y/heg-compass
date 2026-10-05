@@ -1,7 +1,7 @@
 import { useSession } from "@/hooks/use-session";
 import { formPayload, validateFields } from "@/lib/form-values";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -19,8 +19,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { insertRow, updateRow, type Row } from "@/lib/data";
 import { formatDate } from "@/lib/format";
+import { noteDocument, parseNoteValue } from "@/lib/rich-text";
+import { RichTextView } from "./RichText";
+const RichTextEditor = lazy(() => import("./RichTextEditor"));
 
-export type FieldType = "text" | "textarea" | "number" | "date" | "select" | "checkbox" | "money";
+export type FieldType =
+  "text" | "textarea" | "richtext" | "number" | "date" | "select" | "checkbox" | "money";
 
 export type FieldConfig = {
   name: string;
@@ -39,7 +43,12 @@ function startingValues(fields: FieldConfig[], initialValues?: Row, defaults?: R
   const base: Row = {};
   for (const field of fields) {
     const initial = initialValues?.[field.name] ?? defaults?.[field.name];
-    base[field.name] = initial ?? (field.type === "checkbox" ? false : "");
+    base[field.name] =
+      field.type === "richtext"
+        ? JSON.stringify(
+            noteDocument(initialValues?.rich_text?.[field.name], String(initial ?? "")),
+          )
+        : (initial ?? (field.type === "checkbox" ? false : ""));
   }
   return base;
 }
@@ -103,13 +112,15 @@ export function RecordForm({
       const key = field.section ?? "Details";
       grouped.set(key, [...(grouped.get(key) ?? []), field]);
     }
-    return [...grouped.entries()];
+    return [...grouped.entries()].sort(([a], [b]) => Number(a === "Notes") - Number(b === "Notes"));
   }, [fields]);
 
   const mutation = useMutation({
     mutationFn: async () => {
       if (!canEdit(table)) throw new Error("You do not have permission to edit this record.");
       const payload: Row = formPayload(fields, values, Boolean(recordId));
+      if (payload.rich_text)
+        payload.rich_text = { ...(initialValues?.rich_text ?? {}), ...payload.rich_text };
       for (const [key, value] of Object.entries(defaults ?? {})) {
         if (payload[key] === undefined || payload[key] === null) payload[key] = value;
       }
@@ -181,7 +192,10 @@ export function RecordForm({
         <div className={presentation !== "sheet" ? "inline-form-sections" : "space-y-7"}>
           {sections.map(([sectionName, sectionFields]) =>
             presentation === "record" && sectionName === "Revision" && !dirty ? null : (
-              <section key={sectionName} className="space-y-4">
+              <section
+                key={sectionName}
+                className={`space-y-4 ${sectionName === "Notes" ? "record-form-notes" : ""}`}
+              >
                 <h3 className="section-title">{sectionName}</h3>
                 <div
                   className={
@@ -248,7 +262,45 @@ export function RecordForm({
                               {field.label}
                               {field.required && <span className="ml-1 text-danger">*</span>}
                             </Label>
-                            {isDisplayValue ? (
+                            {field.type === "richtext" ? (
+                              isDisplayValue ? (
+                                <div
+                                  id={id}
+                                  role="button"
+                                  tabIndex={0}
+                                  className="record-data-value"
+                                  aria-label={`Edit ${field.label}`}
+                                  onClick={() => setActiveField(field.name)}
+                                  onKeyDown={(event) => {
+                                    if (event.key === "Enter" || event.key === " ") {
+                                      event.preventDefault();
+                                      setActiveField(field.name);
+                                    }
+                                  }}
+                                >
+                                  <RichTextView
+                                    document={parseNoteValue(values[field.name])}
+                                    interactive={false}
+                                  />
+                                </div>
+                              ) : (
+                                <Suspense
+                                  fallback={
+                                    <p className="text-sm text-muted-foreground">Loading editor…</p>
+                                  }
+                                >
+                                  <RichTextEditor
+                                    autoFocus={presentation === "record"}
+                                    id={id}
+                                    label={field.label}
+                                    value={values[field.name] ?? ""}
+                                    onChange={(value) =>
+                                      setValues((prev: Row) => ({ ...prev, [field.name]: value }))
+                                    }
+                                  />
+                                </Suspense>
+                              )
+                            ) : isDisplayValue ? (
                               <button
                                 id={id}
                                 type="button"
