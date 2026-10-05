@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "./StatusBadge";
 import { formatDate, formatMoney } from "@/lib/format";
@@ -25,7 +25,7 @@ import { PageHeader } from "./PageHeader";
 import { DataTable } from "./DataTable";
 import { SavedViews } from "./SavedViews";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
-import { RecordRelations } from "./RecordLink";
+import { RecordLink, RecordRelations } from "./RecordLink";
 import { RecordChatter } from "./RecordChatter";
 import { DocumentFile } from "./DocumentFile";
 import { RichTextView } from "./RichText";
@@ -77,12 +77,14 @@ export function RecordListPage({
   parentId,
   state = {},
   onChange,
+  actions,
 }: {
   table: string;
   parent?: string | undefined;
   parentId?: string | undefined;
   state?: ListState;
   onChange?: (patch: ListPatch) => void;
+  actions?: ReactNode;
 }) {
   const { session, canEdit } = useSession();
   const navigate = useNavigate();
@@ -131,11 +133,12 @@ export function RecordListPage({
       <PageHeader
         title={definition.label}
         actions={
-          table === "documents" && canEdit("documents") ? (
+          actions ??
+          (table === "documents" && canEdit("documents") ? (
             <Button onClick={() => setCreatingDocument(true)}>
               <Plus className="h-4 w-4" /> New document
             </Button>
-          ) : undefined
+          ) : undefined)
         }
         breadcrumbs={[
           { label: "Apps", to: "/command-center" },
@@ -365,7 +368,7 @@ export function RecordListPage({
                             <small>{fieldLabel(key)}</small>
                             {key === "status" && row.archived_at
                               ? "Archived"
-                              : String(row[key] ?? "—")}
+                              : listValue(table, key, row)}
                           </span>
                         ))}
                       </Link>
@@ -389,12 +392,12 @@ export function RecordListPage({
                   key,
                   header: fieldLabel(key),
                   sortable: false,
-                  ...(key === "status"
-                    ? {
-                        render: (row: Row) =>
-                          row.archived_at ? "Archived" : String(row.status ?? "—"),
-                      }
-                    : {}),
+                  render: (row: Row) => listValue(table, key, row),
+                  align: ["money", "number"].includes(
+                    definition.fields.find((field) => field.name === key)?.type ?? "",
+                  )
+                    ? ("right" as const)
+                    : ("left" as const),
                 }))}
                 rows={rows.data?.rows ?? []}
                 emptyTitle={`No ${definition.label.toLowerCase()} found`}
@@ -447,6 +450,17 @@ export function RecordListPage({
       )}
     </>
   );
+}
+
+function listValue(table: string, key: string, row: Row) {
+  const field = recordDefinition(table)?.fields.find((field) => field.name === key);
+  const target = RELATION_TARGETS[key];
+  if (target) return <RecordLink table={target} id={row[key]} />;
+  if (key === "status") return <StatusBadge status={row.archived_at ? "Archived" : row[key]} />;
+  if (field?.type === "date") return formatDate(row[key]);
+  if (field?.type === "money") return formatMoney(row[key], row.currency_code, 2);
+  if (field?.type === "checkbox") return row[key] ? "Yes" : "No";
+  return String(row[key] ?? "—");
 }
 
 const hidden = new Set([
