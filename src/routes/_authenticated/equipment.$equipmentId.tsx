@@ -1,6 +1,7 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
+import { RichTextView } from "@/components/app/RichText";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -478,7 +479,7 @@ function EquipmentDetail() {
               />
             ) : (
               <Panel title="Notes">
-                <p className="text-sm text-foreground">{orDash(unit.notes)}</p>
+                <RichTextView document={unit.rich_text?.notes} text={unit.notes} />
               </Panel>
             )}
           </section>

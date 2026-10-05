@@ -1,6 +1,7 @@
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
 import { RecordChatter } from "@/components/app/RecordChatter";
+import { RichTextView } from "@/components/app/RichText";
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -402,9 +403,21 @@ function SiteDetail() {
             ) : (
               <Panel title="Notes">
                 <FieldGrid>
-                  <Field label="Route">{orDash(site.route_notes)}</Field>
-                  <Field label="Parking">{orDash(site.parking_notes)}</Field>
-                  <Field label="Special instructions">{orDash(site.special_instructions)}</Field>
+                  <Field label="Route">
+                    <RichTextView document={site.rich_text?.route_notes} text={site.route_notes} />
+                  </Field>
+                  <Field label="Parking">
+                    <RichTextView
+                      document={site.rich_text?.parking_notes}
+                      text={site.parking_notes}
+                    />
+                  </Field>
+                  <Field label="Special instructions">
+                    <RichTextView
+                      document={site.rich_text?.special_instructions}
+                      text={site.special_instructions}
+                    />
+                  </Field>
                 </FieldGrid>
               </Panel>
             )}

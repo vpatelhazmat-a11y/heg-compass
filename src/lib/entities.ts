@@ -198,11 +198,11 @@ export const customerFields: FieldConfig[] = [
   {
     name: "qualification_notes",
     label: "Qualification notes",
-    type: "textarea",
-    section: "Qualification",
+    type: "richtext",
+    section: "Notes",
   },
-  { name: "commercial_notes", label: "Commercial notes", type: "textarea", section: "Commercial" },
-  { name: "risk_notes", label: "Risk notes", type: "textarea", section: "Commercial" },
+  { name: "commercial_notes", label: "Commercial notes", type: "richtext", section: "Notes" },
+  { name: "risk_notes", label: "Risk notes", type: "richtext", section: "Notes" },
 ];
 
 export const siteFields: FieldConfig[] = [
@@ -246,8 +246,8 @@ export const siteFields: FieldConfig[] = [
     type: "textarea",
     section: "Operations",
   },
-  { name: "route_notes", label: "Route notes", type: "textarea", section: "Operations" },
-  { name: "parking_notes", label: "Parking notes", type: "textarea", section: "Operations" },
+  { name: "route_notes", label: "Route notes", type: "richtext", section: "Notes" },
+  { name: "parking_notes", label: "Parking notes", type: "richtext", section: "Notes" },
   {
     name: "ppe_requirements",
     label: "PPE required",
@@ -281,7 +281,7 @@ export const siteFields: FieldConfig[] = [
   {
     name: "special_instructions",
     label: "Special instructions",
-    type: "textarea",
+    type: "richtext",
     section: "Notes",
   },
 ];
@@ -306,7 +306,7 @@ export const contactFields: FieldConfig[] = [
     label: "Preferred contact method",
     section: "How to reach them",
   },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const productFields: FieldConfig[] = [
@@ -359,8 +359,8 @@ export const productFields: FieldConfig[] = [
   {
     name: "special_instructions",
     label: "Special instructions",
-    type: "textarea",
-    section: "Requirements",
+    type: "richtext",
+    section: "Notes",
   },
   { name: "source", label: "Information source", section: "Source" },
 ];
@@ -374,7 +374,7 @@ export const laneFields: FieldConfig[] = [
   { name: "route_description", label: "Route description", type: "textarea", section: "Route" },
   { name: "route_restrictions", label: "Route restrictions", type: "textarea", section: "Route" },
   { name: "permit_requirements", label: "Permit requirements", type: "textarea", section: "Route" },
-  { name: "seasonal_notes", label: "Seasonal notes", type: "textarea", section: "Route" },
+  { name: "seasonal_notes", label: "Seasonal notes", type: "richtext", section: "Notes" },
   {
     name: "equipment_requirements",
     label: "Equipment requirements",
@@ -432,7 +432,7 @@ export const rateFields: FieldConfig[] = [
   { name: "accessorials", label: "Accessorials", type: "textarea", section: "Charges" },
   { name: "quote_reference", label: "Quote reference", section: "Support" },
   { name: "source", label: "Supporting source", section: "Support" },
-  { name: "notes", label: "Notes", type: "textarea", section: "Support" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const bidFields: FieldConfig[] = [
@@ -486,7 +486,7 @@ export const bidFields: FieldConfig[] = [
     options: OPTIONS.lostReason,
     section: "Outcome",
   },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const opportunityFields: FieldConfig[] = [
@@ -531,7 +531,7 @@ export const opportunityFields: FieldConfig[] = [
     options: OPTIONS.lostReason,
     section: "Outcome",
   },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const equipmentFields: FieldConfig[] = [
@@ -566,7 +566,7 @@ export const equipmentFields: FieldConfig[] = [
   { name: "vin", label: "VIN", section: "Identifiers" },
   { name: "serial_number", label: "Serial number", section: "Identifiers" },
   { name: "plate_number", label: "Plate number", section: "Identifiers" },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const incidentFields: FieldConfig[] = [
@@ -660,7 +660,7 @@ export const documentFields: FieldConfig[] = [
   { name: "effective_date", label: "Effective date", type: "date", section: "Validity" },
   { name: "expiration_date", label: "Expires", type: "date", section: "Validity" },
   { name: "storage_path", label: "Link or file location", section: "Storage", full: true },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const contractFields: FieldConfig[] = [
@@ -682,7 +682,7 @@ export const contractFields: FieldConfig[] = [
     type: "textarea",
     section: "Terms",
   },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const assessmentFields: FieldConfig[] = [
@@ -734,7 +734,7 @@ export const requirementFields: FieldConfig[] = [
   { name: "effective_date", label: "Effective date", type: "date", section: "Validity" },
   { name: "expiration_date", label: "Expires", type: "date", section: "Validity" },
   { name: "source_document", label: "Source document", section: "Source" },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const lostBusinessFields: FieldConfig[] = [
@@ -826,7 +826,7 @@ export const equipmentAssignmentFields: FieldConfig[] = [
     options: OPTIONS.siteStatus,
     section: "Assignment",
   },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const equipmentLeaseFields: FieldConfig[] = [
@@ -867,7 +867,7 @@ export const equipmentLeaseFields: FieldConfig[] = [
     options: OPTIONS.siteStatus,
     section: "Agreement",
   },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const equipmentComplianceFields: FieldConfig[] = [
@@ -878,7 +878,7 @@ export const equipmentComplianceFields: FieldConfig[] = [
   { name: "effective_date", label: "Effective date", type: "date", section: "Validity" },
   { name: "expiration_date", label: "Expires", type: "date", section: "Validity" },
   { name: "required", label: "Required", type: "checkbox", section: "Validity" },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];
 
 export const equipmentTechnologyFields: FieldConfig[] = [
@@ -893,5 +893,5 @@ export const equipmentTechnologyFields: FieldConfig[] = [
   { name: "cable_id", label: "Cable ID", section: "Device" },
   { name: "installation_date", label: "Installed", type: "date", section: "Timeline" },
   { name: "removal_date", label: "Removed", type: "date", section: "Timeline" },
-  { name: "notes", label: "Notes", type: "textarea", section: "Notes" },
+  { name: "notes", label: "Notes", type: "richtext", section: "Notes" },
 ];

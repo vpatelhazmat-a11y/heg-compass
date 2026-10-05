@@ -1375,6 +1375,32 @@
     order: 2;
   }
 }
+.rich-note-content { font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.record-form-notes { grid-column: 1 / -1; }
+.rich-note-content p { margin: 0 0 .5em; }
+.rich-note-content p:last-child { margin-bottom: 0; }
+.rich-note-content h2, .rich-note-content h3 { margin: .6em 0 .3em; font-weight: 600; }
+.rich-note-content h2 { font-size: 1.15em; }
+.rich-note-content h3 { font-size: 1.05em; }
+.rich-note-content ul, .rich-note-content ol { padding-left: 1.5em; margin: .4em 0; }
+.rich-note-content ul { list-style: disc; }
+.rich-note-content ol { list-style: decimal; }
+.rich-note-content li p { margin: 0; }
+.rich-note-content a { color: var(--primary); text-decoration: underline; }
+.rich-note-content blockquote { margin: .5em 0; padding-left: 1em; border-left: 2px solid var(--border); }
+.rich-note-content pre { overflow-x: auto; padding: .5em; background: var(--muted); }
+.rich-note-content hr { margin: .8em 0; border-color: var(--border); }
+.rich-note-editor { border-bottom: 1px solid var(--border); }
+.rich-note-toolbar { display: flex; flex-wrap: wrap; gap: 2px; padding: 4px 0; border-bottom: 1px solid var(--border); }
+.rich-note-toolbar button { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 3px; color: var(--muted-foreground); }
+.rich-note-toolbar button:hover, .rich-note-toolbar button[aria-pressed="true"] { color: var(--primary); background: var(--muted); }
+.rich-note-toolbar button:focus-visible { outline: 2px solid var(--ring); }
+.rich-note-input { min-height: 100px; padding: 8px 2px; outline: none; }
+.rich-note-link { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 0; font-size: 13px; }
+.rich-note-link input { flex: 1; min-width: 150px; border-bottom: 1px solid var(--border); outline: none; }
+.rich-note-link button { color: var(--primary); }
+.rich-note-link [role="alert"] { flex-basis: 100%; color: var(--danger); }
+.record-data-value .rich-note-content:empty::before { content: "—"; color: var(--muted-foreground); }
 @media (max-width: 760px) {
   .document-browser { display: block; }
   .document-folder-tree { min-height: 0; border-right: 0; border-bottom: 1px solid var(--border); }

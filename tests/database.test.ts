@@ -169,6 +169,100 @@ test("equipment rate terms enforce dates, units, amounts and operation permissio
     ).rows,
   ).toHaveLength(1);
 });
+test("rich notes synchronize searchable text and remove unsafe formatting on the server", async () => {
+  const noteCustomer = (
+    await db.query("insert into customers(legal_name) values('Rich notes test') returning id")
+  ).rows[0].id;
+  const doc = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        attrs: { onclick: "alert(1)" },
+        content: [
+          {
+            type: "text",
+            text: "Reviewed safely",
+            marks: [{ type: "bold" }, { type: "link", attrs: { href: "javascript:alert(1)" } }],
+          },
+        ],
+      },
+      { type: "script" },
+    ],
+  };
+  const row = (
+    await asRole("sales", "update customers set rich_text=$2 where id=$1 returning *", [
+      noteCustomer,
+      { commercial_notes: doc },
+    ])
+  ).rows[0];
+  expect(row.commercial_notes).toBe("Reviewed safely");
+  expect(row.rich_text.commercial_notes.content).toHaveLength(1);
+  expect(row.rich_text.commercial_notes.content[0].attrs).toBeUndefined();
+  expect(row.rich_text.commercial_notes.content[0].content[0].marks).toEqual([{ type: "bold" }]);
+  const plain = (
+    await asRole(
+      "sales",
+      "update customers set commercial_notes='Plain API edit' where id=$1 returning *",
+      [noteCustomer],
+    )
+  ).rows[0];
+  expect(plain.rich_text).toEqual({});
+  expect(plain.commercial_notes).toBe("Plain API edit");
+  await expect(
+    asRole("sales", "update customers set rich_text=$2 where id=$1", [
+      noteCustomer,
+      { legal_name: doc },
+    ]),
+  ).rejects.toThrow("does not support");
+  expect(
+    (
+      await asRole("read_only", "update customers set rich_text=$2 where id=$1 returning id", [
+        noteCustomer,
+        { commercial_notes: doc },
+      ])
+    ).rows,
+  ).toHaveLength(0);
+});
+
+test("formatted commercial-rate notes retain revision reasons and immutable history", async () => {
+  const row = (
+    await db.query(
+      "insert into rates(customer_id,amount,effective_date) values($1,80,'2026-10-01') returning *",
+      [customer],
+    )
+  ).rows[0];
+  const doc = {
+    type: "doc",
+    content: [
+      {
+        type: "paragraph",
+        content: [{ type: "text", text: "Renewal reviewed", marks: [{ type: "italic" }] }],
+      },
+    ],
+  };
+  const result = (
+    await asRole("sales", "select * from revise_rate($1,$2,$3)", [
+      row.id,
+      row.updated_at,
+      { rich_text: { notes: doc }, change_reason: "Review" },
+    ])
+  ).rows[0];
+  expect(result.notes).toBe("Renewal reviewed");
+  expect(result.rich_text.notes.content[0].content[0].marks).toEqual([{ type: "italic" }]);
+  const history = (await asRole("sales", "select * from rate_history where rate_id=$1", [row.id]))
+    .rows;
+  expect(history).toHaveLength(1);
+  expect(history[0].new_record.notes).toBe("Renewal reviewed");
+  await expect(
+    asRole("sales", "select revise_rate($1,$2,$3)", [
+      row.id,
+      result.updated_at,
+      { rich_text: { notes: doc }, amount: 90 },
+    ]),
+  ).rejects.toThrow("require an effective date and reason");
+});
+
 test("all public base tables have RLS enabled", async () => {
   expect(
     (

@@ -27,6 +27,7 @@ import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordRelations } from "./RecordLink";
 import { RecordChatter } from "./RecordChatter";
 import { DocumentFile } from "./DocumentFile";
+import { RichTextView } from "./RichText";
 import { DocumentFolderTree } from "./DocumentFolderTree";
 import { ArchiveVisibility, RecordArchiveActions } from "./RecordArchiveActions";
 import { SmartButtons } from "./SmartButtons";
@@ -498,6 +499,8 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
     if (value === null || value === "") return "—";
     if (typeof value === "boolean") return value ? "Yes" : "No";
     const field = definition.fields.find((field) => field.name === key);
+    if (field?.type === "richtext")
+      return <RichTextView document={row.rich_text?.[key]} text={String(value ?? "")} />;
     if (field?.type === "money")
       return formatMoney(
         Number(value),
@@ -556,35 +559,37 @@ export function RecordDetailPage({ table, id }: { table: string; id: string }) {
             <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
           ) : (
             <article className="record-sheet" aria-label="Record details">
-              {[...grouped].map(([section, fields]) => (
-                <section
-                  className={`record-section ${section === "Notes" || section === "Record information" ? "record-section-wide" : ""}`}
-                  key={section}
-                >
-                  <h2>{section}</h2>
-                  <dl className="grid gap-x-12">
-                    {fields.map(([key, value]) => (
-                      <div key={key} className="record-field">
-                        <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
-                        <dd>
-                          {table === "refused_loads" && canEdit(table) ? (
-                            <button
-                              type="button"
-                              className="record-edit-value"
-                              onClick={() => setEditing(true)}
-                              aria-label={`Edit ${labels.get(key) ?? fieldLabel(key)}`}
-                            >
-                              {displayValue(key, value)}
-                            </button>
-                          ) : (
-                            displayValue(key, value)
-                          )}
-                        </dd>
-                      </div>
-                    ))}
-                  </dl>
-                </section>
-              ))}
+              {[...grouped]
+                .sort(([a], [b]) => Number(a === "Notes") - Number(b === "Notes"))
+                .map(([section, fields]) => (
+                  <section
+                    className={`record-section ${section === "Notes" || section === "Record information" ? "record-section-wide" : ""}`}
+                    key={section}
+                  >
+                    <h2>{section}</h2>
+                    <dl className="grid gap-x-12">
+                      {fields.map(([key, value]) => (
+                        <div key={key} className="record-field">
+                          <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
+                          <dd>
+                            {table === "refused_loads" && canEdit(table) ? (
+                              <button
+                                type="button"
+                                className="record-edit-value"
+                                onClick={() => setEditing(true)}
+                                aria-label={`Edit ${labels.get(key) ?? fieldLabel(key)}`}
+                              >
+                                {displayValue(key, value)}
+                              </button>
+                            ) : (
+                              displayValue(key, value)
+                            )}
+                          </dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </section>
+                ))}
             </article>
           )}
           {table === "rates" && (
