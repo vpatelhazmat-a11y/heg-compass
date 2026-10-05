@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "./StatusBadge";
-import { formatDate, formatMoney } from "@/lib/format";
+import { formatDate, formatMoney, dueLabel } from "@/lib/format";
 import { getRow, listRows, type Row } from "@/lib/data";
 import {
   recordDefinition,
@@ -90,6 +90,8 @@ export function RecordListPage({
   const navigate = useNavigate();
   const definition = recordDefinition(table);
   const fields = recordListFields(table);
+  const labelFor = (name: string) =>
+    definition?.fields.find((field) => field.name === name)?.label ?? fieldLabel(name);
   const [searchInput, setSearchInput] = useState(state.search ?? "");
   const [creatingDocument, setCreatingDocument] = useState(false);
   useEffect(() => setSearchInput(state.search ?? ""), [state.search]);
@@ -197,7 +199,7 @@ export function RecordListPage({
                   >
                     {fields.search.map((name) => (
                       <option key={name} value={name}>
-                        {fieldLabel(name)}
+                        {labelFor(name)}
                       </option>
                     ))}
                   </select>
@@ -214,7 +216,7 @@ export function RecordListPage({
                     <option value="">Filter</option>
                     {fields.filter.map((name) => (
                       <option key={name} value={name}>
-                        {fieldLabel(name)}
+                        {labelFor(name)}
                       </option>
                     ))}
                   </select>
@@ -242,7 +244,7 @@ export function RecordListPage({
                     <option value="">Group by</option>
                     {fields.filter.map((name) => (
                       <option key={name} value={name}>
-                        {fieldLabel(name)}
+                        {labelFor(name)}
                       </option>
                     ))}
                   </select>
@@ -309,7 +311,7 @@ export function RecordListPage({
                 onSelect={() =>
                   downloadCsv(
                     `heg-${table}-page-${page + 1}`,
-                    definition.columns.map(fieldLabel),
+                    definition.columns.map(labelFor),
                     (rows.data?.rows ?? []).map((row) =>
                       definition.columns.map((key) => row[key] ?? ""),
                     ),
@@ -329,7 +331,7 @@ export function RecordListPage({
                 aria-label="Remove filter"
                 onClick={() => onChange?.({ filterField: "", filterValue: "", page: 0 })}
               >
-                {fieldLabel(state.filterField ?? "")}: {state.filterValue} ×
+                {labelFor(state.filterField ?? "")}: {state.filterValue} ×
               </button>
             )}
             {state.groupBy && (
@@ -338,7 +340,7 @@ export function RecordListPage({
                 aria-label="Remove grouping"
                 onClick={() => onChange?.({ groupBy: "", page: 0 })}
               >
-                Group: {fieldLabel(state.groupBy)} ×
+                Group: {labelFor(state.groupBy)} ×
               </button>
             )}
           </div>
@@ -358,20 +360,25 @@ export function RecordListPage({
                         (index === 0 ||
                           rows.data.rows[index - 1]?.[state.groupBy] !== row[state.groupBy]) && (
                           <h3 className="record-list-group-heading">
-                            {fieldLabel(state.groupBy)}: {String(row[state.groupBy] ?? "Not set")}
+                            {labelFor(state.groupBy)}: {String(row[state.groupBy] ?? "Not set")}
                           </h3>
                         )}
-                      <Link to={recordHref(table, row.id)} className="record-list-card">
-                        <strong>{recordLabel(table, row)}</strong>
+                      <article className="record-list-card">
+                        <Link
+                          to={recordHref(table, row.id)}
+                          className="font-semibold hover:text-primary hover:underline"
+                        >
+                          <strong>{recordLabel(table, row)}</strong>
+                        </Link>
                         {definition.columns.slice(1, 4).map((key) => (
                           <span key={key}>
-                            <small>{fieldLabel(key)}</small>
+                            <small>{labelFor(key)}</small>
                             {key === "status" && row.archived_at
                               ? "Archived"
                               : listValue(table, key, row)}
                           </span>
                         ))}
-                      </Link>
+                      </article>
                     </div>
                   ))}
                 </div>
@@ -390,7 +397,7 @@ export function RecordListPage({
                     : []),
                 ].map((key) => ({
                   key,
-                  header: fieldLabel(key),
+                  header: labelFor(key),
                   sortable: false,
                   render: (row: Row) => listValue(table, key, row),
                   align: ["money", "number"].includes(
@@ -457,6 +464,16 @@ function listValue(table: string, key: string, row: Row) {
   const target = RELATION_TARGETS[key];
   if (target) return <RecordLink table={target} id={row[key]} />;
   if (key === "status") return <StatusBadge status={row.archived_at ? "Archived" : row[key]} />;
+  if (
+    key === "due_date" &&
+    ["tasks", "bids", "corrective_actions"].includes(table) &&
+    !["Completed", "Cancelled", "Won", "Lost", "Withdrawn"].includes(row.status)
+  ) {
+    const due = dueLabel(row[key]);
+    return due.tone === "neutral" ? due.label : <StatusBadge status={due.label} tone={due.tone} />;
+  }
+  if (["priority", "severity"].includes(key)) return <StatusBadge status={row[key]} />;
+  if (key === "updated_at") return formatDate(row[key]);
   if (field?.type === "date") return formatDate(row[key]);
   if (field?.type === "money") return formatMoney(row[key], row.currency_code, 2);
   if (field?.type === "checkbox") return row[key] ? "Yes" : "No";

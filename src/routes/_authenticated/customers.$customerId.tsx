@@ -277,6 +277,7 @@ function CustomerDetail() {
             <TabsContent value="operations" className="mt-4 space-y-6">
               <Panel title="Sites" actions={addButton("Add site", "sites", siteFields)}>
                 <DataTable
+                  embedded
                   columns={siteColumns}
                   recordTable="sites"
                   rows={data?.sites ?? []}
@@ -292,6 +293,7 @@ function CustomerDetail() {
 
               <Panel title="Contacts" actions={addButton("Add contact", "contacts", contactFields)}>
                 <DataTable
+                  embedded
                   columns={[
                     {
                       key: "name",
@@ -316,6 +318,7 @@ function CustomerDetail() {
                 actions={addButton("Add requirement", "requirements", requirementFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "requirement", header: "Requirement" },
                     { key: "category", header: "Category" },
@@ -343,6 +346,7 @@ function CustomerDetail() {
                 actions={addButton("Add product", "products", productFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "product_name", header: "Product" },
                     { key: "hazard_classification", header: "Hazard class" },
@@ -360,6 +364,7 @@ function CustomerDetail() {
 
               <Panel title="Lanes" actions={addButton("Add lane", "lanes", laneFields)}>
                 <DataTable
+                  embedded
                   recordTable="lanes"
                   rows={data?.lanes ?? []}
                   error={related.error}
@@ -373,6 +378,7 @@ function CustomerDetail() {
 
               <Panel title="Current equipment assignments">
                 <DataTable
+                  embedded
                   recordTable="equipment_assignments"
                   rows={data?.equipment ?? []}
                   error={related.error}
@@ -399,6 +405,7 @@ function CustomerDetail() {
                 actions={addButton("Add rate", "rates", rateFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "rate_type", header: "Type" },
                     {
@@ -439,6 +446,7 @@ function CustomerDetail() {
                 actions={addButton("Add opportunity", "opportunities", opportunityFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "name", header: "Opportunity" },
                     {
@@ -471,6 +479,7 @@ function CustomerDetail() {
               </Panel>
               <Panel title="Bids">
                 <DataTable
+                  embedded
                   columns={[
                     { key: "bid_name", header: "Bid" },
                     {
@@ -504,6 +513,7 @@ function CustomerDetail() {
                 actions={addButton("Add contract", "contracts", contractFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "contract_name", header: "Contract" },
                     { key: "contract_number", header: "Number" },
@@ -534,6 +544,7 @@ function CustomerDetail() {
                 actions={addButton("Add document", "documents", documentFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "document_name", header: "Document" },
                     { key: "document_type", header: "Type" },
@@ -559,6 +570,7 @@ function CustomerDetail() {
                 actions={addButton("Record lost business", "lost_business", lostBusinessFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     {
                       key: "occurred_on",
@@ -592,6 +604,7 @@ function CustomerDetail() {
                 description="Individual requests HEG could not accept. Separate from broader commercial losses."
               >
                 <DataTable
+                  embedded
                   recordTable="refused_loads"
                   rows={data?.refused ?? []}
                   isLoading={related.isLoading}

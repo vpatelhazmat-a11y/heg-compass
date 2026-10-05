@@ -263,6 +263,7 @@ function EquipmentDetail() {
                 })}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "rate_kind", header: "Type" },
                     {
@@ -299,6 +300,7 @@ function EquipmentDetail() {
               </Panel>
               <Panel title="Rate history">
                 <DataTable
+                  embedded
                   columns={[
                     {
                       key: "changed_at",
@@ -340,6 +342,7 @@ function EquipmentDetail() {
                 actions={addButton("Add assignment", "equipment_assignments", assignmentFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "assignment_type", header: "Assignment" },
                     {
@@ -374,6 +377,7 @@ function EquipmentDetail() {
                 )}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "jurisdiction", header: "Jurisdiction" },
                     { key: "requirement", header: "Requirement" },
@@ -406,6 +410,7 @@ function EquipmentDetail() {
                 )}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "technology_type", header: "Technology" },
                     { key: "device_id", header: "Device ID" },
@@ -430,6 +435,7 @@ function EquipmentDetail() {
 
               <Panel title="Equipment incidents">
                 <DataTable
+                  embedded
                   recordTable="incidents"
                   rows={data?.incidents ?? []}
                   error={related.error}
