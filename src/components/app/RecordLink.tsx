@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 import { getRow, type Row } from "@/lib/data";
 import {
@@ -35,15 +36,15 @@ export function RecordLink({
         ? "Loading…"
         : "Unavailable record");
   return (
-    <a
-      href={recordHref(table, id!)}
+    <Link
+      to={recordHref(table, id!)}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
       className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
     >
       <span>{text}</span>
       <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
-    </a>
+    </Link>
   );
 }
 

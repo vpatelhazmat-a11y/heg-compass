@@ -1,3 +1,4 @@
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "./StatusBadge";
@@ -41,6 +42,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { downloadCsv } from "@/lib/csv";
 import {
   ChevronLeft,
@@ -51,7 +53,7 @@ import {
   Plus,
   Search,
   Settings2,
-  SlidersHorizontal,
+  ChevronDown,
 } from "lucide-react";
 
 type ListState = RecordPageRequest & { view?: "list" | "cards" };
@@ -83,6 +85,7 @@ export function RecordListPage({
   onChange?: (patch: ListPatch) => void;
 }) {
   const { session, canEdit } = useSession();
+  const navigate = useNavigate();
   const definition = recordDefinition(table);
   const fields = recordListFields(table);
   const [searchInput, setSearchInput] = useState(state.search ?? "");
@@ -134,11 +137,6 @@ export function RecordListPage({
             </Button>
           ) : undefined
         }
-        description={
-          parent
-            ? "Records linked to the selected record."
-            : `Search and open ${definition.label.toLowerCase()}.`
-        }
         breadcrumbs={[
           { label: "Apps", to: "/command-center" },
           ...(parent && parentId && isRecordId(parentId) && recordDefinition(parent)
@@ -176,64 +174,78 @@ export function RecordListPage({
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
             />
-            {fields.search.length > 1 && (
-              <select
-                aria-label="Search field"
-                value={state.searchField ?? fields.search[0]}
-                onChange={(event) => onChange?.({ field: event.target.value, page: 0 })}
-              >
-                {fields.search.map((name) => (
-                  <option key={name} value={name}>
-                    {fieldLabel(name)}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-          <div className="record-list-control-group">
-            <SlidersHorizontal className="h-4 w-4" aria-hidden />
-            <select
-              aria-label="Filter field"
-              value={state.filterField ?? ""}
-              onChange={(event) =>
-                onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
-              }
-            >
-              <option value="">Filter</option>
-              {fields.filter.map((name) => (
-                <option key={name} value={name}>
-                  {fieldLabel(name)}
-                </option>
-              ))}
-            </select>
-            {state.filterField && (
-              <select
-                aria-label="Filter value"
-                value={state.filterValue ?? ""}
-                onChange={(event) => onChange?.({ filterValue: event.target.value, page: 0 })}
-              >
-                <option value="">All</option>
-                {definition.fields
-                  .find((field) => field.name === state.filterField)
-                  ?.options?.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-              </select>
-            )}
-            <select
-              aria-label="Group by"
-              value={state.groupBy ?? ""}
-              onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
-            >
-              <option value="">Group by</option>
-              {fields.filter.map((name) => (
-                <option key={name} value={name}>
-                  {fieldLabel(name)}
-                </option>
-              ))}
-            </select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Search options"
+                  className="record-search-options-trigger"
+                >
+                  <ChevronDown className="h-4 w-4" aria-hidden />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="record-search-options">
+                <p className="field-label">Search in</p>
+                {fields.search.length > 1 && (
+                  <select
+                    aria-label="Search field"
+                    value={state.searchField ?? fields.search[0]}
+                    onChange={(event) => onChange?.({ field: event.target.value, page: 0 })}
+                  >
+                    {fields.search.map((name) => (
+                      <option key={name} value={name}>
+                        {fieldLabel(name)}
+                      </option>
+                    ))}
+                  </select>
+                )}
+                <div className="record-list-control-group">
+                  <p className="field-label">Filters and grouping</p>
+                  <select
+                    aria-label="Filter field"
+                    value={state.filterField ?? ""}
+                    onChange={(event) =>
+                      onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
+                    }
+                  >
+                    <option value="">Filter</option>
+                    {fields.filter.map((name) => (
+                      <option key={name} value={name}>
+                        {fieldLabel(name)}
+                      </option>
+                    ))}
+                  </select>
+                  {state.filterField && (
+                    <select
+                      aria-label="Filter value"
+                      value={state.filterValue ?? ""}
+                      onChange={(event) => onChange?.({ filterValue: event.target.value, page: 0 })}
+                    >
+                      <option value="">All</option>
+                      {definition.fields
+                        .find((field) => field.name === state.filterField)
+                        ?.options?.map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                    </select>
+                  )}
+                  <select
+                    aria-label="Group by"
+                    value={state.groupBy ?? ""}
+                    onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
+                  >
+                    <option value="">Group by</option>
+                    {fields.filter.map((name) => (
+                      <option key={name} value={name}>
+                        {fieldLabel(name)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="record-list-view" aria-label="View mode">
             <button
@@ -306,6 +318,28 @@ export function RecordListPage({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {(state.filterValue || state.groupBy) && (
+          <div className="table-active-filters" aria-label="Active search conditions">
+            {state.filterValue && (
+              <button
+                type="button"
+                aria-label="Remove filter"
+                onClick={() => onChange?.({ filterField: "", filterValue: "", page: 0 })}
+              >
+                {fieldLabel(state.filterField ?? "")}: {state.filterValue} ×
+              </button>
+            )}
+            {state.groupBy && (
+              <button
+                type="button"
+                aria-label="Remove grouping"
+                onClick={() => onChange?.({ groupBy: "", page: 0 })}
+              >
+                Group: {fieldLabel(state.groupBy)} ×
+              </button>
+            )}
+          </div>
+        )}
         {rows.isLoading ? (
           <LoadingState />
         ) : rows.error ? (
@@ -324,7 +358,7 @@ export function RecordListPage({
                             {fieldLabel(state.groupBy)}: {String(row[state.groupBy] ?? "Not set")}
                           </h3>
                         )}
-                      <a href={recordHref(table, row.id)} className="record-list-card">
+                      <Link to={recordHref(table, row.id)} className="record-list-card">
                         <strong>{recordLabel(table, row)}</strong>
                         {definition.columns.slice(1, 4).map((key) => (
                           <span key={key}>
@@ -334,7 +368,7 @@ export function RecordListPage({
                               : String(row[key] ?? "—")}
                           </span>
                         ))}
-                      </a>
+                      </Link>
                     </div>
                   ))}
                 </div>
@@ -399,7 +433,7 @@ export function RecordListPage({
           title="New document"
           table="documents"
           fields={documentFields}
-          onSaved={(saved) => window.location.assign(recordHref("documents", saved.id))}
+          onSaved={(saved) => navigate({ to: recordHref("documents", saved.id) })}
           defaults={
             parent && parentId
               ? {

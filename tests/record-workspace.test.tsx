@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RecordDetailPage } from "../src/components/app/RecordWorkspace";
+import { RecordDetailPage, RecordListPage } from "../src/components/app/RecordWorkspace";
 import { DataTable } from "../src/components/app/DataTable";
 import { RecordForm } from "../src/components/app/RecordForm";
 import { SmartButtons } from "../src/components/app/SmartButtons";
@@ -11,6 +11,7 @@ import { AppLauncher } from "../src/components/app/AppLauncher";
 const mocks = vi.hoisted(() => ({
   getRow: vi.fn(),
   listRows: vi.fn(),
+  listRowsPage: vi.fn(),
   countRows: vi.fn(),
   update: vi.fn(),
   rpc: vi.fn(),
@@ -21,6 +22,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("../src/lib/data", () => ({
   getRow: mocks.getRow,
   listRows: mocks.listRows,
+  listRowsPage: mocks.listRowsPage,
   countRows: mocks.countRows,
   updateRow: mocks.update,
   insertRow: vi.fn(),
@@ -74,10 +76,31 @@ function mount(children: React.ReactNode) {
   clients.push(client);
   return render(<QueryClientProvider client={client}>{children}</QueryClientProvider>);
 }
+test("module search options retain URL filters and expose removable conditions", async () => {
+  const change = vi.fn();
+  mount(
+    <RecordListPage
+      table="sites"
+      state={{ filterField: "status", filterValue: "Active", groupBy: "site_type", page: 2 }}
+      onChange={change}
+    />,
+  );
+  expect(screen.queryByRole("combobox", { name: "Filter field" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Search options" }));
+  expect(screen.getByRole("combobox", { name: "Filter field" })).toHaveProperty("value", "status");
+  fireEvent.change(screen.getByRole("combobox", { name: "Group by" }), {
+    target: { value: "status" },
+  });
+  expect(change).toHaveBeenCalledWith({ groupBy: "status", page: 0 });
+  fireEvent.click(screen.getByRole("button", { name: "Remove filter" }));
+  expect(change).toHaveBeenCalledWith({ filterField: "", filterValue: "", page: 0 });
+  await waitFor(() => expect(mocks.listRowsPage).toHaveBeenCalled());
+});
 beforeEach(() => {
   localStorage.clear();
   mocks.canEdit.mockReturnValue(true);
   mocks.listRows.mockResolvedValue([]);
+  mocks.listRowsPage.mockResolvedValue({ rows: [], count: 0 });
   mocks.countRows.mockResolvedValue(3);
   mocks.getRow.mockImplementation(async (table) =>
     table === "customers"
