@@ -1,16 +1,9 @@
-import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
-import { PageHeader } from "@/components/app/PageHeader";
-import { DataTable } from "@/components/app/DataTable";
-import { RecordForm } from "@/components/app/RecordForm";
-import { Button } from "@/components/ui/button";
-import { listRows } from "@/lib/data";
-import { formatDate } from "@/lib/format";
-import { useSession } from "@/hooks/use-session";
+import { MasterRecordList } from "@/components/app/MasterRecordList";
+import { parseRecordListSearch } from "@/lib/record-lists";
 
 export const Route = createFileRoute("/_authenticated/knowledge/")({
+  validateSearch: parseRecordListSearch,
   head: () => ({
     meta: [
       { title: "Knowledge Hub — HEG Commercial Intelligence Hub" },
@@ -29,69 +22,15 @@ export const Route = createFileRoute("/_authenticated/knowledge/")({
 });
 
 function KnowledgePage() {
-  const { canEdit } = useSession();
-  const canWrite = canEdit("knowledge_articles");
-  const [creating, setCreating] = useState(false);
-  const {
-    data = [],
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ["knowledge"],
-    queryFn: () =>
-      listRows("knowledge_articles", { order: { column: "updated_at", ascending: false } }),
-  });
-
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
   return (
-    <>
-      <PageHeader
-        title="Knowledge Hub"
-        description="Procedures, lessons learned and the answers people currently keep in their heads."
-        actions={
-          canWrite ? (
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" aria-hidden />
-              New article
-            </Button>
-          ) : null
-        }
-      />
-      <div className="p-6">
-        <DataTable
-          columns={[
-            { key: "title", header: "Title" },
-            { key: "category", header: "Category" },
-            {
-              key: "updated_at",
-              header: "Last updated",
-              render: (row) => formatDate(row.updated_at),
-            },
-          ]}
-          recordTable="knowledge_articles"
-          rows={data}
-          isLoading={isLoading}
-          error={error}
-          emptyTitle="Nothing written down yet"
-          emptyDescription="Capture how HEG actually does things — the knowledge that usually leaves with people."
-          emptyAction={
-            canWrite ? (
-              <Button onClick={() => setCreating(true)}>Write the first article</Button>
-            ) : undefined
-          }
-        />
-      </div>
-      <RecordForm
-        open={creating}
-        onOpenChange={setCreating}
-        title="New knowledge article"
-        table="knowledge_articles"
-        fields={[
-          { name: "title", label: "Title", required: true, section: "Article" },
-          { name: "category", label: "Category", section: "Article" },
-          { name: "content", label: "Article", type: "textarea", section: "Article", full: true },
-        ]}
-        invalidateKeys={[["knowledge"]]}
-      />
-    </>
+    <MasterRecordList
+      table="knowledge_articles"
+      search={search}
+      onChange={(patch) => {
+        void navigate({ search: (previous) => ({ ...previous, ...patch }) });
+      }}
+    />
   );
 }

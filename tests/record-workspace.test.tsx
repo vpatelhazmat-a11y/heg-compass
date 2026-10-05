@@ -319,7 +319,10 @@ test("record row opening uses application navigation without reloading the docum
       rows={[{ id: customer, legal_name: "Navigation customer" }]}
     />,
   );
-  fireEvent.click(screen.getByText("Navigation customer"));
+  const link = screen.getByRole("link", { name: "Open record: Navigation customer" });
+  expect(link.getAttribute("href")).toBe(`/customers/${customer}`);
+  expect(screen.queryByText("Open record")).toBeNull();
+  fireEvent.keyDown(link.closest("tr")!, { key: "Enter" });
   expect(mocks.navigate).toHaveBeenCalledWith({ to: `/customers/${customer}` });
 });
 
@@ -515,4 +518,16 @@ test("read-only master lists show search and views without creation controls", a
   );
   expect(screen.getByRole("textbox", { name: "Search Equipment" })).toBeTruthy();
   expect(screen.queryByRole("button", { name: "New", exact: true })).toBeNull();
+});
+
+test("embedded related tables omit repeated tools but retain paging for all records", () => {
+  const rows = Array.from({ length: 26 }, (_, i) => ({ id: String(i), title: "Task " + i }));
+  mount(<DataTable embedded columns={[{ key: "title", header: "Task" }]} rows={rows} />);
+  expect(screen.queryByRole("textbox")).toBeNull();
+  expect(screen.queryByRole("button", { name: "Search options" })).toBeNull();
+  expect(screen.getByText("Task 0")).toBeTruthy();
+  expect(screen.queryByText("Task 25")).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Next page" }));
+  expect(screen.getByText("Task 25")).toBeTruthy();
+  expect(screen.queryByText("Task 0")).toBeNull();
 });

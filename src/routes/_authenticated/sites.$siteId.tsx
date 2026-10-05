@@ -212,6 +212,7 @@ function SiteDetail() {
               {canViewSafety && (
                 <Panel title="Incidents at this site">
                   <DataTable
+                    embedded
                     columns={[
                       {
                         key: "incident_date",
@@ -243,6 +244,7 @@ function SiteDetail() {
                 actions={addButton("Add requirement", "requirements", requirementFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "requirement", header: "Requirement" },
                     { key: "category", header: "Category" },
@@ -269,6 +271,7 @@ function SiteDetail() {
                 actions={addButton("Add assessment", "site_assessments", assessmentFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "assessment_type", header: "Type" },
                     {
@@ -303,6 +306,7 @@ function SiteDetail() {
                 actions={addButton("Add document", "documents", documentFields)}
               >
                 <DataTable
+                  embedded
                   columns={[
                     { key: "document_name", header: "Document" },
                     { key: "document_type", header: "Type" },
@@ -321,6 +325,7 @@ function SiteDetail() {
 
               <Panel title="Products linked through site rates">
                 <DataTable
+                  embedded
                   recordTable="products"
                   rows={data?.products ?? []}
                   error={related.error}
@@ -330,6 +335,7 @@ function SiteDetail() {
               </Panel>
               <Panel title="Origin and destination lanes">
                 <DataTable
+                  embedded
                   recordTable="lanes"
                   rows={data?.lanes ?? []}
                   error={related.error}
@@ -342,6 +348,7 @@ function SiteDetail() {
               </Panel>
               <Panel title="Current equipment assignments">
                 <DataTable
+                  embedded
                   recordTable="equipment_assignments"
                   rows={data?.equipment ?? []}
                   error={related.error}

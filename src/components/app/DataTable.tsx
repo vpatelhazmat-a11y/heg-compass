@@ -57,6 +57,7 @@ export function DataTable({
   exportName,
   pageSize = 25,
   bare = false,
+  embedded = false,
   groupingField,
 }: {
   columns: Column[];
@@ -73,6 +74,7 @@ export function DataTable({
   exportName?: string;
   pageSize?: number;
   bare?: boolean;
+  embedded?: boolean;
   groupingField?: string | undefined;
 }) {
   const { session } = useSession();
@@ -90,6 +92,13 @@ export function DataTable({
   const activeGroupBy = bare ? (groupingField ?? "") : groupBy;
   const selectedColumns = columns.filter((column) => !hiddenColumns.includes(column.key));
   const visibleColumns = selectedColumns.length ? selectedColumns : columns;
+  const primaryLink = Boolean(
+    recordTable &&
+    visibleColumns[0] &&
+    !RELATION_TARGETS[
+      visibleColumns[0].key.endsWith("_id") ? visibleColumns[0].key : `${visibleColumns[0].key}_id`
+    ],
+  );
   const openRow = recordTable
     ? (row: Row) => navigate({ to: recordHref(recordTable, row.id) })
     : onRowClick;
@@ -161,7 +170,7 @@ export function DataTable({
 
   return (
     <div className="workspace-table">
-      {!bare && (
+      {!bare && !embedded && (
         <div className="table-tools flex flex-wrap items-center gap-2">
           <div className="relative flex min-w-[180px] max-w-xl flex-1 items-center">
             <Search
@@ -388,7 +397,15 @@ export function DataTable({
       )}
 
       {rows.length === 0 ? (
-        <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
+        embedded ? (
+          <div className="py-3 text-sm text-muted-foreground">
+            <p>{emptyTitle}</p>
+            {emptyDescription && <p className="mt-1 text-xs">{emptyDescription}</p>}
+            {emptyAction && <div className="mt-2">{emptyAction}</div>}
+          </div>
+        ) : (
+          <EmptyState title={emptyTitle} description={emptyDescription} action={emptyAction} />
+        )
       ) : sorted.length === 0 ? (
         <EmptyState
           title="No matches"
@@ -453,7 +470,12 @@ export function DataTable({
           })}
         </div>
       ) : (
-        <div className="table-frame overflow-hidden border border-border bg-surface">
+        <div
+          className={cn(
+            "table-frame overflow-hidden bg-surface",
+            !embedded && "border border-border",
+          )}
+        >
           <div className="max-h-[70vh] overflow-auto">
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 z-10 bg-secondary">
@@ -496,7 +518,7 @@ export function DataTable({
                       )}
                     </th>
                   ))}
-                  {recordTable && (
+                  {recordTable && !primaryLink && (
                     <th scope="col" className="px-4 py-2.5">
                       <span className="sr-only">Open record</span>
                     </th>
@@ -513,7 +535,7 @@ export function DataTable({
                         <tr className="record-list-group-row">
                           <th
                             scope="rowgroup"
-                            colSpan={visibleColumns.length + (recordTable ? 1 : 0)}
+                            colSpan={visibleColumns.length + (recordTable && !primaryLink ? 1 : 0)}
                           >
                             {groupColumn.header}: {cellValue(row, groupColumn) || "Not set"}
                           </th>
@@ -555,9 +577,21 @@ export function DataTable({
                             column.className,
                           )}
                         >
-                          {RELATION_TARGETS[
-                            column.key.endsWith("_id") ? column.key : `${column.key}_id`
-                          ] && row[column.key.endsWith("_id") ? column.key : `${column.key}_id`] ? (
+                          {primaryLink && recordTable && column === visibleColumns[0] ? (
+                            <Link
+                              to={recordHref(recordTable, row.id)}
+                              aria-label={`Open record: ${recordLabel(recordTable, row)}`}
+                              onClick={(event) => event.stopPropagation()}
+                              className="font-medium text-foreground hover:text-primary hover:underline"
+                            >
+                              {column.render
+                                ? column.render(row)
+                                : cellValue(row, column) || recordLabel(recordTable, row)}
+                            </Link>
+                          ) : RELATION_TARGETS[
+                              column.key.endsWith("_id") ? column.key : `${column.key}_id`
+                            ] &&
+                            row[column.key.endsWith("_id") ? column.key : `${column.key}_id`] ? (
                             <RecordLink
                               table={
                                 RELATION_TARGETS[
@@ -580,7 +614,7 @@ export function DataTable({
                           )}
                         </td>
                       ))}
-                      {recordTable && (
+                      {recordTable && !primaryLink && (
                         <td className="px-4 py-2.5 text-right">
                           <Link
                             to={recordHref(recordTable, row.id)}
@@ -598,6 +632,30 @@ export function DataTable({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+      {embedded && pageCount > 1 && (
+        <div className="record-list-pager">
+          <span aria-live="polite">
+            {current * pageSize + 1}–{Math.min(sorted.length, (current + 1) * pageSize)} of{" "}
+            {sorted.length}
+          </span>
+          <button
+            type="button"
+            aria-label="Previous page"
+            disabled={current === 0}
+            onClick={() => setPage(current - 1)}
+          >
+            <ChevronLeft className="h-4 w-4" aria-hidden />
+          </button>
+          <button
+            type="button"
+            aria-label="Next page"
+            disabled={current + 1 >= pageCount}
+            onClick={() => setPage(current + 1)}
+          >
+            <ChevronRight className="h-4 w-4" aria-hidden />
+          </button>
         </div>
       )}
     </div>

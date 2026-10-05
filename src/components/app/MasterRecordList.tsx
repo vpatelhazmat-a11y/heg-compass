@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { RecordListPage } from "./RecordWorkspace";
-import { RecordForm } from "./RecordForm";
+import { RecordForm, type FieldConfig } from "./RecordForm";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/use-session";
 import { recordDefinition } from "@/lib/record-registry";
@@ -10,8 +10,22 @@ export function MasterRecordList({
   table,
   search,
   onChange,
+  fields,
+  creatable = table !== "sites",
 }: {
-  table: "customers" | "sites" | "equipment";
+  table:
+    | "customers"
+    | "sites"
+    | "equipment"
+    | "bids"
+    | "tasks"
+    | "knowledge_articles"
+    | "incidents"
+    | "corrective_actions"
+    | "opportunities"
+    | "lost_business";
+  fields?: FieldConfig[];
+  creatable?: boolean;
   search: State;
   onChange: (patch: Partial<State>) => void;
 }) {
@@ -34,7 +48,7 @@ export function MasterRecordList({
         }}
         onChange={onChange}
         actions={
-          table !== "sites" && canEdit(table) && !search.archived ? (
+          creatable && canEdit(table) && !search.archived ? (
             <Button onClick={() => setCreating(true)}>New</Button>
           ) : undefined
         }
@@ -45,7 +59,7 @@ export function MasterRecordList({
           onOpenChange={setCreating}
           title={"New " + definition.singular.toLowerCase()}
           table={table}
-          fields={definition.fields}
+          fields={fields ?? definition.fields}
         />
       )}
     </>
