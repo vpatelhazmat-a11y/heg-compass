@@ -39,7 +39,7 @@ export function recordDefaultOrder(table: string) {
 
 export function recordListFields(table: string) {
   const definition = recordDefinition(table);
-  if (!definition) return { search: [] as string[], filter: [] as string[] };
+  if (!definition) return { search: [] as string[], filter: [] as string[], group: [] as string[] };
   const search = [
     ...new Set(
       definition.fields
@@ -52,7 +52,7 @@ export function recordListFields(table: string) {
     ),
   ];
   if (table === "refused_loads")
-    search.push(
+    search.unshift(
       "product",
       "loss_reason",
       "pickup_city",
@@ -67,7 +67,14 @@ export function recordListFields(table: string) {
       definition.fields.filter((field) => field.type === "select").map((field) => field.name),
     ),
   ];
-  return { search, filter };
+  return {
+    search: [...new Set(search)],
+    filter,
+    group:
+      table === "refused_loads"
+        ? ["equipment_type", "rated_status", "loss_reason", "cs_rep"]
+        : filter,
+  };
 }
 
 export async function loadRecordListPage(
@@ -92,7 +99,7 @@ export async function loadRecordListPage(
     ? request.filterValue
     : undefined;
   const groupBy =
-    request.groupBy && allowed.filter.includes(request.groupBy) ? request.groupBy : undefined;
+    request.groupBy && allowed.group.includes(request.groupBy) ? request.groupBy : undefined;
   const page = Math.max(0, Math.floor(request.page ?? 0));
   let filters: Record<string, string | null> = {};
   let ids: string[] | undefined;

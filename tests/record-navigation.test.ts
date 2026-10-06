@@ -16,7 +16,12 @@ import {
 
 vi.mock("../src/lib/data", () => ({ listRows: vi.fn(), getRow: vi.fn(), listRowsPage: vi.fn() }));
 import { listRows, getRow, listRowsPage } from "../src/lib/data";
-import { loadRecordList, loadRecordListPage, parseRecordListSearch } from "../src/lib/record-lists";
+import {
+  loadRecordList,
+  loadRecordListPage,
+  parseRecordListSearch,
+  recordListFields,
+} from "../src/lib/record-lists";
 
 const id = "11111111-1111-4111-8111-111111111111";
 describe("record navigation contract", () => {
@@ -255,5 +260,21 @@ test("refused-load paging preserves date, customer, reason and representative sc
   expect(listRowsPage).toHaveBeenLastCalledWith(
     "customers",
     expect.objectContaining({ filters: {}, dateRange: undefined }),
+  );
+});
+
+test("Refused Loads search choices are unique and grouping is allowlisted", async () => {
+  const fields = recordListFields("refused_loads");
+  expect(fields.search.length).toBe(new Set(fields.search).size);
+  expect(fields.search[0]).toBe("product");
+  await loadRecordListPage("refused_loads", undefined, undefined, { groupBy: "rated_status" });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "refused_loads",
+    expect.objectContaining({ groupBy: "rated_status" }),
+  );
+  await loadRecordListPage("refused_loads", undefined, undefined, { groupBy: "created_by" });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "refused_loads",
+    expect.objectContaining({ groupBy: undefined }),
   );
 });

@@ -76,6 +76,10 @@ test("fractional load counts are rejected before saving", async () => {
   fireEvent.submit(container.querySelector("form")!);
   expect(await screen.findByText("Enter at least one load.")).toBeTruthy();
   expect(mocks.insert).not.toHaveBeenCalled();
+  await waitFor(() =>
+    expect(document.activeElement).toBe(screen.getByLabelText(/Number of loads/)),
+  );
+  expect(screen.getByLabelText(/Number of loads/).getAttribute("aria-invalid")).toBe("true");
 });
 test("read-only users cannot submit and specific equipment is collapsed", () => {
   mocks.canEdit.mockReturnValue(false);
@@ -90,4 +94,22 @@ test("empty tables show a clear empty state without crashing", () => {
     <DataTable rows={[]} columns={[{ key: "id", header: "Record" }]} emptyTitle="No records" />,
   );
   expect(screen.getByText("No records")).toBeTruthy();
+});
+
+test("pending saves lock the form and reject duplicate submission", async () => {
+  let finish!: (row: { id: string }) => void;
+  mocks.insert.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const { container } = mount();
+  fireEvent.click(screen.getByRole("button", { name: "Save & view record" }));
+  await screen.findByRole("button", { name: "Saving…" });
+  expect(screen.getByLabelText(/Number of loads/).matches(":disabled")).toBe(true);
+  fireEvent.submit(container.querySelector("form")!);
+  expect(mocks.insert).toHaveBeenCalledTimes(1);
+  finish({ id: "created" });
+  await waitFor(() => expect(screen.queryByRole("button", { name: "Saving…" })).toBeNull());
 });

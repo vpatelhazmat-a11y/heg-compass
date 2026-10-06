@@ -4,6 +4,7 @@ import {
   useMemo,
   useState,
   useId,
+  useRef,
   cloneElement,
   isValidElement,
   type ReactElement,
@@ -257,10 +258,16 @@ export function RefusedLoadForm({
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const formRef = useRef<HTMLFormElement>(null);
   const submit = (mode: "again" | "view") => {
+    if (save.isPending || !canEdit("refused_loads")) return;
     setIntent(mode);
     if (!validate()) {
       toast.error("Check the highlighted fields.");
+      window.setTimeout(
+        () => formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(),
+        0,
+      );
       return;
     }
     save.mutate();
@@ -268,252 +275,258 @@ export function RefusedLoadForm({
 
   return (
     <form
-      className="grid gap-5 md:grid-cols-2"
+      ref={formRef}
+      className={recordId ? "refused-load-form refused-load-editor" : "refused-load-form"}
       onSubmit={(event) => {
         event.preventDefault();
         submit("view");
       }}
     >
-      <Field label="Call in date" required error={errors["call_in_date"]}>
-        <Input
-          type="date"
-          value={form.call_in_date}
-          onChange={(e) => set("call_in_date", e.target.value)}
-        />
-      </Field>
+      <fieldset disabled={save.isPending} className="grid gap-5 md:grid-cols-2">
+        <Field label="Call in date" required error={errors["call_in_date"]}>
+          <Input
+            type="date"
+            value={form.call_in_date}
+            onChange={(e) => set("call_in_date", e.target.value)}
+          />
+        </Field>
 
-      <Field label="Customer" required error={errors["customer_id"]}>
-        <Choice
-          value={form.customer_id}
-          onChange={(v) => {
-            set("customer_id", v);
-            set("contact_id", "");
-            set("product_id", "");
-          }}
-          options={(customers.data ?? []).map((row: Row) => ({
-            value: row.id,
-            label: row.legal_name ?? row.dba_name ?? "Unnamed customer",
-          }))}
-          placeholder="Select a customer"
-        />
-      </Field>
-
-      <Field label="Contact" hint="Contacts belonging to the selected customer.">
-        <Choice
-          value={form.contact_id}
-          onChange={(v) => set("contact_id", v)}
-          options={filteredContacts.map((row: Row) => ({
-            value: row.id,
-            label:
-              [row.first_name, row.last_name].filter(Boolean).join(" ") ||
-              row.email ||
-              "Unnamed contact",
-          }))}
-          placeholder="Select a contact"
-          clearable
-        />
-      </Field>
-
-      <Field label="Equipment needed" required error={errors["equipment_type"]}>
-        <Choice
-          value={form.equipment_type}
-          onChange={(v) => set("equipment_type", v)}
-          options={equipmentTypes.options}
-          placeholder="Select equipment"
-        />
-      </Field>
-
-      <details className="md:col-span-2">
-        <summary className="cursor-pointer text-sm">Advanced / Specific equipment</summary>
-        <Field label="Specific unit" hint="Only if a particular unit was requested.">
+        <Field label="Customer" required error={errors["customer_id"]}>
           <Choice
-            value={form.equipment_id}
-            onChange={(v) => set("equipment_id", v)}
-            options={(equipment.data ?? []).map((row: Row) => ({
+            value={form.customer_id}
+            onChange={(v) => {
+              set("customer_id", v);
+              set("contact_id", "");
+              set("product_id", "");
+            }}
+            options={(customers.data ?? []).map((row: Row) => ({
               value: row.id,
-              label: [row.unit_number, row.equipment_type].filter(Boolean).join(" · ") || "Unit",
+              label: row.legal_name ?? row.dba_name ?? "Unnamed customer",
             }))}
-            placeholder="Select a unit"
+            placeholder="Select a customer"
+          />
+        </Field>
+
+        <Field label="Contact" hint="Contacts belonging to the selected customer.">
+          <Choice
+            value={form.contact_id}
+            onChange={(v) => set("contact_id", v)}
+            options={filteredContacts.map((row: Row) => ({
+              value: row.id,
+              label:
+                [row.first_name, row.last_name].filter(Boolean).join(" ") ||
+                row.email ||
+                "Unnamed contact",
+            }))}
+            placeholder="Select a contact"
             clearable
           />
         </Field>
-      </details>
-      <Field label="Number of loads" required error={errors["load_count"]}>
-        <Input
-          type="number"
-          min="1"
-          step="1"
-          value={form.load_count}
-          onChange={(e) => set("load_count", e.target.value)}
-        />
-      </Field>
 
-      <Field label="Product" hint="Choose a known product, or describe it below.">
-        <Choice
-          value={form.product_id}
-          onChange={(v) => set("product_id", v)}
-          options={filteredProducts.map((row: Row) => ({
-            value: row.id,
-            label: row.product_name ?? "Product",
-          }))}
-          placeholder="Select a product"
-          clearable
-        />
-      </Field>
+        <Field label="Equipment needed" required error={errors["equipment_type"]}>
+          <Choice
+            value={form.equipment_type}
+            onChange={(v) => set("equipment_type", v)}
+            options={equipmentTypes.options}
+            placeholder="Select equipment"
+          />
+        </Field>
 
-      <Field label="Product description" hint="Used when the product is not in the system yet.">
-        <Input
-          value={form.product}
-          onChange={(e) => set("product", e.target.value)}
-          placeholder="As described by the customer"
-        />
-      </Field>
+        <details className="md:col-span-2">
+          <summary className="cursor-pointer text-sm">Advanced / Specific equipment</summary>
+          <Field label="Specific unit" hint="Only if a particular unit was requested.">
+            <Choice
+              value={form.equipment_id}
+              onChange={(v) => set("equipment_id", v)}
+              options={(equipment.data ?? []).map((row: Row) => ({
+                value: row.id,
+                label: [row.unit_number, row.equipment_type].filter(Boolean).join(" · ") || "Unit",
+              }))}
+              placeholder="Select a unit"
+              clearable
+            />
+          </Field>
+        </details>
+        <Field label="Number of loads" required error={errors["load_count"]}>
+          <Input
+            type="number"
+            min="1"
+            step="1"
+            value={form.load_count}
+            onChange={(e) => set("load_count", e.target.value)}
+          />
+        </Field>
 
-      <Field label="Rated or not rated">
-        <Choice
-          value={form.rated_status}
-          onChange={(v) => set("rated_status", v)}
-          options={ratedOptions.options}
-          placeholder="Select"
-          clearable
-        />
-      </Field>
+        <Field label="Product" hint="Choose a known product, or describe it below.">
+          <Choice
+            value={form.product_id}
+            onChange={(v) => set("product_id", v)}
+            options={filteredProducts.map((row: Row) => ({
+              value: row.id,
+              label: row.product_name ?? "Product",
+            }))}
+            placeholder="Select a product"
+            clearable
+          />
+        </Field>
 
-      <div className="hidden md:block" aria-hidden />
+        <Field label="Product description" hint="Used when the product is not in the system yet.">
+          <Input
+            value={form.product}
+            onChange={(e) => set("product", e.target.value)}
+            placeholder="As described by the customer"
+          />
+        </Field>
 
-      <Field label="Pickup city" required error={errors["pickup_city"]}>
-        <Input value={form.pickup_city} onChange={(e) => set("pickup_city", e.target.value)} />
-      </Field>
-      <Field label="Pickup state" required error={errors["pickup_state"]}>
-        <Choice
-          value={form.pickup_state}
-          onChange={(v) => set("pickup_state", v)}
-          options={states.options}
-          placeholder="Select a state"
-        />
-      </Field>
-      <Field label="Delivery city" required error={errors["delivery_city"]}>
-        <Input value={form.delivery_city} onChange={(e) => set("delivery_city", e.target.value)} />
-      </Field>
-      <Field label="Delivery state" required error={errors["delivery_state"]}>
-        <Choice
-          value={form.delivery_state}
-          onChange={(v) => set("delivery_state", v)}
-          options={states.options}
-          placeholder="Select a state"
-        />
-      </Field>
+        <Field label="Rated or not rated">
+          <Choice
+            value={form.rated_status}
+            onChange={(v) => set("rated_status", v)}
+            options={ratedOptions.options}
+            placeholder="Select"
+            clearable
+          />
+        </Field>
 
-      <label className="flex items-center gap-3 md:col-span-2">
-        <Checkbox
-          checked={form.multiple_requested_dates}
-          onCheckedChange={(value) => set("multiple_requested_dates", Boolean(value))}
-        />
-        <span className="text-sm">The customer requested more than one date</span>
-      </label>
+        <div className="hidden md:block" aria-hidden />
 
-      <Field label="Requested / comments" full>
-        <textarea
-          className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm"
-          value={form.requested_comments}
-          onChange={(e) => set("requested_comments", e.target.value)}
-          placeholder="What the customer asked for"
-        />
-      </Field>
+        <Field label="Pickup city" required error={errors["pickup_city"]}>
+          <Input value={form.pickup_city} onChange={(e) => set("pickup_city", e.target.value)} />
+        </Field>
+        <Field label="Pickup state" required error={errors["pickup_state"]}>
+          <Choice
+            value={form.pickup_state}
+            onChange={(v) => set("pickup_state", v)}
+            options={states.options}
+            placeholder="Select a state"
+          />
+        </Field>
+        <Field label="Delivery city" required error={errors["delivery_city"]}>
+          <Input
+            value={form.delivery_city}
+            onChange={(e) => set("delivery_city", e.target.value)}
+          />
+        </Field>
+        <Field label="Delivery state" required error={errors["delivery_state"]}>
+          <Choice
+            value={form.delivery_state}
+            onChange={(v) => set("delivery_state", v)}
+            options={states.options}
+            placeholder="Select a state"
+          />
+        </Field>
 
-      <Field label="Offered date" error={errors["offered_date"]}>
-        <Input
-          type="date"
-          value={form.offered_date}
-          onChange={(e) => set("offered_date", e.target.value)}
-        />
-      </Field>
+        <label className="flex items-center gap-3 md:col-span-2">
+          <Checkbox
+            checked={form.multiple_requested_dates}
+            onCheckedChange={(value) => set("multiple_requested_dates", Boolean(value))}
+          />
+          <span className="text-sm">The customer requested more than one date</span>
+        </label>
 
-      <Field label="CS representative" required error={errors["cs_rep"]}>
-        <Choice
-          value={form.cs_rep}
-          onChange={(v) => set("cs_rep", v)}
-          options={people.options}
-          placeholder="Select a person"
-          clearable
-        />
-      </Field>
+        <Field label="Requested / comments" full>
+          <textarea
+            className="min-h-24 w-full rounded-md border border-input bg-background p-3 text-sm"
+            value={form.requested_comments}
+            onChange={(e) => set("requested_comments", e.target.value)}
+            placeholder="What the customer asked for"
+          />
+        </Field>
 
-      <Field label="Offered / comments" full>
-        <textarea
-          className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm"
-          value={form.offered_comments}
-          onChange={(e) => set("offered_comments", e.target.value)}
-          placeholder="What HEG was able to offer"
-        />
-      </Field>
+        <Field label="Offered date" error={errors["offered_date"]}>
+          <Input
+            type="date"
+            value={form.offered_date}
+            onChange={(e) => set("offered_date", e.target.value)}
+          />
+        </Field>
 
-      <Field label="Reason for lost revenue" required error={errors["loss_reason"]}>
-        <Choice
-          value={form.loss_reason}
-          onChange={(v) => set("loss_reason", v)}
-          options={lossReasons.options}
-          placeholder="Select a reason"
-        />
-      </Field>
+        <Field label="CS representative" required error={errors["cs_rep"]}>
+          <Choice
+            value={form.cs_rep}
+            onChange={(v) => set("cs_rep", v)}
+            options={people.options}
+            placeholder="Select a person"
+            clearable
+          />
+        </Field>
 
-      <Field
-        label="Estimated lost revenue"
-        hint="Leave blank if no rate is known — never estimate a rate."
-        error={errors["estimated_lost_revenue"]}
-      >
-        <Input
-          type="number"
-          min="0"
-          step="0.01"
-          value={form.estimated_lost_revenue}
-          onChange={(e) => set("estimated_lost_revenue", e.target.value)}
-          placeholder="Optional"
-        />
-      </Field>
+        <Field label="Offered / comments" full>
+          <textarea
+            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm"
+            value={form.offered_comments}
+            onChange={(e) => set("offered_comments", e.target.value)}
+            placeholder="What HEG was able to offer"
+          />
+        </Field>
 
-      <Field label="Additional explanation" full>
-        <textarea
-          className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm"
-          value={form.loss_reason_detail}
-          onChange={(e) => set("loss_reason_detail", e.target.value)}
-          placeholder="Anything else worth knowing about this loss"
-        />
-      </Field>
+        <Field label="Reason for lost revenue" required error={errors["loss_reason"]}>
+          <Choice
+            value={form.loss_reason}
+            onChange={(v) => set("loss_reason", v)}
+            options={lossReasons.options}
+            placeholder="Select a reason"
+          />
+        </Field>
 
-      {save.error && (
-        <p role="alert" className="text-sm text-destructive md:col-span-2">
-          {save.error.message}
-        </p>
-      )}
-      <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
-        {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={save.isPending}
-            onClick={() => {
-              clearDraft();
-              onCancel();
-            }}
-          >
-            Cancel
-          </Button>
+        <Field
+          label="Estimated lost revenue"
+          hint="Leave blank if no rate is known — never estimate a rate."
+          error={errors["estimated_lost_revenue"]}
+        >
+          <Input
+            type="number"
+            min="0"
+            step="0.01"
+            value={form.estimated_lost_revenue}
+            onChange={(e) => set("estimated_lost_revenue", e.target.value)}
+            placeholder="Optional"
+          />
+        </Field>
+
+        <Field label="Additional explanation" full>
+          <textarea
+            className="min-h-20 w-full rounded-md border border-input bg-background p-3 text-sm"
+            value={form.loss_reason_detail}
+            onChange={(e) => set("loss_reason_detail", e.target.value)}
+            placeholder="Anything else worth knowing about this loss"
+          />
+        </Field>
+
+        {save.error && (
+          <p role="alert" className="text-sm text-destructive md:col-span-2">
+            {save.error.message}
+          </p>
         )}
-        {!recordId && (
-          <Button
-            type="button"
-            variant="outline"
-            disabled={save.isPending || !canEdit("refused_loads")}
-            onClick={() => submit("again")}
-          >
-            Save &amp; add another
+        <div className="flex flex-wrap justify-end gap-2 md:col-span-2">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={save.isPending}
+              onClick={() => {
+                clearDraft();
+                onCancel();
+              }}
+            >
+              Cancel
+            </Button>
+          )}
+          {!recordId && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={save.isPending || !canEdit("refused_loads")}
+              onClick={() => submit("again")}
+            >
+              Save &amp; add another
+            </Button>
+          )}
+          <Button type="submit" disabled={save.isPending || !canEdit("refused_loads")}>
+            {save.isPending ? "Saving…" : recordId ? "Save changes" : "Save & view record"}
           </Button>
-        )}
-        <Button type="submit" disabled={save.isPending || !canEdit("refused_loads")}>
-          {save.isPending ? "Saving…" : recordId ? "Save changes" : "Save & view record"}
-        </Button>
-      </div>
+        </div>
+      </fieldset>
     </form>
   );
 }
@@ -535,18 +548,39 @@ function Field({
 }) {
   const id = useId();
   return (
-    <div className={full ? "space-y-1.5 md:col-span-2" : "space-y-1.5"}>
+    <div
+      className={
+        full
+          ? "refused-load-field refused-load-field-long space-y-1.5 md:col-span-2"
+          : "refused-load-field space-y-1.5"
+      }
+    >
       <Label htmlFor={id}>
         {label}
         {required && <span className="ml-0.5 text-danger">*</span>}
       </Label>
       {isValidElement(children)
-        ? cloneElement(children as ReactElement<{ id: string }>, { id })
+        ? cloneElement(
+            children as ReactElement<{
+              id: string;
+              "aria-invalid"?: boolean;
+              "aria-describedby"?: string | undefined;
+            }>,
+            {
+              id,
+              "aria-invalid": Boolean(error),
+              "aria-describedby": error || hint ? `${id}-help` : undefined,
+            },
+          )
         : children}
       {error ? (
-        <p className="text-xs text-danger">{error}</p>
+        <p id={`${id}-help`} className="text-xs text-danger">
+          {error}
+        </p>
       ) : hint ? (
-        <p className="text-xs text-muted-foreground">{hint}</p>
+        <p id={`${id}-help`} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
       ) : null}
     </div>
   );
@@ -554,6 +588,8 @@ function Field({
 
 function Choice({
   id,
+  "aria-invalid": invalid,
+  "aria-describedby": describedBy,
   value,
   onChange,
   options,
@@ -561,6 +597,8 @@ function Choice({
   clearable,
 }: {
   id?: string;
+  "aria-invalid"?: boolean;
+  "aria-describedby"?: string | undefined;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
@@ -572,7 +610,7 @@ function Choice({
       value={value ? value : ""}
       onValueChange={(next) => onChange(next === NONE ? "" : next)}
     >
-      <SelectTrigger id={id}>
+      <SelectTrigger id={id} aria-invalid={invalid} aria-describedby={describedBy}>
         <SelectValue placeholder={placeholder} />
       </SelectTrigger>
       <SelectContent className="max-h-72">

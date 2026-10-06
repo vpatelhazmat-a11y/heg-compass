@@ -1892,3 +1892,41 @@ html {
     margin-bottom: 20px;
   }
 }
+
+.refused-load-editor {
+  padding: 24px 0;
+}
+.refused-load-editor .refused-load-field:not(.refused-load-field-long) {
+  display: grid;
+  grid-template-columns: minmax(104px, 0.42fr) minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: start;
+}
+.refused-load-editor .refused-load-field:not(.refused-load-field-long) > label {
+  padding-top: 7px;
+}
+.refused-load-editor .refused-load-field:not(.refused-load-field-long) > p {
+  grid-column: 2;
+}
+.refused-load-editor input,
+.refused-load-editor textarea,
+.refused-load-editor [role="combobox"] {
+  border-color: transparent;
+  border-bottom-color: var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.refused-load-editor input:focus-visible,
+.refused-load-editor textarea:focus-visible,
+.refused-load-editor [role="combobox"]:focus-visible {
+  border-bottom-color: var(--primary);
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+@media (max-width: 640px) {
+  .refused-load-editor .refused-load-field:not(.refused-load-field-long) {
+    grid-template-columns: 104px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+}

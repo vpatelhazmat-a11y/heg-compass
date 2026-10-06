@@ -222,23 +222,25 @@ export function RecordListPage({
                     ))}
                   </select>
                 )}
-                {fields.filter.length > 0 && (
+                {(fields.filter.length > 0 || fields.group.length > 0) && (
                   <div className="record-list-control-group">
                     <p className="field-label">Filters and grouping</p>
-                    <select
-                      aria-label="Filter field"
-                      value={state.filterField ?? ""}
-                      onChange={(event) =>
-                        onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
-                      }
-                    >
-                      <option value="">Filter</option>
-                      {fields.filter.map((name) => (
-                        <option key={name} value={name}>
-                          {labelFor(name)}
-                        </option>
-                      ))}
-                    </select>
+                    {fields.filter.length > 0 && (
+                      <select
+                        aria-label="Filter field"
+                        value={state.filterField ?? ""}
+                        onChange={(event) =>
+                          onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
+                        }
+                      >
+                        <option value="">Filter</option>
+                        {fields.filter.map((name) => (
+                          <option key={name} value={name}>
+                            {labelFor(name)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                     {state.filterField && (
                       <select
                         aria-label="Filter value"
@@ -263,7 +265,7 @@ export function RecordListPage({
                       onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
                     >
                       <option value="">Group by</option>
-                      {fields.filter.map((name) => (
+                      {fields.group.map((name) => (
                         <option key={name} value={name}>
                           {labelFor(name)}
                         </option>
@@ -428,23 +430,36 @@ export function RecordListPage({
                 returnTo={returnTo}
                 groupingField={state.groupBy}
                 columns={
-                  columns ??
-                  [
-                    ...definition.columns,
-                    ...(state.groupBy && !definition.columns.includes(state.groupBy)
-                      ? [state.groupBy]
-                      : []),
-                  ].map((key) => ({
-                    key,
-                    header: labelFor(key),
-                    sortable: !RELATION_TARGETS[key],
-                    render: (row: Row) => listValue(table, key, row),
-                    align: ["money", "number"].includes(
-                      definition.fields.find((field) => field.name === key)?.type ?? "",
-                    )
-                      ? ("right" as const)
-                      : ("left" as const),
-                  }))
+                  columns
+                    ? [
+                        ...columns,
+                        ...(state.groupBy && !columns.some((column) => column.key === state.groupBy)
+                          ? [
+                              {
+                                key: state.groupBy,
+                                header: labelFor(state.groupBy),
+                                sortable: false,
+                                render: (row: Row) => listValue(table, state.groupBy!, row),
+                              },
+                            ]
+                          : []),
+                      ]
+                    : [
+                        ...definition.columns,
+                        ...(state.groupBy && !definition.columns.includes(state.groupBy)
+                          ? [state.groupBy]
+                          : []),
+                      ].map((key) => ({
+                        key,
+                        header: labelFor(key),
+                        sortable: !RELATION_TARGETS[key],
+                        render: (row: Row) => listValue(table, key, row),
+                        align: ["money", "number"].includes(
+                          definition.fields.find((field) => field.name === key)?.type ?? "",
+                        )
+                          ? ("right" as const)
+                          : ("left" as const),
+                      }))
                 }
                 rows={rows.data?.rows ?? []}
                 emptyTitle={`No ${definition.label.toLowerCase()} found`}
