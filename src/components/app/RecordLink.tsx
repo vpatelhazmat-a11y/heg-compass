@@ -15,10 +15,14 @@ export function RecordLink({
   table,
   id,
   label,
+  compact = false,
+  returnTo,
 }: {
   table: string;
   id: string | null | undefined;
   label?: string | undefined;
+  compact?: boolean;
+  returnTo?: string | undefined;
 }) {
   const valid = Boolean(id && recordDefinition(table));
   const record = useQuery({
@@ -37,13 +41,13 @@ export function RecordLink({
         : "Unavailable record");
   return (
     <Link
-      to={recordHref(table, id!)}
+      to={recordHref(table, id!, returnTo)}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
       className="inline-flex items-center gap-1 text-primary underline-offset-4 hover:underline"
     >
       <span>{text}</span>
-      <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden />
+      {!compact && <ArrowUpRight className="h-3.5 w-3.5 shrink-0" aria-hidden />}
     </Link>
   );
 }

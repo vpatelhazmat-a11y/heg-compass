@@ -61,6 +61,7 @@ import {
 
 type ListState = RecordPageRequest & { view?: "list" | "cards" };
 type ListPatch = {
+  refused?: RecordPageRequest["refused"];
   sort?: string;
   ascending?: boolean;
   archived?: boolean;
@@ -295,6 +296,7 @@ export function RecordListPage({
             userId={session?.userId}
             scope={`record-${table}`}
             value={{
+              ...(state.refused ? { refused: state.refused } : {}),
               ...(state.sort ? { sort: state.sort, ascending: Boolean(state.ascending) } : {}),
               search: state.search ?? "",
               searchField: state.searchField ?? "",
@@ -305,6 +307,7 @@ export function RecordListPage({
             }}
             onApply={(saved) =>
               onChange?.({
+                refused: saved.refused,
                 sort: saved.sort ?? "",
                 ascending: Boolean(saved.ascending),
                 q: saved.search,
@@ -480,7 +483,7 @@ export function RecordListPage({
           title="New document"
           table="documents"
           fields={documentFields}
-          onSaved={(saved) => navigate({ to: recordHref("documents", saved.id) })}
+          onSaved={(saved) => navigate({ to: recordHref("documents", saved.id, returnTo) })}
           defaults={
             parent && parentId
               ? {
@@ -576,7 +579,7 @@ export function RecordDetailPage({
   if (record.error)
     return (
       <div className="p-6">
-        <ErrorState message={record.error.message} />
+        <ErrorState message={record.error.message} onRetry={() => void record.refetch()} />
       </div>
     );
   const row = record.data;
@@ -606,7 +609,8 @@ export function RecordDetailPage({
     grouped.set(section, [...(grouped.get(section) ?? []), entry]);
   }
   const displayValue = (key: string, value: unknown) => {
-    if (value === null || value === "") return "—";
+    if (value === null || value === "")
+      return table === "refused_loads" && key === "estimated_lost_revenue" ? "Rate unknown" : "—";
     if (typeof value === "boolean") return value ? "Yes" : "No";
     const field = definition.fields.find((field) => field.name === key);
     if (field?.type === "richtext")
@@ -614,7 +618,11 @@ export function RecordDetailPage({
     if (field?.type === "money")
       return formatMoney(
         Number(value),
-        table === "equipment_leases" ? row.currency_code : "USD",
+        table === "equipment_leases"
+          ? row.currency_code
+          : table === "refused_loads"
+            ? row.currency
+            : "USD",
         2,
       );
     if (field?.type === "date" || key === "created_at" || key === "updated_at")
@@ -707,6 +715,7 @@ export function RecordDetailPage({
             <section aria-label="Rate history">
               <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
               <DataTable
+                embedded
                 rows={history.data ?? []}
                 isLoading={history.isLoading}
                 error={history.error}
@@ -792,10 +801,17 @@ function RecordEditor({ table, row, onClose }: { table: string; row: Row; onClos
   if (choices.some((choice) => choice.isError))
     return (
       <div className="p-6">
-        <ErrorState message="Related choices could not be loaded. Close and retry before editing." />
-        <Button variant="outline" onClick={onClose}>
-          Close
-        </Button>
+        <ErrorState
+          message="Related choices could not be loaded."
+          onRetry={() => {
+            for (const choice of choices) if (choice.isError) void choice.refetch();
+          }}
+        />
+        {onClose && (
+          <Button variant="outline" onClick={onClose}>
+            Close
+          </Button>
+        )}
       </div>
     );
   const relationFields: FieldConfig[] = relationKeys

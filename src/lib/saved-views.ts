@@ -1,4 +1,6 @@
+import type { RecordPageRequest } from "./record-lists";
 export type SavedViewState = {
+  refused?: RecordPageRequest["refused"];
   sort?: string;
   ascending?: boolean;
   search: string;
@@ -18,7 +20,21 @@ const cleanState = (value: unknown): SavedViewState | null => {
   const state = value as Record<string, unknown>;
   const text = (field: string) =>
     typeof state[field] === "string" ? String(state[field]).slice(0, 120) : "";
+  const refused =
+    state["refused"] && typeof state["refused"] === "object"
+      ? (state["refused"] as Record<string, unknown>)
+      : undefined;
   return {
+    ...(refused
+      ? {
+          refused: Object.fromEntries(
+            ["from", "to", "customer", "reason", "rep"].map((key) => [
+              key,
+              typeof refused[key] === "string" ? refused[key].slice(0, 120) : "",
+            ]),
+          ),
+        }
+      : {}),
     ...(text("sort") ? { sort: text("sort"), ascending: state["ascending"] === true } : {}),
     search: text("search"),
     searchField: text("searchField"),

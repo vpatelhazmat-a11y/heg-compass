@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useDraftProtection } from "@/hooks/use-draft-protection";
 import { useSession } from "@/hooks/use-session";
 import { insertRow, listRows, updateRow } from "@/lib/data";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
   const [mode, setMode] = useState<"message" | "note" | "activity" | null>(null);
   const [body, setBody] = useState("");
   const [dueDate, setDueDate] = useState("");
+  const clearDraft = useDraftProtection(Boolean(mode && (body.trim() || dueDate)), "Chatter draft");
   const key = ["record-chatter", table, id];
   const chatter = useQuery({
     queryKey: key,
@@ -53,6 +55,7 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
       const value = body.trim();
       if (!value) throw new Error("Enter a message or activity title.");
       if (mode === "activity") {
+        if (!canEdit("tasks")) throw new Error("You cannot create activities.");
         if (!dueDate) throw new Error("Choose a due date.");
         await insertRow("tasks", {
           title: value,
@@ -71,6 +74,7 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
       }
     },
     onSuccess: () => {
+      clearDraft();
       setMode(null);
       setBody("");
       setDueDate("");
@@ -79,11 +83,14 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
     onError: (error: Error) => toast.error(error.message),
   });
   const complete = useMutation({
-    mutationFn: (taskId: string) =>
-      updateRow("tasks", taskId, {
+    mutationFn: (taskId: string) => {
+      if (!canEdit(table) || !canEdit("tasks"))
+        throw new Error("You cannot complete this activity.");
+      return updateRow("tasks", taskId, {
         status: "Completed",
         completed_date: new Date().toISOString().slice(0, 10),
-      }),
+      });
+    },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
     onError: (error: Error) => toast.error(error.message),
   });
@@ -99,13 +106,37 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
         <h2 className="text-sm font-semibold">Chatter</h2>
         {writable && (
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setMode("message")}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={save.isPending}
+              onClick={() => {
+                save.reset();
+                setMode("message");
+              }}
+            >
               Send message
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setMode("note")}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={save.isPending}
+              onClick={() => {
+                save.reset();
+                setMode("note");
+              }}
+            >
               Log note
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setMode("activity")}>
+            <Button
+              size="sm"
+              variant="ghost"
+              disabled={save.isPending || !canEdit("tasks")}
+              onClick={() => {
+                save.reset();
+                setMode("activity");
+              }}
+            >
               Activity
             </Button>
           </div>
@@ -116,7 +147,7 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
           className="mt-4 space-y-3"
           onSubmit={(event) => {
             event.preventDefault();
-            save.mutate();
+            if (!save.isPending) save.mutate();
           }}
         >
           <label className="block text-sm font-medium" htmlFor="chatter-body">
@@ -126,6 +157,7 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
             id="chatter-body"
             value={body}
             maxLength={10000}
+            disabled={save.isPending}
             onChange={(event) => setBody(event.target.value)}
           />
           {mode === "activity" && (
@@ -134,17 +166,35 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
               <Input
                 id="chatter-due"
                 type="date"
+                disabled={save.isPending}
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
                 className="mt-1 max-w-48"
               />
             </label>
           )}
+          {save.error && (
+            <p role="alert" className="text-sm text-destructive">
+              {save.error.message}
+            </p>
+          )}
           <div className="flex gap-2">
             <Button size="sm" type="submit" disabled={save.isPending}>
-              Save
+              {save.isPending ? "Saving…" : "Save"}
             </Button>
-            <Button size="sm" variant="ghost" type="button" onClick={() => setMode(null)}>
+            <Button
+              size="sm"
+              variant="ghost"
+              type="button"
+              disabled={save.isPending}
+              onClick={() => {
+                clearDraft();
+                setMode(null);
+                setBody("");
+                setDueDate("");
+                save.reset();
+              }}
+            >
               Cancel
             </Button>
           </div>
@@ -155,6 +205,9 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
       ) : chatter.error ? (
         <p role="alert" className="mt-4 text-sm text-destructive">
           {chatter.error.message}
+          <button type="button" className="ml-2 underline" onClick={() => void chatter.refetch()}>
+            Try again
+          </button>
         </p>
       ) : chatter.data?.length ? (
         <ol className="mt-4 space-y-3">
@@ -211,11 +264,14 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
                       ? " · Overdue"
                       : ""}
                   </span>
-                  {writable && item.status !== "Completed" && (
+                  {writable && canEdit("tasks") && item.status !== "Completed" && (
                     <button
                       type="button"
                       className="text-primary hover:underline"
-                      onClick={() => complete.mutate(item.id)}
+                      disabled={complete.isPending}
+                      onClick={() => {
+                        if (!complete.isPending) complete.mutate(item.id);
+                      }}
                     >
                       Mark done
                     </button>

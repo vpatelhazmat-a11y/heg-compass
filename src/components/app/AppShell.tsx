@@ -36,6 +36,8 @@ function ShellLayout({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [paletteQuery, setPaletteQuery] = useState("");
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState<string | null>(null);
   const module = activeModule(pathname);
 
   useEffect(() => {
@@ -70,10 +72,20 @@ function ShellLayout({ children }: { children: ReactNode }) {
   }, [paletteOpen]);
 
   const signOut = async () => {
-    await queryClient.cancelQueries();
-    queryClient.clear();
-    await supabase.auth.signOut();
-    navigate({ to: "/auth", replace: true });
+    if (signingOut || hasDrafts) return;
+    setSigningOut(true);
+    setSignOutError(null);
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      await queryClient.cancelQueries();
+      queryClient.clear();
+      await navigate({ to: "/auth", replace: true });
+    } catch (error) {
+      setSignOutError(error instanceof Error ? error.message : "Unable to sign out. Try again.");
+    } finally {
+      setSigningOut(false);
+    }
   };
   const initials = (session?.fullName ?? session?.email ?? "?")
     .split(/[\s@.]+/)
@@ -166,6 +178,9 @@ function ShellLayout({ children }: { children: ReactNode }) {
               </p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => navigate({ to: "/overview" })}>
+              Daily overview
+            </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/profile" })}>
               Your profile
             </DropdownMenuItem>
@@ -177,10 +192,25 @@ function ShellLayout({ children }: { children: ReactNode }) {
                 Administration
               </DropdownMenuItem>
             )}
-            <DropdownMenuItem onSelect={signOut} disabled={hasDrafts}>
+            <DropdownMenuItem
+              onSelect={(event) => {
+                event.preventDefault();
+                void signOut();
+              }}
+              disabled={hasDrafts || signingOut}
+            >
               <LogOut className="h-4 w-4" aria-hidden />{" "}
-              {hasDrafts ? "Save or discard edits to sign out" : "Sign out"}
+              {hasDrafts
+                ? "Save or discard edits to sign out"
+                : signingOut
+                  ? "Signing out…"
+                  : "Sign out"}
             </DropdownMenuItem>
+            {signOutError && (
+              <p role="alert" className="px-2 py-1 text-xs text-destructive">
+                {signOutError}
+              </p>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
