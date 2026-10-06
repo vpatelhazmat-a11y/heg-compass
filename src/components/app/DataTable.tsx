@@ -60,6 +60,7 @@ export function DataTable({
   bare = false,
   embedded = false,
   groupingField,
+  serverSort,
 }: {
   columns: Column[];
   rows: Row[];
@@ -78,11 +79,17 @@ export function DataTable({
   bare?: boolean;
   embedded?: boolean;
   groupingField?: string | undefined;
+  serverSort?: {
+    key?: string | undefined;
+    asc: boolean;
+    onChange: (key: string, asc: boolean) => void;
+  };
 }) {
   const { session } = useSession();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<{ key: string; asc: boolean } | null>(null);
+  const displayedSort = serverSort ?? sort;
   const [page, setPage] = useState(0);
   const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
   const [searchField, setSearchField] = useState("");
@@ -494,6 +501,13 @@ export function DataTable({
                     <th
                       key={column.key}
                       scope="col"
+                      aria-sort={
+                        displayedSort?.key === column.key
+                          ? displayedSort.asc
+                            ? "ascending"
+                            : "descending"
+                          : "none"
+                      }
                       className={cn(
                         "border-b border-border px-4 py-2.5 text-left text-xs font-medium text-muted-foreground",
                         column.align === "right" && "text-right",
@@ -506,17 +520,17 @@ export function DataTable({
                         <button
                           type="button"
                           className="inline-flex items-center gap-1 hover:text-foreground"
-                          onClick={() =>
-                            setSort((prev) =>
-                              prev?.key === column.key
-                                ? { key: column.key, asc: !prev.asc }
-                                : { key: column.key, asc: true },
-                            )
-                          }
+                          onClick={() => {
+                            const asc =
+                              displayedSort?.key === column.key ? !displayedSort.asc : true;
+                            if (serverSort) serverSort.onChange(column.key, asc);
+                            else setSort({ key: column.key, asc });
+                            setPage(0);
+                          }}
                         >
                           {column.header}
-                          {sort?.key === column.key ? (
-                            sort.asc ? (
+                          {displayedSort?.key === column.key ? (
+                            displayedSort.asc ? (
                               <ArrowUp className="h-3 w-3" aria-hidden />
                             ) : (
                               <ArrowDown className="h-3 w-3" aria-hidden />

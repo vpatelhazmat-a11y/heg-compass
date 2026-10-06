@@ -1,4 +1,6 @@
 export type SavedViewState = {
+  sort?: string;
+  ascending?: boolean;
   search: string;
   searchField: string;
   filterField: string;
@@ -17,6 +19,7 @@ const cleanState = (value: unknown): SavedViewState | null => {
   const text = (field: string) =>
     typeof state[field] === "string" ? String(state[field]).slice(0, 120) : "";
   return {
+    ...(text("sort") ? { sort: text("sort"), ascending: state["ascending"] === true } : {}),
     search: text("search"),
     searchField: text("searchField"),
     filterField: text("filterField"),

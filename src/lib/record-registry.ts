@@ -129,7 +129,16 @@ export const RECORDS: Record<string, RecordDefinition> = {
     "Refused Loads",
     "Refused load",
     ["call_in_date", "product"],
-    ["call_in_date", "customer_id", "product", "loss_reason", "estimated_lost_revenue"],
+    [
+      "call_in_date",
+      "customer_id",
+      "product",
+      "equipment_type",
+      "load_count",
+      "loss_reason",
+      "estimated_lost_revenue",
+      "cs_rep",
+    ],
     [],
     [
       "customer_id",

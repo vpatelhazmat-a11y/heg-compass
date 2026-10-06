@@ -64,7 +64,7 @@ export const HUB_MODULES: HubModule[] = [
     id: "refused-loads",
     label: "Refused Loads",
     description: "Capacity and lost revenue",
-    to: "/lost-loads",
+    to: "/lost-loads/records",
     paths: ["/lost-loads", "/records/refused_loads"],
   },
   {

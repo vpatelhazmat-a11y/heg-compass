@@ -3,6 +3,8 @@ import { RecordListPage } from "@/components/app/RecordWorkspace";
 
 export const Route = createFileRoute("/_authenticated/records/$entityType/")({
   validateSearch: (search: Record<string, unknown>) => ({
+    sort: typeof search["sort"] === "string" ? search["sort"] : undefined,
+    ascending: search["ascending"] === true,
     parent: typeof search["parent"] === "string" ? search["parent"] : undefined,
     parentId: typeof search["parentId"] === "string" ? search["parentId"] : undefined,
     q: typeof search["q"] === "string" ? search["q"].slice(0, 120) : undefined,
@@ -35,6 +37,8 @@ function RecordListRoute() {
       parent={state.parent}
       parentId={state.parentId}
       state={{
+        sort: state.sort,
+        ascending: state.ascending,
         search: state.q,
         searchField: state.field,
         filterField: state.filterField,

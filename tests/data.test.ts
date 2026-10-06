@@ -14,7 +14,7 @@ const client = vi.hoisted(() => {
   return q;
 });
 vi.mock("../src/integrations/supabase/client", () => ({ supabase: { from: () => client } }));
-import { listRows } from "../src/lib/data";
+import { listRows, listRowsPage } from "../src/lib/data";
 beforeEach(() => {
   state.fail = false;
   client.range.mockImplementation(async (from: number, to: number) => ({
@@ -32,4 +32,16 @@ test("empty queries return arrays and failures remain distinguishable from zero 
   expect(await listRows("customers")).toEqual([]);
   state.fail = true;
   await expect(listRows("customers")).rejects.toThrow("Connection failed");
+});
+
+test("paged grouped ordering keeps group, chosen sort and stable ID tie-break", async () => {
+  client.order.mockClear();
+  await listRowsPage("bids", {
+    groupBy: "status",
+    order: { column: "due_date", ascending: true },
+    offset: 25,
+    limit: 25,
+  });
+  expect(client.order.mock.calls.map((call) => call[0])).toEqual(["status", "due_date", "id"]);
+  expect(client.range).toHaveBeenLastCalledWith(25, 49);
 });

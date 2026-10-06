@@ -17,6 +17,8 @@ function memoryStore() {
 test("saved views stay scoped to an account and list, and can be replaced or removed", () => {
   const store = memoryStore();
   const initial: SavedViewState = {
+    sort: "legal_name",
+    ascending: false,
     search: "Acme",
     searchField: "name",
     filterField: "status",

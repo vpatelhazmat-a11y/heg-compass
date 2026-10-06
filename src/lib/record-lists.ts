@@ -6,6 +6,10 @@ export const isRecordId = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 
 export type RecordPageRequest = {
+  refused?:
+    { from?: string; to?: string; customer?: string; reason?: string; rep?: string } | undefined;
+  sort?: string | undefined;
+  ascending?: boolean | undefined;
   page?: number | undefined;
   archived?: boolean | undefined;
   folder?: string | undefined;
@@ -15,6 +19,23 @@ export type RecordPageRequest = {
   filterValue?: string | undefined;
   groupBy?: string | undefined;
 };
+
+export function recordDefaultOrder(table: string) {
+  const defaults: Record<string, { column: string; ascending: boolean }> = {
+    customers: { column: "legal_name", ascending: true },
+    sites: { column: "site_name", ascending: true },
+    equipment: { column: "unit_number", ascending: true },
+    bids: { column: "due_date", ascending: true },
+    tasks: { column: "due_date", ascending: true },
+    refused_loads: { column: "call_in_date", ascending: false },
+    knowledge_articles: { column: "updated_at", ascending: false },
+    incidents: { column: "incident_date", ascending: false },
+    opportunities: { column: "expected_close_date", ascending: true },
+    corrective_actions: { column: "due_date", ascending: true },
+    lost_business: { column: "occurred_on", ascending: false },
+  };
+  return defaults[table] ?? { column: "created_at", ascending: false };
+}
 
 export function recordListFields(table: string) {
   const definition = recordDefinition(table);
@@ -30,7 +51,17 @@ export function recordListFields(table: string) {
         .map((field) => field.name),
     ),
   ];
-  if (table === "refused_loads") search.push("product", "loss_reason");
+  if (table === "refused_loads")
+    search.push(
+      "product",
+      "loss_reason",
+      "pickup_city",
+      "pickup_state",
+      "delivery_city",
+      "delivery_state",
+      "cs_rep",
+      "equipment_type",
+    );
   const filter = [
     ...new Set(
       definition.fields.filter((field) => field.type === "select").map((field) => field.name),
@@ -82,7 +113,16 @@ export async function loadRecordListPage(
       filters = { linked_entity_type: request.folder! };
     else if (request.folder === "unlinked") filters = { linked_entity_type: null };
   }
+  const refused = table === "refused_loads" ? request.refused : undefined;
+  if (refused?.customer && isRecordId(refused.customer)) filters["customer_id"] = refused.customer;
+  if (refused?.reason && refused.reason !== "__all__")
+    filters["loss_reason"] = refused.reason.slice(0, 120);
+  if (refused?.rep && refused.rep !== "__all__") filters["cs_rep"] = refused.rep.slice(0, 120);
+  const date = (value?: string) => (value && /^\d{4}-\d{2}-\d{2}$/.test(value) ? value : undefined);
   return listRowsPage(table, {
+    dateRange: refused
+      ? { column: "call_in_date", from: date(refused.from), to: date(refused.to) }
+      : undefined,
     filters,
     ids,
     searchField,
@@ -90,6 +130,10 @@ export async function loadRecordListPage(
     exactField,
     exactValue,
     groupBy,
+    order:
+      request.sort && definition.columns.includes(request.sort)
+        ? { column: request.sort, ascending: Boolean(request.ascending) }
+        : recordDefaultOrder(table),
     offset: page * 25,
     limit: 25,
     archived: request.archived,
@@ -127,6 +171,8 @@ export async function countRelatedRecords(table: string, parent: string, parentI
 
 export function parseRecordListSearch(search: Record<string, unknown> & SearchSchemaInput) {
   return {
+    sort: typeof search["sort"] === "string" ? search["sort"] : undefined,
+    ascending: search["ascending"] === true,
     q: typeof search["q"] === "string" ? search["q"].slice(0, 120) : undefined,
     field: typeof search["field"] === "string" ? search["field"] : undefined,
     filterField: typeof search["filterField"] === "string" ? search["filterField"] : undefined,

@@ -1,11 +1,9 @@
-import { useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { createFileRoute, Link, type SearchSchemaInput } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { PageHeader } from "@/components/app/PageHeader";
-import { Panel } from "@/components/app/Panels";
-import { DataTable } from "@/components/app/DataTable";
-import { RefusedLoadForm, toFormState } from "@/components/app/RefusedLoadForm";
+import { RecordListPage } from "@/components/app/RecordWorkspace";
+import { parseRecordListSearch } from "@/lib/record-lists";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +22,20 @@ import { useSession } from "@/hooks/use-session";
 const ALL = "__all__";
 
 export const Route = createFileRoute("/_authenticated/lost-loads/records")({
+  validateSearch: (search: Record<string, unknown> & SearchSchemaInput) => ({
+    ...parseRecordListSearch(search),
+    from:
+      typeof search["from"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["from"])
+        ? search["from"]
+        : "",
+    to:
+      typeof search["to"] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(search["to"])
+        ? search["to"]
+        : "",
+    customer: typeof search["customer"] === "string" ? search["customer"].slice(0, 120) : ALL,
+    reason: typeof search["reason"] === "string" ? search["reason"].slice(0, 120) : ALL,
+    rep: typeof search["rep"] === "string" ? search["rep"].slice(0, 120) : ALL,
+  }),
   head: () => ({
     meta: [
       { title: "Refused Load Records — HEG Commercial Intelligence Hub" },
@@ -38,19 +50,23 @@ export const Route = createFileRoute("/_authenticated/lost-loads/records")({
 function LostLoadRecords() {
   const { canEdit } = useSession();
   const canWrite = canEdit("refused_loads");
-  const [editing, setEditing] = useState<Row | null>(null);
-  const [filters, setFilters] = useState({
-    from: "",
-    to: "",
-    customer: ALL,
-    reason: ALL,
-    rep: ALL,
-  });
+  const filters = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const setFilters = (next: (previous: typeof filters) => typeof filters) =>
+    void navigate({ search: (previous) => ({ ...next(previous), page: 0 }), replace: true });
+  const activeFilters = Boolean(
+    filters.from ||
+    filters.to ||
+    [filters.customer, filters.reason, filters.rep].some((value) => value !== ALL),
+  );
 
   const rows = useQuery({
-    queryKey: ["refused-loads"],
+    queryKey: ["refused-load-reps"],
     queryFn: () =>
-      listRows("refused_loads", { order: { column: "call_in_date", ascending: false } }),
+      listRows("refused_loads", {
+        select: "id,cs_rep,created_at",
+        order: { column: "cs_rep", ascending: true },
+      }),
   });
   const customers = useQuery({
     queryKey: ["customer-names"],
@@ -60,7 +76,7 @@ function LostLoadRecords() {
         order: { column: "legal_name", ascending: true },
       }),
   });
-  const reasons = useLookup("loss_reason");
+  const reasons = useLookup("lost_reason");
 
   const nameById = useMemo(
     () =>
@@ -78,22 +94,31 @@ function LostLoadRecords() {
     [rows.data],
   );
 
-  const filtered = useMemo(() => {
-    return (rows.data ?? []).filter((row: Row) => {
-      if (filters.from && (row.call_in_date ?? "") < filters.from) return false;
-      if (filters.to && (row.call_in_date ?? "") > filters.to) return false;
-      if (filters.customer !== ALL && row.customer_id !== filters.customer) return false;
-      if (filters.reason !== ALL && row.loss_reason !== filters.reason) return false;
-      if (filters.rep !== ALL && row.cs_rep !== filters.rep) return false;
-      return true;
-    });
-  }, [rows.data, filters]);
-
   return (
     <>
-      <PageHeader
-        title="Refused load records"
-        description="Every refused load, searchable and editable."
+      <RecordListPage
+        table="refused_loads"
+        state={{
+          search: filters.q,
+          searchField: filters.field,
+          filterField: filters.filterField,
+          filterValue: filters.filterValue,
+          groupBy: filters.groupBy,
+          sort: filters.sort,
+          ascending: filters.ascending,
+          page: filters.page,
+          view: filters.view,
+          refused: {
+            from: filters.from,
+            to: filters.to,
+            customer: filters.customer,
+            reason: filters.reason,
+            rep: filters.rep,
+          },
+        }}
+        onChange={(patch) =>
+          void navigate({ search: (previous) => ({ ...previous, ...patch }), replace: true })
+        }
         actions={
           canWrite ? (
             <Button asChild>
@@ -103,116 +128,115 @@ function LostLoadRecords() {
             </Button>
           ) : undefined
         }
-      />
-
-      <div className="space-y-6 p-6">
-        <Panel title="Filters">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="space-y-1.5">
-              <Label>From</Label>
+        activeFilters={
+          activeFilters ? (
+            <div className="table-active-filters">
+              <button
+                onClick={() =>
+                  setFilters((previous) => ({
+                    ...previous,
+                    from: "",
+                    to: "",
+                    customer: ALL,
+                    reason: ALL,
+                    rep: ALL,
+                  }))
+                }
+              >
+                Refused load filters ×
+              </button>
+            </div>
+          ) : undefined
+        }
+        extraFilters={
+          <div className="space-y-3">
+            <p className="field-label">Refused load filters</p>
+            <div>
+              <Label htmlFor="refused-from">From</Label>
               <Input
+                id="refused-from"
                 type="date"
                 value={filters.from}
-                onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))}
+                onChange={(event) =>
+                  setFilters((previous) => ({ ...previous, from: event.target.value }))
+                }
               />
             </div>
-            <div className="space-y-1.5">
-              <Label>To</Label>
+            <div>
+              <Label htmlFor="refused-to">To</Label>
               <Input
+                id="refused-to"
                 type="date"
                 value={filters.to}
-                onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))}
+                onChange={(event) =>
+                  setFilters((previous) => ({ ...previous, to: event.target.value }))
+                }
               />
             </div>
             <Picker
               label="Customer"
               value={filters.customer}
-              onChange={(v) => setFilters((p) => ({ ...p, customer: v }))}
-              options={(customers.data ?? []).map((c: Row) => ({
-                value: c.id,
-                label: c.legal_name ?? "Unnamed customer",
+              onChange={(value) => setFilters((previous) => ({ ...previous, customer: value }))}
+              options={(customers.data ?? []).map((row: Row) => ({
+                value: row.id,
+                label: row.legal_name ?? "Unnamed customer",
               }))}
             />
             <Picker
               label="Reason"
               value={filters.reason}
-              onChange={(v) => setFilters((p) => ({ ...p, reason: v }))}
+              onChange={(value) => setFilters((previous) => ({ ...previous, reason: value }))}
               options={reasons.options}
             />
             <Picker
               label="CS rep"
               value={filters.rep}
-              onChange={(v) => setFilters((p) => ({ ...p, rep: v }))}
-              options={reps.map((rep) => ({ value: rep, label: rep }))}
+              onChange={(value) => setFilters((previous) => ({ ...previous, rep: value }))}
+              options={reps.map((value) => ({ value, label: value }))}
             />
           </div>
-        </Panel>
-
-        <DataTable
-          recordTable="refused_loads"
-          rows={filtered}
-          isLoading={rows.isLoading}
-          error={rows.error}
-          exportName="heg-lost-loads"
-          searchPlaceholder="Search lost loads"
-          emptyTitle="No lost loads match these filters"
-          emptyDescription="Clear the filters, or record a refused load to start tracking lost revenue."
-          onRowClick={canWrite ? (row) => setEditing(row) : undefined}
-          columns={[
-            {
-              key: "call_in_date",
-              header: "Call in",
-              render: (row) => formatDate(row.call_in_date),
-            },
-            {
-              key: "customer",
-              header: "Customer",
-              value: (row) => nameById.get(row.customer_id) ?? "",
-              render: (row) => orDash(nameById.get(row.customer_id)),
-            },
-            {
-              key: "equipment_type",
-              header: "Equipment",
-              render: (row) => orDash(row.equipment_type),
-            },
-            { key: "load_count", header: "Loads", align: "right" },
-            {
-              key: "lane",
-              header: "Lane",
-              value: (row) =>
-                `${row.pickup_city ?? ""} ${row.pickup_state ?? ""} ${row.delivery_city ?? ""} ${row.delivery_state ?? ""}`,
-              render: (row) =>
-                `${orDash(row.pickup_city)}, ${orDash(row.pickup_state)} → ${orDash(row.delivery_city)}, ${orDash(row.delivery_state)}`,
-            },
-            { key: "loss_reason", header: "Reason", render: (row) => orDash(row.loss_reason) },
-            {
-              key: "estimated_lost_revenue",
-              header: "Lost revenue",
-              align: "right",
-              render: (row) =>
-                row.estimated_lost_revenue == null
-                  ? "Rate unknown"
-                  : formatMoney(row.estimated_lost_revenue),
-            },
-            { key: "cs_rep", header: "CS rep", render: (row) => orDash(row.cs_rep) },
-          ]}
-        />
-
-        {editing && (
-          <Panel
-            title="Edit refused load"
-            description={`Recorded ${formatDate(editing.call_in_date)}`}
-          >
-            <RefusedLoadForm
-              recordId={editing.id}
-              expectedUpdatedAt={editing.updated_at}
-              initial={toFormState(editing)}
-              onSaved={() => setEditing(null)}
-              onCancel={() => setEditing(null)}
-            />
-          </Panel>
-        )}
-      </div>
+        }
+        columns={[
+          {
+            key: "call_in_date",
+            header: "Call in",
+            render: (row) => formatDate(row.call_in_date),
+          },
+          {
+            key: "customer",
+            header: "Customer",
+            sortable: false,
+            value: (row) => nameById.get(row.customer_id) ?? "",
+            render: (row) => orDash(nameById.get(row.customer_id)),
+          },
+          {
+            key: "equipment_type",
+            header: "Equipment",
+            render: (row) => orDash(row.equipment_type),
+          },
+          { key: "load_count", header: "Loads", align: "right" },
+          {
+            key: "lane",
+            sortable: false,
+            header: "Lane",
+            value: (row) =>
+              `${row.pickup_city ?? ""} ${row.pickup_state ?? ""} ${row.delivery_city ?? ""} ${row.delivery_state ?? ""}`,
+            render: (row) =>
+              `${orDash(row.pickup_city)}, ${orDash(row.pickup_state)} → ${orDash(row.delivery_city)}, ${orDash(row.delivery_state)}`,
+          },
+          { key: "loss_reason", header: "Reason", render: (row) => orDash(row.loss_reason) },
+          {
+            key: "estimated_lost_revenue",
+            header: "Lost revenue",
+            align: "right",
+            render: (row) =>
+              row.estimated_lost_revenue == null
+                ? "Rate unknown"
+                : formatMoney(row.estimated_lost_revenue),
+          },
+          { key: "cs_rep", header: "CS rep", render: (row) => orDash(row.cs_rep) },
+        ]}
+      />
     </>
   );
 }
@@ -232,7 +256,7 @@ function Picker({
     <div className="space-y-1.5">
       <Label>{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
+        <SelectTrigger aria-label={label}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent className="max-h-72">

@@ -20,11 +20,12 @@ import {
   isRecordId,
   loadRecordListPage,
   recordListFields,
+  recordDefaultOrder,
   type RecordPageRequest,
 } from "@/lib/record-lists";
 import { useSession } from "@/hooks/use-session";
 import { PageHeader } from "./PageHeader";
-import { DataTable } from "./DataTable";
+import { DataTable, type Column } from "./DataTable";
 import { SavedViews } from "./SavedViews";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordLink, RecordRelations } from "./RecordLink";
@@ -60,6 +61,8 @@ import {
 
 type ListState = RecordPageRequest & { view?: "list" | "cards" };
 type ListPatch = {
+  sort?: string;
+  ascending?: boolean;
   archived?: boolean;
   folder?: string | undefined;
   parent?: string | undefined;
@@ -80,6 +83,9 @@ export function RecordListPage({
   state = {},
   onChange,
   actions,
+  extraFilters,
+  activeFilters,
+  columns,
 }: {
   table: string;
   parent?: string | undefined;
@@ -87,6 +93,9 @@ export function RecordListPage({
   state?: ListState;
   onChange?: (patch: ListPatch) => void;
   actions?: ReactNode;
+  extraFilters?: ReactNode;
+  activeFilters?: ReactNode;
+  columns?: Column[];
 }) {
   const { session, canEdit } = useSession();
   const navigate = useNavigate();
@@ -116,8 +125,11 @@ export function RecordListPage({
       state.filterField,
       state.filterValue,
       state.groupBy,
+      state.sort,
+      state.ascending,
       state.archived,
       state.folder,
+      state.refused,
       page,
     ],
     queryFn: () => loadRecordListPage(table, parent, parentId, state),
@@ -194,6 +206,7 @@ export function RecordListPage({
                 </button>
               </PopoverTrigger>
               <PopoverContent align="end" className="record-search-options">
+                {extraFilters}
                 <p className="field-label">Search in</p>
                 {fields.search.length > 1 && (
                   <select
@@ -208,51 +221,55 @@ export function RecordListPage({
                     ))}
                   </select>
                 )}
-                <div className="record-list-control-group">
-                  <p className="field-label">Filters and grouping</p>
-                  <select
-                    aria-label="Filter field"
-                    value={state.filterField ?? ""}
-                    onChange={(event) =>
-                      onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
-                    }
-                  >
-                    <option value="">Filter</option>
-                    {fields.filter.map((name) => (
-                      <option key={name} value={name}>
-                        {labelFor(name)}
-                      </option>
-                    ))}
-                  </select>
-                  {state.filterField && (
+                {fields.filter.length > 0 && (
+                  <div className="record-list-control-group">
+                    <p className="field-label">Filters and grouping</p>
                     <select
-                      aria-label="Filter value"
-                      value={state.filterValue ?? ""}
-                      onChange={(event) => onChange?.({ filterValue: event.target.value, page: 0 })}
+                      aria-label="Filter field"
+                      value={state.filterField ?? ""}
+                      onChange={(event) =>
+                        onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
+                      }
                     >
-                      <option value="">All</option>
-                      {definition.fields
-                        .find((field) => field.name === state.filterField)
-                        ?.options?.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
+                      <option value="">Filter</option>
+                      {fields.filter.map((name) => (
+                        <option key={name} value={name}>
+                          {labelFor(name)}
+                        </option>
+                      ))}
                     </select>
-                  )}
-                  <select
-                    aria-label="Group by"
-                    value={state.groupBy ?? ""}
-                    onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
-                  >
-                    <option value="">Group by</option>
-                    {fields.filter.map((name) => (
-                      <option key={name} value={name}>
-                        {labelFor(name)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                    {state.filterField && (
+                      <select
+                        aria-label="Filter value"
+                        value={state.filterValue ?? ""}
+                        onChange={(event) =>
+                          onChange?.({ filterValue: event.target.value, page: 0 })
+                        }
+                      >
+                        <option value="">All</option>
+                        {definition.fields
+                          .find((field) => field.name === state.filterField)
+                          ?.options?.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                      </select>
+                    )}
+                    <select
+                      aria-label="Group by"
+                      value={state.groupBy ?? ""}
+                      onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
+                    >
+                      <option value="">Group by</option>
+                      {fields.filter.map((name) => (
+                        <option key={name} value={name}>
+                          {labelFor(name)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </PopoverContent>
             </Popover>
           </div>
@@ -278,6 +295,7 @@ export function RecordListPage({
             userId={session?.userId}
             scope={`record-${table}`}
             value={{
+              ...(state.sort ? { sort: state.sort, ascending: Boolean(state.ascending) } : {}),
               search: state.search ?? "",
               searchField: state.searchField ?? "",
               filterField: state.filterField ?? "",
@@ -287,6 +305,8 @@ export function RecordListPage({
             }}
             onApply={(saved) =>
               onChange?.({
+                sort: saved.sort ?? "",
+                ascending: Boolean(saved.ascending),
                 q: saved.search,
                 field: saved.searchField,
                 filterField: saved.filterField,
@@ -315,9 +335,12 @@ export function RecordListPage({
                 onSelect={() =>
                   downloadCsv(
                     `heg-${table}-page-${page + 1}`,
-                    definition.columns.map(labelFor),
-                    (rows.data?.rows ?? []).map((row) =>
-                      definition.columns.map((key) => row[key] ?? ""),
+                    columns?.map((column) => column.header) ?? definition.columns.map(labelFor),
+                    (rows.data?.rows ?? []).map(
+                      (row) =>
+                        columns?.map((column) =>
+                          column.value ? (column.value(row) ?? "") : (row[column.key] ?? ""),
+                        ) ?? definition.columns.map((key) => row[key] ?? ""),
                     ),
                   )
                 }
@@ -327,6 +350,7 @@ export function RecordListPage({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {activeFilters}
         {(state.filterValue || state.groupBy) && (
           <div className="table-active-filters" aria-label="Active search conditions">
             {state.filterValue && (
@@ -392,25 +416,33 @@ export function RecordListPage({
             ) : (
               <DataTable
                 bare
+                serverSort={{
+                  key: state.sort ?? recordDefaultOrder(table).column,
+                  asc: state.sort ? Boolean(state.ascending) : recordDefaultOrder(table).ascending,
+                  onChange: (key, asc) => onChange?.({ sort: key, ascending: asc, page: 0 }),
+                }}
                 recordTable={table}
                 returnTo={returnTo}
                 groupingField={state.groupBy}
-                columns={[
-                  ...definition.columns,
-                  ...(state.groupBy && !definition.columns.includes(state.groupBy)
-                    ? [state.groupBy]
-                    : []),
-                ].map((key) => ({
-                  key,
-                  header: labelFor(key),
-                  sortable: false,
-                  render: (row: Row) => listValue(table, key, row),
-                  align: ["money", "number"].includes(
-                    definition.fields.find((field) => field.name === key)?.type ?? "",
-                  )
-                    ? ("right" as const)
-                    : ("left" as const),
-                }))}
+                columns={
+                  columns ??
+                  [
+                    ...definition.columns,
+                    ...(state.groupBy && !definition.columns.includes(state.groupBy)
+                      ? [state.groupBy]
+                      : []),
+                  ].map((key) => ({
+                    key,
+                    header: labelFor(key),
+                    sortable: !RELATION_TARGETS[key],
+                    render: (row: Row) => listValue(table, key, row),
+                    align: ["money", "number"].includes(
+                      definition.fields.find((field) => field.name === key)?.type ?? "",
+                    )
+                      ? ("right" as const)
+                      : ("left" as const),
+                  }))
+                }
                 rows={rows.data?.rows ?? []}
                 emptyTitle={`No ${definition.label.toLowerCase()} found`}
               />

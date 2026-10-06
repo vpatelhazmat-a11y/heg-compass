@@ -134,7 +134,7 @@ test("launcher exposes all twelve workspaces with usable destinations", () => {
     "/records/site_assessments",
   );
   expect(screen.getByRole("link", { name: /Refused Loads/ }).getAttribute("href")).toBe(
-    "/lost-loads",
+    "/lost-loads/records",
   );
   expect(links[0]?.getAttribute("draggable")).toBe("false");
   fireEvent.keyDown(screen.getByRole("link", { name: /Sites/ }), {
@@ -530,4 +530,19 @@ test("embedded related tables omit repeated tools but retain paging for all reco
   fireEvent.click(screen.getByRole("button", { name: "Next page" }));
   expect(screen.getByText("Task 25")).toBeTruthy();
   expect(screen.queryByText("Task 0")).toBeNull();
+});
+
+test("server sort changes the whole list and resets paging", async () => {
+  mocks.listRowsPage.mockResolvedValue({ rows: [{ id, legal_name: "Example" }], count: 60 });
+  const change = vi.fn();
+  mount(
+    <RecordListPage
+      table="customers"
+      state={{ page: 2, sort: "legal_name", ascending: true }}
+      onChange={change}
+    />,
+  );
+  const heading = await screen.findByRole("button", { name: "Legal name" });
+  fireEvent.click(heading);
+  expect(change).toHaveBeenCalledWith({ sort: "legal_name", ascending: false, page: 0 });
 });

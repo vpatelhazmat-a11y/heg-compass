@@ -20,6 +20,8 @@ export type ListOptions = {
 };
 
 export type PageOptions = {
+  dateRange?: { column: string; from?: string | undefined; to?: string | undefined } | undefined;
+  order?: { column: string; ascending: boolean } | undefined;
   filters?: Record<string, string | number | boolean | null | undefined>;
   searchField?: string | undefined;
   search?: string | undefined;
@@ -48,6 +50,10 @@ export async function listRowsPage(
     query =
       value === null ? query.is(safeColumn(column), null) : query.eq(safeColumn(column), value);
   }
+  if (options.dateRange?.from)
+    query = query.gte(safeColumn(options.dateRange.column), options.dateRange.from);
+  if (options.dateRange?.to)
+    query = query.lte(safeColumn(options.dateRange.column), options.dateRange.to);
   if (options.ids) {
     if (!options.ids.length) return { rows: [], count: 0 };
     query = query.in("id", options.ids);
@@ -60,10 +66,15 @@ export async function listRowsPage(
   }
   if (options.exactField && options.exactValue)
     query = query.eq(safeColumn(options.exactField), options.exactValue);
-  query = query.order(safeColumn(options.groupBy ?? "created_at"), {
-    ascending: Boolean(options.groupBy),
+  query = query.order(safeColumn(options.groupBy ?? options.order?.column ?? "created_at"), {
+    ascending: options.groupBy ? true : Boolean(options.order?.ascending),
     nullsFirst: false,
   });
+  if (options.groupBy && options.order && options.order.column !== options.groupBy)
+    query = query.order(safeColumn(options.order.column), {
+      ascending: options.order.ascending,
+      nullsFirst: false,
+    });
   query = query.order("id", { ascending: true });
   const { data, count, error } = await query.range(offset, offset + limit - 1);
   if (error) throw new Error(error.message);
