@@ -42,7 +42,7 @@ test.each(["From", "To"])("%s date survives the router's deferred search reducer
       <RefusedList />
     </QueryClientProvider>,
   );
-  fireEvent.change(screen.getByLabelText(label), { target: { value: "2026-09-01" } });
+  fireEvent.input(screen.getByLabelText(label), { target: { value: "2026-09-01" } });
   const reducer = mocks.navigate.mock.calls[0]![0].search;
   // React restores a controlled input before a deferred router reducer runs.
   expect((screen.getByLabelText(label) as HTMLInputElement).value).toBe("");

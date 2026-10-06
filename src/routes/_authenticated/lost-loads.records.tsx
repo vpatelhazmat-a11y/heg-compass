@@ -167,8 +167,8 @@ function LostLoadRecords() {
                 id="refused-from"
                 type="date"
                 value={filters.from}
-                onChange={(event) => {
-                  const value = event.target.value;
+                onInput={(event) => {
+                  const value = event.currentTarget.value;
                   setFilters((previous) => ({ ...previous, from: value }));
                 }}
               />
@@ -179,8 +179,8 @@ function LostLoadRecords() {
                 id="refused-to"
                 type="date"
                 value={filters.to}
-                onChange={(event) => {
-                  const value = event.target.value;
+                onInput={(event) => {
+                  const value = event.currentTarget.value;
                   setFilters((previous) => ({ ...previous, to: value }));
                 }}
               />
