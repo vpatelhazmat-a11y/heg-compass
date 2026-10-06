@@ -1,5 +1,5 @@
 import { Fragment, type ReactNode } from "react";
-import { noteDocument, safeNoteLink, type RichTextNode } from "@/lib/rich-text";
+import { noteDocument, notePlainText, safeNoteLink, type RichTextNode } from "@/lib/rich-text";
 
 function renderNode(node: RichTextNode, interactive: boolean): ReactNode {
   const children = node.content?.map((child, index) => (
@@ -61,9 +61,13 @@ export function RichTextView({
   text?: string | null;
   interactive?: boolean;
 }) {
+  const resolved = noteDocument(document, text ?? "");
+  const empty =
+    !notePlainText(resolved).trim() &&
+    (resolved.content ?? []).every((node) => node.type === "paragraph");
   return (
     <div className="rich-note-content">
-      {renderNode(noteDocument(document, text ?? ""), interactive)}
+      {empty ? <span className="record-data-empty">—</span> : renderNode(resolved, interactive)}
     </div>
   );
 }

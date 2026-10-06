@@ -89,3 +89,11 @@ test("rich-note payloads keep readable text for search and export alongside sani
   expect(payload["notes"]).toBe("Annual review");
   expect(payload["rich_text"]).toEqual({ notes: document });
 });
+
+test("empty formatted notes retain a visible value target", () => {
+  const { rerender } = render(<RichTextView text="" interactive={false} />);
+  expect(screen.getByText("—")).toBeTruthy();
+  rerender(<RichTextView text="Customer context" interactive={false} />);
+  expect(screen.queryByText("—")).toBeNull();
+  expect(screen.getByText("Customer context")).toBeTruthy();
+});
