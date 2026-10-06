@@ -21,6 +21,8 @@ export function SmartButtons({ table, id }: { table: string; id: string }) {
           to="/records/$entityType"
           params={{ entityType: relation.table }}
           search={{
+            sort: undefined,
+            ascending: false,
             parent: table,
             parentId: id,
             q: undefined,

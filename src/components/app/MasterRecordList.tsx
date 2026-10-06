@@ -37,6 +37,8 @@ export function MasterRecordList({
       <RecordListPage
         table={table}
         state={{
+          sort: search.sort,
+          ascending: search.ascending,
           search: search.q,
           searchField: search.field,
           filterField: search.filterField,

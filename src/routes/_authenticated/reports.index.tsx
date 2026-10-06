@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { PageHeader } from "@/components/app/PageHeader";
 import { Panel, StatTile } from "@/components/app/Panels";
-import { LoadingState } from "@/components/app/EmptyState";
+import { Button } from "@/components/ui/button";
+import { LoadingState, ErrorState } from "@/components/app/EmptyState";
 import { listRows } from "@/lib/data";
 import { formatMoney } from "@/lib/format";
 
@@ -22,7 +23,7 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 });
 
 function ReportsPage() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["reports"],
     queryFn: async () => {
       const [customers, sites, equipment, bids, opportunities, lost] = await Promise.all([
@@ -38,6 +39,21 @@ function ReportsPage() {
       return { customers, sites, equipment, bids, opportunities, lost };
     },
   });
+
+  if (error)
+    return (
+      <>
+        <PageHeader title="Reports" />
+        <div className="p-6">
+          <ErrorState
+            message={error instanceof Error ? error.message : "Reports could not load."}
+          />
+          <Button variant="outline" onClick={() => void refetch()}>
+            Try again
+          </Button>
+        </div>
+      </>
+    );
 
   if (isLoading || !data) {
     return (
@@ -56,10 +72,7 @@ function ReportsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Reports"
-        description="Summaries built only from what has been recorded — no estimates, no filler."
-      />
+      <PageHeader title="Reports" />
       <div className="space-y-6 p-6">
         <Panel
           title="Coverage"

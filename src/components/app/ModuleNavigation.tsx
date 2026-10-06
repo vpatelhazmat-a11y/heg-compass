@@ -36,7 +36,7 @@ const menus: Record<string, [string, string][]> = {
   ],
   "Bids / RFPs": [["Bids / RFPs", "/bids"]],
   "Refused Loads": [
-    ["Dashboard", "/lost-loads"],
+    ["Summary", "/lost-loads"],
     ["Records", "/lost-loads/records"],
     ["Analysis", "/lost-loads/analysis"],
   ],
@@ -54,11 +54,12 @@ const menus: Record<string, [string, string][]> = {
 export function ModuleNavigation({ pathname }: { pathname: string }) {
   const module = activeModule(pathname);
   const links = module
-    ? (menus[module.label] ?? [[module.label, module.to]])
+    ? (menus[module.label] ?? [[module.label, module.to]]).filter(([, to]) => to !== module.to)
     : [
         ["Apps", "/command-center"],
         ["Daily overview", "/overview"],
       ];
+  if (!links.length) return null;
   const canonicalPath = pathname.replace(
     /^\/records\/(customers|sites|equipment|bids)(?=\/|$)/,
     "/$1",

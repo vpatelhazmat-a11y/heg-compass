@@ -102,7 +102,11 @@ function ShellLayout({ children }: { children: ReactNode }) {
           >
             HEG Compass
           </Link>
-          {module && <span className="truncate font-semibold">{module.label}</span>}
+          {module && (
+            <Link to={module.to} className="truncate font-semibold hover:underline">
+              {module.label}
+            </Link>
+          )}
           {!module && (
             <span className="font-semibold sm:hidden">
               {pathname === "/overview" ? "Overview" : "Apps"}

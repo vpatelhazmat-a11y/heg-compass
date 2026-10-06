@@ -56,6 +56,8 @@ function SafetyPage() {
               filterField: undefined,
               filterValue: undefined,
               groupBy: undefined,
+              sort: undefined,
+              ascending: false,
               page: 0,
               view: "list",
               archived: false,

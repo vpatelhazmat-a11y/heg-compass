@@ -210,3 +210,50 @@ test("record breadcrumbs retain collection state and reject external or unknown 
   ])
     expect(recordReturnHref("customers", value)).toBe("/customers");
 });
+
+test("server sorting is allowlisted and restores master deadline ordering", async () => {
+  vi.mocked(listRowsPage).mockResolvedValue({ rows: [], count: 0 });
+  await loadRecordListPage("bids", undefined, undefined, {
+    sort: "due_date",
+    ascending: false,
+    page: 2,
+  });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "bids",
+    expect.objectContaining({ order: { column: "due_date", ascending: false }, offset: 50 }),
+  );
+  await loadRecordListPage("bids", undefined, undefined, { sort: "password_hash" });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "bids",
+    expect.objectContaining({ order: { column: "due_date", ascending: true } }),
+  );
+});
+
+test("refused-load paging preserves date, customer, reason and representative scope", async () => {
+  vi.mocked(listRowsPage).mockResolvedValue({ rows: [], count: 0 });
+  await loadRecordListPage("refused_loads", undefined, undefined, {
+    page: 1,
+    refused: {
+      from: "2026-09-01",
+      to: "2026-09-30",
+      customer: id,
+      reason: "Capacity",
+      rep: "Jane",
+    },
+  });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "refused_loads",
+    expect.objectContaining({
+      filters: { customer_id: id, loss_reason: "Capacity", cs_rep: "Jane" },
+      dateRange: { column: "call_in_date", from: "2026-09-01", to: "2026-09-30" },
+      offset: 25,
+    }),
+  );
+  await loadRecordListPage("customers", undefined, undefined, {
+    refused: { reason: "Capacity", from: "2026-09-01" },
+  });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "customers",
+    expect.objectContaining({ filters: {}, dateRange: undefined }),
+  );
+});
