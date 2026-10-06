@@ -1,6 +1,6 @@
 import type { SearchSchemaInput } from "@tanstack/react-router";
-import { countRows, getRow, listRows, listRowsPage } from "./data";
-import { recordDefinition, relatedFilters, relatedList } from "./record-registry";
+import { countRows, getRow, listRows, listRowsPage, relationshipOrFilter } from "./data";
+import { recordDefinition, relatedQuery, relatedList } from "./record-registry";
 
 export const isRecordId = (value: string) =>
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
@@ -103,6 +103,7 @@ export async function loadRecordListPage(
   const page = Math.max(0, Math.floor(request.page ?? 0));
   let filters: Record<string, string | null> = {};
   let ids: string[] | undefined;
+  let anyOf: Record<string, string> | undefined;
   if (parent || parentId) {
     if (!parent || !parentId || !isRecordId(parentId))
       throw new Error("Invalid related-record link.");
@@ -114,7 +115,7 @@ export async function loadRecordListPage(
         select: "id,equipment_id,created_at",
       });
       ids = [...new Set<string>(assignments.map((row) => row.equipment_id))];
-    } else filters = relatedFilters(relation, parentId);
+    } else ({ filters, anyOf } = relatedQuery(relation, parentId));
   } else if (table === "documents") {
     if (["customer", "site", "equipment"].includes(request.folder ?? ""))
       filters = { linked_entity_type: request.folder! };
@@ -131,6 +132,7 @@ export async function loadRecordListPage(
       ? { column: "call_in_date", from: date(refused.from), to: date(refused.to) }
       : undefined,
     filters,
+    anyOf,
     ids,
     searchField,
     search: request.search?.slice(0, 120),
@@ -164,15 +166,18 @@ export async function loadRecordList(table: string, parent?: string, parentId?: 
       (row) => row && !row.archived_at,
     );
   }
-  return listRows(table, { filters: relatedFilters(relation, parentId) });
+  return listRows(table, relatedQuery(relation, parentId));
 }
 
 export async function countRelatedRecords(table: string, parent: string, parentId: string) {
   const relation = relatedList(parent, table);
   if (!relation || !isRecordId(parentId)) throw new Error("Invalid related-record link.");
   if (relation.equipmentAtSite) return (await loadRecordList(table, parent, parentId)).length;
-  const filters: Record<string, string | null> = relatedFilters(relation, parentId);
+  const scope = relatedQuery(relation, parentId);
+  const filters: Record<string, string | null> = scope.filters;
   if (["customers", "sites", "equipment"].includes(table)) filters["archived_at"] = null;
+  if (scope.anyOf)
+    return countRows(table, filters, (query) => query.or(relationshipOrFilter(scope.anyOf!)));
   return countRows(table, filters);
 }
 

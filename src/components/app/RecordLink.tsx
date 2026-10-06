@@ -52,7 +52,7 @@ export function RecordLink({
   );
 }
 
-export function RecordRelations({ row }: { row: Row }) {
+export function RecordRelations({ row, returnTo }: { row: Row; returnTo?: string | undefined }) {
   const links = Object.entries(RELATION_TARGETS).filter(([key]) => row[key]);
   const type = row.linked_entity_type ?? row.entity_type;
   const id = row.linked_entity_id ?? row.entity_id;
@@ -66,13 +66,13 @@ export function RecordRelations({ row }: { row: Row }) {
       {links.map(([key, table]) => (
         <div key={key}>
           <p className="field-label">{fieldLabel(key)}</p>
-          <RecordLink table={table} id={row[key]} />
+          <RecordLink table={table} id={row[key]} returnTo={returnTo} />
         </div>
       ))}
       {polyTable && id && (
         <div>
           <p className="field-label">Linked record</p>
-          <RecordLink table={polyTable} id={id} />
+          <RecordLink table={polyTable} id={id} returnTo={returnTo} />
         </div>
       )}
     </section>

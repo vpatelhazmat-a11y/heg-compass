@@ -1,3 +1,4 @@
+import { RelatedRecords } from "@/components/app/RelatedRecords";
 import { parseRecordReturn } from "@/lib/record-return";
 import { recordReturnHref, recordReturnLabel } from "@/lib/record-registry";
 import { SmartButtons } from "@/components/app/SmartButtons";
@@ -516,6 +517,8 @@ function EquipmentDetail() {
           invalidateKeys={[["equipment-related", equipmentId]]}
         />
       )}
+
+      <RelatedRecords table="equipment" id={equipmentId} />
 
       {creator && (
         <RecordForm

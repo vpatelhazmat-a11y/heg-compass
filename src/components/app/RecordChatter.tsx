@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { useDraftProtection } from "@/hooks/use-draft-protection";
@@ -8,26 +8,23 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
-const kinds: Record<string, string> = {
-  customers: "customer",
-  sites: "site",
-  equipment: "equipment",
-  incidents: "incident",
-  drivers: "driver",
-  rates: "rate",
-  bids: "bid",
-  opportunities: "opportunity",
-  contracts: "contract",
-};
+import { SHARED_RECORD_KINDS } from "@/lib/record-registry";
+import { todayISO } from "@/lib/format";
 
 export function RecordChatter({ table, id }: { table: string; id: string }) {
-  const kind = kinds[table];
+  const kind = Object.hasOwn(SHARED_RECORD_KINDS, table) ? SHARED_RECORD_KINDS[table] : undefined;
+  const composerId = useId();
   const { session, canEdit } = useSession();
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"message" | "note" | "activity" | null>(null);
   const [body, setBody] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const clearDraft = useDraftProtection(Boolean(mode && (body.trim() || dueDate)), "Chatter draft");
+  const [assignee, setAssignee] = useState<string | null>(null);
+  const owner = assignee ?? session?.userId ?? "";
+  const clearDraft = useDraftProtection(
+    Boolean(mode && (body.trim() || dueDate || (assignee && assignee !== session?.userId))),
+    "Chatter draft",
+  );
   const key = ["record-chatter", table, id];
   const chatter = useQuery({
     queryKey: key,
@@ -47,7 +44,11 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
   const profiles = useQuery({
     queryKey: ["chatter-profiles"],
     enabled: Boolean(kind),
-    queryFn: () => listRows("profiles", { order: { column: "full_name", ascending: true } }),
+    queryFn: () =>
+      listRows("profiles", {
+        select: "id,full_name,active,created_at",
+        order: { column: "full_name", ascending: true },
+      }),
   });
   const save = useMutation({
     mutationFn: async () => {
@@ -57,11 +58,17 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
       if (mode === "activity") {
         if (!canEdit("tasks")) throw new Error("You cannot create activities.");
         if (!dueDate) throw new Error("Choose a due date.");
+        if (
+          !owner ||
+          (owner !== session?.userId &&
+            !profiles.data?.some((person) => person.id === owner && person.active))
+        )
+          throw new Error("Choose an active assignee.");
         await insertRow("tasks", {
           title: value,
           linked_entity_type: kind,
           linked_entity_id: id,
-          owner: session?.userId,
+          owner,
           due_date: dueDate,
         });
       } else if (mode) {
@@ -78,7 +85,8 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
       setMode(null);
       setBody("");
       setDueDate("");
-      queryClient.invalidateQueries({ queryKey: key });
+      setAssignee(null);
+      refreshActivity();
     },
     onError: (error: Error) => toast.error(error.message),
   });
@@ -88,12 +96,23 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
         throw new Error("You cannot complete this activity.");
       return updateRow("tasks", taskId, {
         status: "Completed",
-        completed_date: new Date().toISOString().slice(0, 10),
+        completed_date: todayISO(),
       });
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: key }),
+    onSuccess: () => refreshActivity(),
     onError: (error: Error) => toast.error(error.message),
   });
+
+  function refreshActivity() {
+    for (const queryKey of [
+      key,
+      ["activity-feed"],
+      ["record-list-page", "tasks"],
+      ["record", "tasks"],
+      ["related-count", table, id, "tasks"],
+    ])
+      void queryClient.invalidateQueries({ queryKey });
+  }
 
   if (!kind) return null;
   const writable = canEdit(table);
@@ -150,27 +169,60 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
             if (!save.isPending) save.mutate();
           }}
         >
-          <label className="block text-sm font-medium" htmlFor="chatter-body">
+          <label className="block text-sm font-medium" htmlFor={`${composerId}-body`}>
             {mode === "activity" ? "Activity title" : mode === "note" ? "Internal note" : "Message"}
           </label>
           <Textarea
-            id="chatter-body"
+            id={`${composerId}-body`}
             value={body}
             maxLength={10000}
             disabled={save.isPending}
             onChange={(event) => setBody(event.target.value)}
           />
           {mode === "activity" && (
-            <label className="block text-sm font-medium" htmlFor="chatter-due">
+            <label className="block text-sm font-medium" htmlFor={`${composerId}-due`}>
               Due date
               <Input
-                id="chatter-due"
+                id={`${composerId}-due`}
                 type="date"
                 disabled={save.isPending}
                 value={dueDate}
                 onChange={(event) => setDueDate(event.target.value)}
                 className="mt-1 max-w-48"
               />
+            </label>
+          )}
+          {mode === "activity" && (
+            <label className="block text-sm font-medium" htmlFor={`${composerId}-owner`}>
+              Assigned to
+              <select
+                id={`${composerId}-owner`}
+                value={owner}
+                disabled={save.isPending}
+                onChange={(event) => setAssignee(event.target.value)}
+                className="mt-1 block w-full rounded border border-input bg-background px-3 py-2 text-sm"
+              >
+                {session?.userId && <option value={session.userId}>Me</option>}
+                {(profiles.data ?? [])
+                  .filter((person) => person.active && person.id !== session?.userId)
+                  .map((person) => (
+                    <option key={person.id} value={person.id}>
+                      {person.full_name || "Team member"}
+                    </option>
+                  ))}
+              </select>
+              {profiles.error && (
+                <span className="block mt-1 text-xs text-destructive">
+                  Team choices could not load.{" "}
+                  <button
+                    type="button"
+                    className="underline"
+                    onClick={() => void profiles.refetch()}
+                  >
+                    Try again
+                  </button>
+                </span>
+              )}
             </label>
           )}
           {save.error && (
@@ -192,6 +244,7 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
                 setMode(null);
                 setBody("");
                 setDueDate("");
+                setAssignee(null);
                 save.reset();
               }}
             >
@@ -258,11 +311,11 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
                 <div className="mt-1 flex items-center gap-3 text-xs text-muted-foreground">
                   <span>
                     Due {item.due_date || "—"} · {item.status}
-                    {item.status !== "Completed" &&
-                    item.due_date &&
-                    item.due_date < new Date().toISOString().slice(0, 10)
+                    {item.status !== "Completed" && item.due_date && item.due_date < todayISO()
                       ? " · Overdue"
-                      : ""}
+                      : item.status !== "Completed" && item.due_date === todayISO()
+                        ? " · Today"
+                        : ""}
                   </span>
                   {writable && canEdit("tasks") && item.status !== "Completed" && (
                     <button

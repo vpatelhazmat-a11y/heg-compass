@@ -10,6 +10,8 @@ import {
   recordReturnHref,
   recordReturnLabel,
   relatedList,
+  relatedLists,
+  relatedQuery,
   editableRelationKeys,
   relationDependsOnCustomer,
 } from "../src/lib/record-registry";
@@ -277,4 +279,20 @@ test("Refused Loads search choices are unique and grouping is allowlisted", asyn
     "refused_loads",
     expect.objectContaining({ groupBy: undefined }),
   );
+});
+
+test("secondary links preserve the database relationship scope", () => {
+  expect(relatedQuery(relatedList("rates", "refused_loads")!, id).filters).toEqual({ rate_id: id });
+  expect(relatedQuery(relatedList("incidents", "corrective_actions")!, id).filters).toEqual({
+    incident_id: id,
+  });
+  expect(relatedQuery(relatedList("sites", "lanes")!, id)).toEqual({
+    filters: {},
+    anyOf: { destination_site_id: id, origin_site_id: id },
+  });
+  expect(relatedQuery(relatedList("customers", "requirements")!, id).filters).toEqual({
+    entity_type: "customer",
+    entity_id: id,
+  });
+  expect(relatedLists("__proto__")).toEqual([]);
 });

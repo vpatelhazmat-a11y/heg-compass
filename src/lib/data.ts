@@ -14,12 +14,13 @@ export type ListOptions = {
   filters?: Record<string, string | number | boolean | null | undefined>;
   order?: { column: string; ascending?: boolean };
   limit?: number;
-  anyOf?: Record<string, string>;
+  anyOf?: Record<string, string> | undefined;
   includeArchived?: boolean;
   archivedOnly?: boolean;
 };
 
 export type PageOptions = {
+  anyOf?: Record<string, string> | undefined;
   dateRange?: { column: string; from?: string | undefined; to?: string | undefined } | undefined;
   order?: { column: string; ascending: boolean } | undefined;
   filters?: Record<string, string | number | boolean | null | undefined>;
@@ -50,6 +51,7 @@ export async function listRowsPage(
     query =
       value === null ? query.is(safeColumn(column), null) : query.eq(safeColumn(column), value);
   }
+  if (options.anyOf) query = query.or(relationshipOrFilter(options.anyOf));
   if (options.dateRange?.from)
     query = query.gte(safeColumn(options.dateRange.column), options.dateRange.from);
   if (options.dateRange?.to)
@@ -93,16 +95,7 @@ export async function listRows(table: string, options: ListOptions = {}): Promis
     if (options.archivedOnly) query = query.not("archived_at", "is", null);
     else if (!options.includeArchived) query = query.is("archived_at", null);
   }
-  if (options.anyOf)
-    query = query.or(
-      Object.entries(options.anyOf)
-        .map(([key, value]) => {
-          if (!/^[a-z_]+$/.test(key) || !/^[0-9a-f-]{36}$/i.test(value))
-            throw new Error("Invalid relationship filter");
-          return key + ".eq." + value;
-        })
-        .join(","),
-    );
+  if (options.anyOf) query = query.or(relationshipOrFilter(options.anyOf));
   const order = options.order ?? { column: "created_at", ascending: false };
   query = query.order(order.column, { ascending: order.ascending ?? false, nullsFirst: false });
   // Stable pagination keeps dashboards and relationship lists from silently
@@ -119,6 +112,19 @@ export async function listRows(table: string, options: ListOptions = {}): Promis
     rows.push(...(data ?? []));
     if ((data ?? []).length < remaining) return rows;
   }
+}
+export function relationshipOrFilter(anyOf: Record<string, string>) {
+  if (!Object.keys(anyOf).length) throw new Error("Invalid relationship filter");
+  return Object.entries(anyOf)
+    .map(([key, value]) => {
+      if (
+        !/^[a-z_]+$/.test(key) ||
+        !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
+      )
+        throw new Error("Invalid relationship filter");
+      return `${key}.eq.${value}`;
+    })
+    .join(",");
 }
 
 export async function getRow(table: string, id: string, select = "*"): Promise<Row | null> {

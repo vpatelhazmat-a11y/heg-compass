@@ -1,5 +1,6 @@
 import type { FieldConfig } from "@/components/app/RecordForm";
 import * as fields from "./entities";
+import { DIRECT_RECORD_LINKS } from "./record-links.generated";
 
 export type RecordDefinition = {
   label: string;
@@ -286,6 +287,9 @@ export const RECORDS: Record<string, RecordDefinition> = {
 };
 
 export const RELATION_TARGETS: Record<string, string> = {
+  current_customer_id: "customers",
+  current_site_id: "sites",
+  refused_load_id: "refused_loads",
   contact_id: "contacts",
   rate_id: "rates",
   customer_id: "customers",
@@ -376,8 +380,22 @@ export type RelatedList = {
   table: string;
   label: string;
   column?: string;
+  columns?: string[];
   entityType?: string;
+  entityTypeColumn?: "entity_type";
   equipmentAtSite?: boolean;
+};
+/** Only these kinds are supported by the current shared-record database constraints. */
+export const SHARED_RECORD_KINDS: Record<string, string> = {
+  customers: "customer",
+  sites: "site",
+  equipment: "equipment",
+  incidents: "incident",
+  drivers: "driver",
+  rates: "rate",
+  bids: "bid",
+  opportunities: "opportunity",
+  contracts: "contract",
 };
 export const RELATED_LISTS: Record<string, RelatedList[]> = {
   customers: [
@@ -403,14 +421,44 @@ export const RELATED_LISTS: Record<string, RelatedList[]> = {
   ],
 };
 export function relatedList(parent: string, table: string): RelatedList | undefined {
-  return Object.hasOwn(RELATED_LISTS, parent)
-    ? RELATED_LISTS[parent]?.find((item) => item.table === table)
-    : undefined;
+  return relatedLists(parent).find((item) => item.table === table);
+}
+export function relatedLists(parent: string): RelatedList[] {
+  if (!recordDefinition(parent)) return [];
+  const relations = new Map((RELATED_LISTS[parent] ?? []).map((item) => [item.table, item]));
+  for (const [table, columns] of Object.entries(DIRECT_RECORD_LINKS[parent] ?? {})) {
+    if (!relations.has(table))
+      relations.set(table, {
+        table,
+        label: recordDefinition(table)!.label,
+        ...(columns.length === 1 ? { column: columns[0]! } : { columns }),
+      });
+  }
+  const kind = Object.hasOwn(SHARED_RECORD_KINDS, parent) ? SHARED_RECORD_KINDS[parent] : undefined;
+  if (kind)
+    for (const table of ["documents", "tasks", "requirements"]) {
+      if (!relations.has(table))
+        relations.set(table, {
+          table,
+          label: recordDefinition(table)!.label,
+          entityType: kind,
+          ...(table === "requirements" ? { entityTypeColumn: "entity_type" as const } : {}),
+        });
+    }
+  return [...relations.values()];
 }
 export function relatedFilters(relation: RelatedList, id: string): Record<string, string> {
-  if (relation.entityType) return { linked_entity_type: relation.entityType, linked_entity_id: id };
+  if (relation.entityType)
+    return relation.entityTypeColumn === "entity_type"
+      ? { entity_type: relation.entityType, entity_id: id }
+      : { linked_entity_type: relation.entityType, linked_entity_id: id };
   if (relation.column) return { [relation.column]: id };
   throw new Error("This relationship needs its dedicated loader.");
+}
+export function relatedQuery(relation: RelatedList, id: string) {
+  return relation.columns
+    ? { filters: {}, anyOf: Object.fromEntries(relation.columns.map((column) => [column, id])) }
+    : { filters: relatedFilters(relation, id), anyOf: undefined };
 }
 
 export function recordReturnHref(table: string, value?: string): string {

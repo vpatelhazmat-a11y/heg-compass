@@ -1,3 +1,4 @@
+import { RelatedRecords } from "@/components/app/RelatedRecords";
 import { parseRecordReturn } from "@/lib/record-return";
 import { recordReturnHref, recordReturnLabel } from "@/lib/record-registry";
 import { SmartButtons } from "@/components/app/SmartButtons";
@@ -659,6 +660,8 @@ function CustomerDetail() {
           </section>
         </div>
       </div>
+
+      <RelatedRecords table="customers" id={customerId} />
 
       {editingRate && (
         <RecordForm
