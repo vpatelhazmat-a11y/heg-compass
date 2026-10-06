@@ -29,6 +29,7 @@ import { DataTable, type Column } from "./DataTable";
 import { SavedViews } from "./SavedViews";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordLink, RecordRelations } from "./RecordLink";
+import { RelatedRecords } from "./RelatedRecords";
 import { RecordChatter } from "./RecordChatter";
 import { DocumentFile } from "./DocumentFile";
 import { RichTextView } from "./RichText";
@@ -673,7 +674,7 @@ export function RecordDetailPage({
           { label: recordLabel(table, row) },
         ]}
       />
-      <RecordRelations row={row} />
+      <RecordRelations row={row} returnTo={recordHref(table, id, returnTo)} />
       <div className="record-workspace-layout">
         <RecordChatter table={table} id={id} />
         <div className="record-workspace-main space-y-6 px-3 pb-6 sm:px-6">
@@ -788,6 +789,7 @@ export function RecordDetailPage({
             </section>
           )}
           {table === "documents" && <DocumentFile document={row} />}
+          <RelatedRecords table={table} id={id} />
         </div>
       </div>
     </>

@@ -1,0 +1,31 @@
+# ERP delivery checklist
+
+This is the remaining delivery plan, reconciled against the original ten-phase request. Passing automated tests or checking module landing pages does not establish completion of this plan. Implementation, local verification, production publication, and user acceptance are separate gates.
+
+## Current pass — record relationships and activities
+
+- Implemented locally: secondary related-record lists derived from the database foreign keys; collapsed Related records sections on master and generic record forms; scoped links including lanes connected through either site endpoint; requirements scoped by record kind and identifier.
+- Implemented locally: active-colleague activity assignment, Today/Overdue labels, local calendar completion dates, and task/list/count refresh after activity changes.
+- Verification: relationship scope and assignment regression tests added. Full checks and production acceptance remain delivery gates.
+- Publication: not yet published.
+- No database migration in this pass. Existing access policies continue to govern all reads and writes.
+
+## Remaining original-plan work
+
+| Area                           | Remaining work and acceptance gate                                                                                                                                                                                                                              |
+| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Launcher and navigation        | Review every module and record workflow against the shared layout. Mouse hold/drag persistence was accepted by the user; physical touch/pen acceptance remains. Preserve user ordering.                                                                         |
+| Record pages and relationships | Verify all registered record types, editable relations, live counts, return paths, creation flows, empty/error states, and keyboard operation. New secondary links require production checks.                                                                   |
+| Chatter                        | Currently supported on nine record kinds: customers, sites, equipment, incidents, drivers, rates, bids, opportunities, contracts. All-record support, field-change history, mentions, followers, typed activities, and notification delivery remain incomplete. |
+| Rich notes                     | Formatting exists, but image/table/attachment workflows and storage registration need end-to-end verification across record kinds.                                                                                                                              |
+| Documents                      | Complete module/record folder navigation, record upload association, attach-to-any-record flows, owner/type/expiry filters and deadline alerts. Verify signed access and role restrictions.                                                                     |
+| Imports and exports            | Complete the guided CSV/XLSX template, mapping, validation, matching, provenance and rejected-row workflow; filtered column-selected export.                                                                                                                    |
+| Reporting                      | Complete and verify report source/filter/group/measure configuration, saved/shared views, supported renderers and spreadsheet export.                                                                                                                           |
+| Notifications                  | Complete mentions, assignment/due/deadline delivery, subscriptions, email/digests and scheduled processing; test with distinct accounts.                                                                                                                        |
+| General Settings               | Complete users/invites, granular roles, lookups, templates, document/activity types, tags, audit, data quality and system health.                                                                                                                               |
+| Equipment                      | Verify lease/maintenance rate history and report integration, including save failures and permissions.                                                                                                                                                          |
+| Cross-cutting                  | Team views, archive consistency, tags, keyboard navigation, role matrix, foreign-key enforcement and signed file access require a full acceptance matrix.                                                                                                       |
+
+## Definition of done
+
+Each workflow must have a concrete supported implementation, relevant checks, a published build, and production acceptance evidence. Unsupported controls must not appear functional. Changes requiring broader database support need a reviewed migration and appropriate authorization before live application. Remaining gaps stay on this checklist; a successful refinement pass does not close the whole plan.

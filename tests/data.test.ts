@@ -14,7 +14,7 @@ const client = vi.hoisted(() => {
   return q;
 });
 vi.mock("../src/integrations/supabase/client", () => ({ supabase: { from: () => client } }));
-import { listRows, listRowsPage } from "../src/lib/data";
+import { listRows, listRowsPage, relationshipOrFilter } from "../src/lib/data";
 beforeEach(() => {
   state.fail = false;
   client.range.mockImplementation(async (from: number, to: number) => ({
@@ -44,4 +44,14 @@ test("paged grouped ordering keeps group, chosen sort and stable ID tie-break", 
   });
   expect(client.order.mock.calls.map((call) => call[0])).toEqual(["status", "due_date", "id"]);
   expect(client.range).toHaveBeenLastCalledWith(25, 49);
+});
+
+test("relationship OR filters reject injected columns and identifiers", () => {
+  const id = "11111111-1111-4111-8111-111111111111";
+  expect(relationshipOrFilter({ origin_site_id: id, destination_site_id: id })).toBe(
+    "origin_site_id.eq." + id + ",destination_site_id.eq." + id,
+  );
+  expect(() => relationshipOrFilter({ "id,archived_at": id })).toThrow();
+  expect(() => relationshipOrFilter({ site_id: "id,archived_at.is.null" })).toThrow();
+  expect(() => relationshipOrFilter({})).toThrow();
 });
