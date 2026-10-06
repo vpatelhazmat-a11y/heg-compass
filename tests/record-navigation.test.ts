@@ -296,3 +296,17 @@ test("secondary links preserve the database relationship scope", () => {
   });
   expect(relatedLists("__proto__")).toEqual([]);
 });
+
+test("commercial document folders retain their server-side kind filter", async () => {
+  vi.mocked(listRowsPage).mockResolvedValue({ rows: [], count: 0 });
+  await loadRecordListPage("documents", undefined, undefined, { folder: "contract" });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "documents",
+    expect.objectContaining({ filters: { linked_entity_type: "contract" } }),
+  );
+  await loadRecordListPage("documents", undefined, undefined, { folder: "incident" });
+  expect(listRowsPage).toHaveBeenLastCalledWith(
+    "documents",
+    expect.objectContaining({ filters: { linked_entity_type: "incident" } }),
+  );
+});

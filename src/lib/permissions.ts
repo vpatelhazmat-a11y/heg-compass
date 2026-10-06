@@ -39,3 +39,16 @@ export function canEditTable(roles: AppRole[], table: string): boolean {
     allowed = ["sales", "operations", "safety"];
   return roles.some((role) => allowed.includes(role));
 }
+
+/** Read permissions for visible navigation; database policies still enforce access. */
+export function canViewTable(roles: AppRole[], table: string): boolean {
+  if (["drivers", "driver_qualifications", "driver_safety_events"].includes(table))
+    return roles.some((role) => ["admin", "safety", "management"].includes(role));
+  if (["incidents", "corrective_actions", "site_assessments"].includes(table))
+    return roles.some((role) => ["admin", "safety", "operations", "management"].includes(role));
+  if (["rates", "rate_history", "bids", "contracts"].includes(table))
+    return roles.some((role) => ["admin", "sales", "operations", "management"].includes(role));
+  return roles.some((role) =>
+    ["admin", "sales", "operations", "safety", "management", "read_only"].includes(role),
+  );
+}

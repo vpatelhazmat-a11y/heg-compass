@@ -1645,10 +1645,6 @@
   color: var(--primary);
 }
 .saved-views-menu {
-  position: absolute;
-  z-index: 40;
-  top: calc(100% + 6px);
-  right: 0;
   width: min(295px, calc(100vw - 20px));
   padding: 14px;
   border: 1px solid var(--border);
@@ -2031,4 +2027,24 @@ html {
   .record-linked-fields {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.document-folder-pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.document-folder-pager button {
+  color: var(--primary);
+}
+.document-folder-pager button:disabled {
+  opacity: 0.45;
+}
+
+.saved-views-menu p[role="alert"] {
+  color: var(--danger);
 }

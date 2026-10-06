@@ -2,13 +2,18 @@
 
 This is the remaining delivery plan, reconciled against the original ten-phase request. Passing automated tests or checking module landing pages does not establish completion of this plan. Implementation, local verification, production publication, and user acceptance are separate gates.
 
-## Current pass — record relationships and activities
+## Published layout refinement and current document pass
 
 - Implemented locally: secondary related-record lists derived from the database foreign keys; collapsed Related records sections on master and generic record forms; scoped links including lanes connected through either site endpoint; requirements scoped by record kind and identifier.
 - Implemented locally: active-colleague activity assignment, Today/Overdue labels, local calendar completion dates, and task/list/count refresh after activity changes.
 - Verification: 124 tests, type/schema/generated-link checks, lint and build passed. Production customer counts, scoped lane navigation, return breadcrumb and active-assignee choices verified; no live test records were saved. Other record/device/role workflows remain acceptance gates.
 - Publication: PR #40 merged and published to Lovable on 2026-10-06.
 - No database migration in this pass. Existing access policies continue to govern all reads and writes.
+
+- PR #41 flattened Notes; PR #42 unified master and generic record layouts, placed Related records inside the record column, and removed duplicate form padding and boxed source disclosures. PR #42 passed 126 tests and hosted CI; the published customer record was checked in the browser.
+- Current implementation expands document folders to eight registered parent kinds, respects role visibility, adds folder search/paging/retry, and preserves canonical document associations. Attachment checks and signed-download failures show recoverable states.
+- Saved views now use the shared accessible popover and retain the visible saved list when storage writes fail. Views remain personal and device-local.
+- These changes do not complete all-record attachment support, shared views, notifications, imports, or the broader original plan. No database migration is included.
 
 ## Remaining original-plan work
 

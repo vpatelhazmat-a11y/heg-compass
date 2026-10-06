@@ -14,6 +14,7 @@ export function DocumentFile({ document }: { document: Row }) {
   const { canEdit } = useSession();
   const queryClient = useQueryClient();
   const [busy, setBusy] = useState(false);
+  const [operationError, setOperationError] = useState<string | null>(null);
   const fileStatus = useQuery({
     queryKey: ["document-file", document.id, document.file_path],
     enabled: Boolean(document.file_path),
@@ -25,6 +26,8 @@ export function DocumentFile({ document }: { document: Row }) {
   });
 
   const upload = async (file: File) => {
+    if (busy) return;
+    setOperationError(null);
     if (file.size > MAX_SIZE) {
       toast.error("Choose a file smaller than 20 MB.");
       return;
@@ -58,9 +61,10 @@ export function DocumentFile({ document }: { document: Row }) {
       if (error) throw error;
       toast.success("File uploaded");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "File upload failed. You can retry it here.",
-      );
+      const message =
+        error instanceof Error ? error.message : "File upload failed. You can retry it here.";
+      setOperationError(message);
+      toast.error(message);
     } finally {
       await queryClient.invalidateQueries({ queryKey: ["record", "documents", document.id] });
       await queryClient.invalidateQueries({ queryKey: ["document-file", document.id] });
@@ -69,6 +73,8 @@ export function DocumentFile({ document }: { document: Row }) {
   };
 
   const download = async () => {
+    if (busy || fileStatus.data !== true) return;
+    setOperationError(null);
     setBusy(true);
     try {
       const { data, error } = await supabase.storage
@@ -82,7 +88,9 @@ export function DocumentFile({ document }: { document: Row }) {
       link.click();
       link.remove();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Download unavailable.");
+      const message = error instanceof Error ? error.message : "Download unavailable.";
+      setOperationError(message);
+      toast.error(message);
     } finally {
       setBusy(false);
     }
@@ -91,7 +99,24 @@ export function DocumentFile({ document }: { document: Row }) {
   return (
     <section className="record-section record-section-wide" aria-label="Document file">
       <h2>File</h2>
-      {document.file_path && fileStatus.data !== false ? (
+      {document.file_path && fileStatus.isPending ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          Checking attachment…
+        </p>
+      ) : document.file_path && fileStatus.isError ? (
+        <div className="text-sm">
+          <p role="alert" className="text-destructive">
+            The attachment could not be checked.
+          </p>
+          <button
+            type="button"
+            className="mt-1 text-primary hover:underline"
+            onClick={() => void fileStatus.refetch()}
+          >
+            Try again
+          </button>
+        </div>
+      ) : document.file_path && fileStatus.data === true ? (
         <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted-foreground">{document.file_name}</span>
           <Button type="button" variant="outline" size="sm" disabled={busy} onClick={download}>
@@ -118,7 +143,16 @@ export function DocumentFile({ document }: { document: Row }) {
           />
         </label>
       ) : (
-        <p className="text-sm text-muted-foreground">No file uploaded.</p>
+        <p className="text-sm text-muted-foreground">
+          {document.file_path
+            ? "The attached file is missing. Ask a document editor to upload it again."
+            : "No file uploaded."}
+        </p>
+      )}
+      {operationError && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {operationError}
+        </p>
       )}
     </section>
   );

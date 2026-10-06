@@ -1,3 +1,4 @@
+import { validDocumentFolder } from "./document-folders";
 import type { SearchSchemaInput } from "@tanstack/react-router";
 import { countRows, getRow, listRows, listRowsPage, relationshipOrFilter } from "./data";
 import { recordDefinition, relatedQuery, relatedList } from "./record-registry";
@@ -117,7 +118,7 @@ export async function loadRecordListPage(
       ids = [...new Set<string>(assignments.map((row) => row.equipment_id))];
     } else ({ filters, anyOf } = relatedQuery(relation, parentId));
   } else if (table === "documents") {
-    if (["customer", "site", "equipment"].includes(request.folder ?? ""))
+    if (validDocumentFolder(request.folder) && request.folder !== "unlinked")
       filters = { linked_entity_type: request.folder! };
     else if (request.folder === "unlinked") filters = { linked_entity_type: null };
   }

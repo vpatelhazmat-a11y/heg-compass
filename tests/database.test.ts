@@ -1,3 +1,5 @@
+import { canViewTable } from "../src/lib/permissions";
+import type { AppRole } from "../src/hooks/use-session";
 import { beforeAll, afterAll, test, expect } from "vitest";
 import { createDatabase } from "./database.mjs";
 import * as forms from "../src/lib/entities";
@@ -770,4 +772,35 @@ test("equipment assignment history permits only one open assignment", async () =
       ])
     ).rows,
   ).toHaveLength(0);
+});
+
+test("document-folder visibility matches parent-table database read permissions", async () => {
+  await db.exec("begin");
+  try {
+    // An earlier security test disables this account. Restore it only in this isolated trial.
+    await db.query("update profiles set active=true where id=$1", [users.read_only]);
+    for (const role of Object.keys(users))
+      for (const table of [
+        "customers",
+        "sites",
+        "equipment",
+        "bids",
+        "rates",
+        "contracts",
+        "opportunities",
+        "incidents",
+        "drivers",
+      ]) {
+        const result = await asRole(role, "select public.can_access_table($1,false) as allowed", [
+          table,
+        ]);
+        expect(
+          canViewTable(role === "unassigned" ? [] : [role as AppRole], table),
+          role + ":" + table,
+        ).toBe(result.rows[0].allowed);
+      }
+  } finally {
+    await db.exec("rollback");
+  }
+  expect(canViewTable([], "customers")).toBe(false);
 });
