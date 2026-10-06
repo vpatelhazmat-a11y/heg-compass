@@ -28,7 +28,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
 import { insertRow, updateRow, type Row } from "@/lib/data";
-import { formatDate } from "@/lib/format";
+import { formatDate, formatMoney } from "@/lib/format";
 import { noteDocument, parseNoteValue } from "@/lib/rich-text";
 import { RichTextView } from "./RichText";
 import { useDraftProtection } from "@/hooks/use-draft-protection";
@@ -226,9 +226,11 @@ export function RecordForm({
                 <h3 className="section-title">{sectionName}</h3>
                 <div
                   className={
-                    presentation !== "sheet"
-                      ? "grid grid-cols-1 gap-4"
-                      : "grid grid-cols-1 gap-4 sm:grid-cols-2"
+                    presentation === "record"
+                      ? "grid grid-cols-1 gap-x-6 gap-y-1"
+                      : presentation !== "sheet"
+                        ? "grid grid-cols-1 gap-4"
+                        : "grid grid-cols-1 gap-4 sm:grid-cols-2"
                   }
                 >
                   {sectionFields.map((field) => {
@@ -240,12 +242,22 @@ export function RecordForm({
                       (readOnly || activeField !== field.name);
                     const rawValue = values[field.name];
                     const displayValue =
-                      field.type === "select"
-                        ? (field.options?.find((option) => option.value === rawValue)?.label ??
-                          rawValue)
-                        : field.type === "date" && rawValue
-                          ? formatDate(rawValue)
-                          : rawValue;
+                      field.type === "money"
+                        ? formatMoney(
+                            rawValue,
+                            values.currency_code ||
+                              values.currency ||
+                              initialValues?.currency_code ||
+                              initialValues?.currency ||
+                              "USD",
+                            2,
+                          )
+                        : field.type === "select"
+                          ? (field.options?.find((option) => option.value === rawValue)?.label ??
+                            rawValue)
+                          : field.type === "date" && rawValue
+                            ? formatDate(rawValue)
+                            : rawValue;
                     return (
                       <div
                         key={field.name}

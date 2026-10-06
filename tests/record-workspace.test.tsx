@@ -409,7 +409,7 @@ test("direct record editing discards changes without changing the stored rate", 
   fireEvent.change(screen.getByLabelText(/Amount/), { target: { value: "999" } });
   fireEvent.click(screen.getByRole("button", { name: "Discard" }));
   expect(screen.getByRole("region", { name: "Edit rate" })).toBeTruthy();
-  expect(screen.getByRole("button", { name: /^Edit Amount:/ }).textContent).toBe("100");
+  expect(screen.getByRole("button", { name: /^Edit Amount:/ }).textContent).toBe("$100.00");
   expect(screen.queryByRole("button", { name: "Save changes" })).toBeNull();
   expect(mocks.rpc).not.toHaveBeenCalled();
   expect(mocks.update).not.toHaveBeenCalled();
@@ -545,4 +545,19 @@ test("server sort changes the whole list and resets paging", async () => {
   const heading = await screen.findByRole("button", { name: "Legal name" });
   fireEvent.click(heading);
   expect(change).toHaveBeenCalledWith({ sort: "legal_name", ascending: false, page: 0 });
+});
+
+test("record money values show currency and cents before direct editing", () => {
+  mount(
+    <RecordForm
+      presentation="record"
+      open
+      onOpenChange={() => undefined}
+      title="Rate"
+      table="rates"
+      initialValues={{ amount: 1620.25, currency_code: "CAD" }}
+      fields={[{ name: "amount", label: "Amount", type: "money" }]}
+    />,
+  );
+  expect(screen.getByRole("button", { name: /^Edit Amount:/ }).textContent).toBe("CA$1,620.25");
 });

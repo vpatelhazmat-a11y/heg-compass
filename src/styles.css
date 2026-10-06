@@ -1179,6 +1179,8 @@
 .document-browser {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
+  align-items: start;
 }
 .document-browser > .document-folder-tree {
   grid-column: 1;
@@ -1188,7 +1190,8 @@
   grid-column: 2;
 }
 .document-folder-tree {
-  min-height: calc(100vh - 150px);
+  min-height: 0;
+  align-self: stretch;
   border-right: 1px solid var(--border);
   background: var(--surface);
   padding: 18px 10px;

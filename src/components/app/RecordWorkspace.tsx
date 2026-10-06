@@ -608,6 +608,7 @@ export function RecordDetailPage({
       </div>
     );
   const labels = new Map(definition.fields.map((field) => [field.name, field.label]));
+  const refusedEditableKeys = new Set([...Object.keys(toFormState(row)), "internal_notes"]);
   const entries = Object.entries(row).filter(
     ([key, value]) =>
       !hidden.has(key) &&
@@ -706,7 +707,9 @@ export function RecordDetailPage({
                         <div key={key} className="record-field">
                           <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
                           <dd>
-                            {table === "refused_loads" && canEdit(table) ? (
+                            {table === "refused_loads" &&
+                            canEdit(table) &&
+                            refusedEditableKeys.has(key) ? (
                               <button
                                 type="button"
                                 className="record-edit-value"
