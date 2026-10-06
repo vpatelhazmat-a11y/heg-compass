@@ -15,6 +15,7 @@ import {
   RELATION_TARGETS,
   editableRelationKeys,
   relationDependsOnCustomer,
+  SHARED_RECORD_KINDS,
 } from "@/lib/record-registry";
 import {
   isRecordId,
@@ -502,8 +503,7 @@ export function RecordListPage({
           defaults={
             parent && parentId
               ? {
-                  linked_entity_type:
-                    parent === "opportunities" ? "opportunity" : parent.replace(/s$/, ""),
+                  linked_entity_type: SHARED_RECORD_KINDS[parent],
                   linked_entity_id: parentId,
                 }
               : undefined

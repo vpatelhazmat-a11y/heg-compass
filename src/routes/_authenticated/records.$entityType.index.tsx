@@ -1,3 +1,4 @@
+import { validDocumentFolder } from "@/lib/document-folders";
 import { createFileRoute } from "@tanstack/react-router";
 import { RecordListPage } from "@/components/app/RecordWorkspace";
 
@@ -15,11 +16,7 @@ export const Route = createFileRoute("/_authenticated/records/$entityType/")({
     groupBy: typeof search["groupBy"] === "string" ? search["groupBy"] : undefined,
     view: search["view"] === "cards" ? ("cards" as const) : ("list" as const),
     archived: search["archived"] === true,
-    folder:
-      typeof search["folder"] === "string" &&
-      ["customer", "site", "equipment", "unlinked"].includes(search["folder"])
-        ? search["folder"]
-        : undefined,
+    folder: validDocumentFolder(search["folder"]),
     page:
       typeof search["page"] === "number" && Number.isInteger(search["page"]) && search["page"] >= 0
         ? search["page"]

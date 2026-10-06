@@ -80,11 +80,7 @@ export function saveView(
     ),
     { name: label, state: cleanState(state)! },
   ].slice(-12);
-  try {
-    storage.setItem(key(userId, scope), JSON.stringify(next));
-  } catch {
-    /* Keep this session's list. */
-  }
+  storage.setItem(key(userId, scope), JSON.stringify(next));
   return next;
 }
 
@@ -95,10 +91,6 @@ export function removeView(
   storage: Store = localStorage,
 ): SavedView[] {
   const next = readSavedViews(userId, scope, storage).filter((item) => item.name !== name);
-  try {
-    storage.setItem(key(userId, scope), JSON.stringify(next));
-  } catch {
-    /* Keep this session's list. */
-  }
+  storage.setItem(key(userId, scope), JSON.stringify(next));
   return next;
 }

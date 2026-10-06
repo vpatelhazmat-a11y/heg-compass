@@ -31,7 +31,11 @@ vi.mock("../src/lib/data", () => ({
   insertRow: vi.fn(),
 }));
 vi.mock("../src/hooks/use-session", () => ({
-  useSession: () => ({ canEdit: mocks.canEdit, session: { userId: "test-user" } }),
+  useSession: () => ({
+    canEdit: mocks.canEdit,
+    roles: ["admin"],
+    session: { userId: "test-user" },
+  }),
 }));
 vi.mock("../src/integrations/supabase/client", () => ({ supabase: { rpc: mocks.rpc } }));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: mocks.toastError } }));

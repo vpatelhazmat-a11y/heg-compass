@@ -4,11 +4,9 @@ import { ChevronDown, ChevronRight, Folder, FolderOpen, Search } from "lucide-re
 import { listRowsPage } from "@/lib/data";
 import { recordLabel } from "@/lib/record-registry";
 
-const folders = [
-  { kind: "customer", table: "customers", label: "Customers", searchField: "legal_name" },
-  { kind: "site", table: "sites", label: "Sites", searchField: "site_name" },
-  { kind: "equipment", table: "equipment", label: "Equipment", searchField: "unit_number" },
-] as const;
+import { DOCUMENT_FOLDERS } from "@/lib/document-folders";
+import { canViewTable } from "@/lib/permissions";
+import { useSession } from "@/hooks/use-session";
 
 export function DocumentFolderTree({
   folder,
@@ -26,19 +24,24 @@ export function DocumentFolderTree({
     page: number;
   }) => void;
 }) {
+  const { roles = [] } = useSession();
+  const folders = DOCUMENT_FOLDERS.filter((folder) => canViewTable(roles, folder.table));
+  const [page, setPage] = useState(0);
   const [expanded, setExpanded] = useState<string | null>(
     folders.find((item) => item.table === parent)?.kind ?? null,
   );
   const [search, setSearch] = useState("");
   const active = folders.find((item) => item.kind === expanded);
   const choices = useQuery({
-    queryKey: ["document-folders", expanded, search],
+    queryKey: ["document-folders", expanded, search, page],
     enabled: Boolean(active),
     queryFn: () =>
       listRowsPage(active!.table, {
         searchField: active!.searchField,
         search: search.trim().slice(0, 120),
         limit: 30,
+        offset: page * 30,
+        order: { column: active!.searchField, ascending: true },
       }),
   });
   return (
@@ -48,7 +51,12 @@ export function DocumentFolderTree({
         type="button"
         className="document-folder"
         aria-current={!folder && !parent ? "page" : undefined}
-        onClick={() => onSelect({ page: 0 })}
+        onClick={() => {
+          setExpanded(null);
+          setSearch("");
+          setPage(0);
+          onSelect({ page: 0 });
+        }}
       >
         <FolderOpen className="h-4 w-4" /> All documents
       </button>
@@ -62,6 +70,7 @@ export function DocumentFolderTree({
             onClick={() => {
               setExpanded(expanded === item.kind ? null : item.kind);
               setSearch("");
+              setPage(0);
               onSelect({ folder: item.kind, page: 0 });
             }}
           >
@@ -80,13 +89,25 @@ export function DocumentFolderTree({
                   aria-label={`Find ${item.label.toLowerCase()} folder`}
                   placeholder={`Find ${item.label.toLowerCase()}…`}
                   value={search}
-                  onChange={(event) => setSearch(event.target.value)}
+                  onChange={(event) => {
+                    setSearch(event.target.value);
+                    setPage(0);
+                  }}
                 />
               </label>
               {choices.isLoading ? (
                 <span className="document-folder-hint">Loading…</span>
               ) : choices.error ? (
-                <span className="document-folder-hint">Folders unavailable</span>
+                <div className="document-folder-hint">
+                  <span role="alert">Folders could not load.</span>
+                  <button
+                    type="button"
+                    className="ml-2 text-primary hover:underline"
+                    onClick={() => void choices.refetch()}
+                  >
+                    Try again
+                  </button>
+                </div>
               ) : choices.data?.rows.length ? (
                 choices.data.rows.map((row) => (
                   <button
@@ -105,7 +126,28 @@ export function DocumentFolderTree({
                 <span className="document-folder-hint">No matching records</span>
               )}
               {(choices.data?.count ?? 0) > 30 && (
-                <span className="document-folder-hint">Search to find more</span>
+                <div className="document-folder-pager">
+                  <span>
+                    {page * 30 + 1}–{Math.min((page + 1) * 30, choices.data!.count)} of{" "}
+                    {choices.data!.count}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Previous folder page"
+                    disabled={page === 0}
+                    onClick={() => setPage(page - 1)}
+                  >
+                    Previous
+                  </button>
+                  <button
+                    type="button"
+                    aria-label="Next folder page"
+                    disabled={(page + 1) * 30 >= choices.data!.count}
+                    onClick={() => setPage(page + 1)}
+                  >
+                    Next
+                  </button>
+                </div>
               )}
             </div>
           )}
