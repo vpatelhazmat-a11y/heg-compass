@@ -63,7 +63,10 @@ export function ModuleNavigation({ pathname }: { pathname: string }) {
   );
   const selected = [...links]
     .sort((a, b) => b[1]!.length - a[1]!.length)
-    .find(([, to]) => canonicalPath === to || canonicalPath.startsWith(`${to}/`))?.[1];
+    .find(
+      ([, to]) =>
+        canonicalPath === to || (to !== "/lost-loads" && canonicalPath.startsWith(`${to}/`)),
+    )?.[1];
   return (
     <nav className="module-navigation" aria-label="Module navigation">
       {links.slice(0, 3).map(([label, to]) => (

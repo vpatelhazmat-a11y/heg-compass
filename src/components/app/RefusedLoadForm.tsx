@@ -446,6 +446,7 @@ export function RefusedLoadForm({
             value={form.cs_rep}
             onChange={(v) => set("cs_rep", v)}
             options={people.options}
+            retainCurrent
             placeholder="Select a person"
             clearable
           />
@@ -465,6 +466,7 @@ export function RefusedLoadForm({
             value={form.loss_reason}
             onChange={(v) => set("loss_reason", v)}
             options={lossReasons.options}
+            retainCurrent
             placeholder="Select a reason"
           />
         </Field>
@@ -595,6 +597,7 @@ function Choice({
   options,
   placeholder,
   clearable,
+  retainCurrent,
 }: {
   id?: string;
   "aria-invalid"?: boolean;
@@ -604,6 +607,7 @@ function Choice({
   options: { value: string; label: string }[];
   placeholder: string;
   clearable?: boolean;
+  retainCurrent?: boolean;
 }) {
   return (
     <Select
@@ -615,6 +619,9 @@ function Choice({
       </SelectTrigger>
       <SelectContent className="max-h-72">
         {clearable && <SelectItem value={NONE}>None</SelectItem>}
+        {retainCurrent && value && !options.some((option) => option.value === value) && (
+          <SelectItem value={value}>{value}</SelectItem>
+        )}
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             {option.label}

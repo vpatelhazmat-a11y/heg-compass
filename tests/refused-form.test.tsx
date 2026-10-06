@@ -113,3 +113,8 @@ test("pending saves lock the form and reject duplicate submission", async () => 
   finish({ id: "created" });
   await waitFor(() => expect(screen.queryByRole("button", { name: "Saving…" })).toBeNull());
 });
+
+test("historical lost reasons remain visible when absent from current lookup options", () => {
+  mount();
+  expect(screen.getByLabelText(/Reason for lost revenue/).textContent).toContain("Capacity");
+});

@@ -1,7 +1,6 @@
 import { createFileRoute, type SearchSchemaInput } from "@tanstack/react-router";
 import { MasterRecordList } from "@/components/app/MasterRecordList";
 import { parseRecordListSearch } from "@/lib/record-lists";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSession } from "@/hooks/use-session";
 import { EmptyState } from "@/components/app/EmptyState";
 import { PageHeader } from "@/components/app/PageHeader";
@@ -46,31 +45,6 @@ function SafetyPage() {
     );
   return (
     <>
-      <Tabs
-        value={search.section}
-        onValueChange={(section) => {
-          void navigate({
-            search: {
-              q: undefined,
-              field: undefined,
-              filterField: undefined,
-              filterValue: undefined,
-              groupBy: undefined,
-              sort: undefined,
-              ascending: false,
-              page: 0,
-              view: "list",
-              archived: false,
-              section,
-            },
-          });
-        }}
-      >
-        <TabsList className="px-6">
-          <TabsTrigger value="incidents">Incidents</TabsTrigger>
-          <TabsTrigger value="actions">Corrective actions</TabsTrigger>
-        </TabsList>
-      </Tabs>
       <MasterRecordList
         key={search.section}
         table={search.section === "actions" ? "corrective_actions" : "incidents"}
