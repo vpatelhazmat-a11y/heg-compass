@@ -55,10 +55,7 @@ export function ModuleNavigation({ pathname }: { pathname: string }) {
   const module = activeModule(pathname);
   const links = module
     ? (menus[module.label] ?? [[module.label, module.to]]).filter(([, to]) => to !== module.to)
-    : [
-        ["Apps", "/command-center"],
-        ["Daily overview", "/overview"],
-      ];
+    : [];
   if (!links.length) return null;
   const canonicalPath = pathname.replace(
     /^\/records\/(customers|sites|equipment|bids)(?=\/|$)/,

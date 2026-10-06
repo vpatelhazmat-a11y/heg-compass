@@ -617,6 +617,8 @@ export function DataTable({
                             ] &&
                             row[column.key.endsWith("_id") ? column.key : `${column.key}_id`] ? (
                             <RecordLink
+                              compact
+                              returnTo={originHref}
                               table={
                                 RELATION_TARGETS[
                                   column.key.endsWith("_id") ? column.key : `${column.key}_id`

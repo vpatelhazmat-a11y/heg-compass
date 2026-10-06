@@ -105,7 +105,10 @@ export function useAppReorder(onMove: (id: string, target: string) => void) {
       const current = press.current;
       if (!current || current.pointerId !== event.pointerId) return;
       if (!current.active) {
-        if (Math.hypot(event.clientX - current.x, event.clientY - current.y) > 8) finish(false);
+        if (Math.hypot(event.clientX - current.x, event.clientY - current.y) > 8) {
+          finish(false);
+          suppressUntil.current = Date.now() + 400;
+        }
         return;
       }
       event.preventDefault();

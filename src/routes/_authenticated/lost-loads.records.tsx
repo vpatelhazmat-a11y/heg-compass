@@ -116,9 +116,19 @@ function LostLoadRecords() {
             rep: filters.rep,
           },
         }}
-        onChange={(patch) =>
-          void navigate({ search: (previous) => ({ ...previous, ...patch }), replace: true })
-        }
+        onChange={(patch) => {
+          const { refused, ...rest } = patch;
+          void navigate({
+            search: (previous) => ({
+              ...previous,
+              ...rest,
+              ...("refused" in patch
+                ? { from: "", to: "", customer: ALL, reason: ALL, rep: ALL, ...refused }
+                : {}),
+            }),
+            replace: true,
+          });
+        }}
         actions={
           canWrite ? (
             <Button asChild>
@@ -157,9 +167,10 @@ function LostLoadRecords() {
                 id="refused-from"
                 type="date"
                 value={filters.from}
-                onChange={(event) =>
-                  setFilters((previous) => ({ ...previous, from: event.target.value }))
-                }
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setFilters((previous) => ({ ...previous, from: value }));
+                }}
               />
             </div>
             <div>
@@ -168,9 +179,10 @@ function LostLoadRecords() {
                 id="refused-to"
                 type="date"
                 value={filters.to}
-                onChange={(event) =>
-                  setFilters((previous) => ({ ...previous, to: event.target.value }))
-                }
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setFilters((previous) => ({ ...previous, to: value }));
+                }}
               />
             </div>
             <Picker
@@ -220,7 +232,7 @@ function LostLoadRecords() {
             sortable: false,
             header: "Lane",
             value: (row) =>
-              `${row.pickup_city ?? ""} ${row.pickup_state ?? ""} ${row.delivery_city ?? ""} ${row.delivery_state ?? ""}`,
+              `${orDash(row.pickup_city)}, ${orDash(row.pickup_state)} → ${orDash(row.delivery_city)}, ${orDash(row.delivery_state)}`,
             render: (row) =>
               `${orDash(row.pickup_city)}, ${orDash(row.pickup_state)} → ${orDash(row.delivery_city)}, ${orDash(row.delivery_state)}`,
           },

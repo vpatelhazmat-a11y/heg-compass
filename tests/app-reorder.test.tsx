@@ -35,10 +35,12 @@ beforeEach(() => {
   // jsdom has no native PointerEvent or pointer capture.
   class TestPointerEvent extends MouseEvent {
     pointerId: number;
+    pointerType: string;
     isPrimary: boolean;
     constructor(type: string, options: PointerEventInit = {}) {
       super(type, options);
       this.pointerId = options.pointerId ?? 1;
+      this.pointerType = options.pointerType ?? "mouse";
       this.isPrimary = options.isPrimary ?? true;
     }
   }
@@ -63,21 +65,25 @@ test("ordinary click opens an app and does not reorder", () => {
   expect(screen.queryByRole("status")).toBeNull();
 });
 
-test("hold then drag places an app and suppresses accidental opening", () => {
-  render(<Harness />);
-  fireEvent.pointerDown(screen.getByTestId("tile"), {
-    pointerId: 1,
-    button: 0,
-    clientX: 20,
-    clientY: 120,
-  });
-  act(() => vi.advanceTimersByTime(280));
-  expect(screen.getByRole("status")).toBeTruthy();
-  fireEvent.pointerMove(screen.getByTestId("tile"), { pointerId: 1, clientX: 180, clientY: 200 });
-  fireEvent.pointerUp(screen.getByTestId("tile"), { pointerId: 1 });
-  fireEvent.click(screen.getByRole("button", { name: "Tasks" }));
-  expect(move).toHaveBeenCalledExactlyOnceWith("tasks", "customers");
-});
+test.each(["mouse", "touch", "pen"])(
+  "%s hold then drag places an app and suppresses accidental opening",
+  (pointerType) => {
+    render(<Harness />);
+    fireEvent.pointerDown(screen.getByTestId("tile"), {
+      pointerId: 1,
+      button: 0,
+      pointerType,
+      clientX: 20,
+      clientY: 120,
+    });
+    act(() => vi.advanceTimersByTime(280));
+    expect(screen.getByRole("status")).toBeTruthy();
+    fireEvent.pointerMove(screen.getByTestId("tile"), { pointerId: 1, clientX: 180, clientY: 200 });
+    fireEvent.pointerUp(screen.getByTestId("tile"), { pointerId: 1 });
+    fireEvent.click(screen.getByRole("button", { name: "Tasks" }));
+    expect(move).toHaveBeenCalledExactlyOnceWith("tasks", "customers");
+  },
+);
 
 test.each(["pointerCancel", "escape"])("%s cancels a held drag without saving", (action) => {
   render(<Harness />);
@@ -87,6 +93,22 @@ test.each(["pointerCancel", "escape"])("%s cancels a held drag without saving", 
   if (action === "escape") fireEvent.keyDown(window, { key: "Escape" });
   else fireEvent.pointerCancel(screen.getByTestId("tile"), { pointerId: 1 });
   fireEvent.pointerUp(screen.getByTestId("tile"), { pointerId: 1 });
+  expect(move).not.toHaveBeenCalled();
+  expect(screen.queryByRole("status")).toBeNull();
+});
+
+test("movement before pickup cancels without accidentally opening the app", () => {
+  render(<Harness />);
+  fireEvent.pointerDown(screen.getByTestId("tile"), {
+    pointerId: 1,
+    button: 0,
+    clientX: 20,
+    clientY: 120,
+  });
+  fireEvent.pointerMove(screen.getByTestId("tile"), { pointerId: 1, clientX: 90, clientY: 120 });
+  act(() => vi.advanceTimersByTime(280));
+  fireEvent.pointerUp(screen.getByTestId("tile"), { pointerId: 1 });
+  fireEvent.click(screen.getByRole("button", { name: "Tasks" }));
   expect(move).not.toHaveBeenCalled();
   expect(screen.queryByRole("status")).toBeNull();
 });
