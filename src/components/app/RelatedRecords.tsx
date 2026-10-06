@@ -27,6 +27,7 @@ export function RelatedRecords({ table, id }: { table: string; id: string }) {
         {relations.map((relation, index) => (
           <div key={relation.table}>
             <Link
+              aria-label={`${relation.label}, ${counts[index]?.isPending ? "count loading" : counts[index]?.isError ? "count unavailable" : `${counts[index]?.data} records`}`}
               to="/records/$entityType"
               params={{ entityType: relation.table }}
               search={{

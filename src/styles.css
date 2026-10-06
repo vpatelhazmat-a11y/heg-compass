@@ -1461,7 +1461,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(300px, 340px);
   align-items: start;
-  min-height: calc(100vh - 180px);
   background: var(--surface);
 }
 .record-workspace-layout:not(:has(> .record-chatter)) {
@@ -1478,14 +1477,37 @@
   border-bottom: 0;
   padding: 20px;
 }
-.record-workspace-layout > .master-record,
 .record-workspace-layout > .record-workspace-main {
   grid-column: 1;
   grid-row: 1;
   width: 100%;
-  max-width: none;
+  max-width: 1100px;
   min-width: 0;
+  justify-self: center;
+  padding: 24px;
 }
+.record-workspace-main > * + * {
+  margin-top: 24px;
+}
+.record-workspace-main .always-editable-record > div:first-child {
+  padding: 0;
+}
+.record-workspace-main .record-sheet {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  max-width: none;
+}
+.record-disclosure {
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+  font-size: 13px;
+}
+.record-disclosure > summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+
 .record-workspace-layout .record-chatter h2 {
   font-size: 13px;
 }
@@ -1935,9 +1957,9 @@ html {
 }
 
 .record-related-panel {
-  margin: 16px 24px 24px;
+  margin: 24px 0 0;
   border-top: 1px solid var(--border);
-  padding-top: 12px;
+  padding-top: 16px;
 }
 .record-related-panel > summary {
   cursor: pointer;
@@ -1974,10 +1996,39 @@ html {
   margin: 0;
 }
 .master-record > section[aria-label="Notes"] {
-  padding-top: 0;
+  padding-top: 20px;
   border-top: 1px solid var(--border);
 }
 .always-editable-record .record-form-notes .record-data-value {
   min-height: 28px;
   padding: 3px 0;
+}
+
+@media (max-width: 640px) {
+  .record-workspace-layout > .record-workspace-main {
+    padding: 20px 16px;
+  }
+}
+
+.record-linked-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 32px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border);
+}
+.record-linked-fields > div {
+  display: grid;
+  grid-template-columns: minmax(104px, 0.42fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: baseline;
+}
+.record-linked-fields a {
+  min-width: 0;
+  font-size: 14px;
+}
+@media (max-width: 760px) {
+  .record-linked-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
