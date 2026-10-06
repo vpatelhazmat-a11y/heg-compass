@@ -1,9 +1,8 @@
-import { RelatedRecords } from "@/components/app/RelatedRecords";
+import { RecordLayout } from "@/components/app/RecordLayout";
 import { parseRecordReturn } from "@/lib/record-return";
-import { recordReturnHref, recordReturnLabel } from "@/lib/record-registry";
+import { recordHref, recordReturnHref, recordReturnLabel } from "@/lib/record-registry";
 import { SmartButtons } from "@/components/app/SmartButtons";
 import { RecordRelations } from "@/components/app/RecordLink";
-import { RecordChatter } from "@/components/app/RecordChatter";
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -240,428 +239,430 @@ function CustomerDetail() {
         }
         related={<SmartButtons table="customers" id={customerId} />}
       />
-      <RecordRelations row={customer} />
-      <div className="record-workspace-layout">
-        <RecordChatter table="customers" id={customerId} />
-        <div className="master-record space-y-6 p-6">
-          {related.error && <ErrorState message={related.error.message} />}
+      <RecordLayout
+        table="customers"
+        id={customerId}
+        master
+        links={
+          <RecordRelations
+            row={customer}
+            returnTo={recordHref("customers", customerId, returnTo)}
+          />
+        }
+      >
+        {related.error && <ErrorState message={related.error.message} />}
 
-          <Tabs defaultValue="overview">
-            <TabsList className="flex w-full flex-wrap justify-start">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="operations">Operations</TabsTrigger>
-              <TabsTrigger value="commercial">Commercial</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-            </TabsList>
-            <TabsContent forceMount value="overview" className="mt-4 space-y-6">
-              {
-                <RecordForm
-                  readOnly={!canWrite}
-                  presentation="record"
-                  open
-                  onOpenChange={() => undefined}
-                  title="Customer details"
-                  table="customers"
-                  recordId={customerId}
-                  initialValues={customer}
-                  fields={customerFields.filter(
-                    (field) =>
-                      !["qualification_notes", "commercial_notes", "risk_notes"].includes(
-                        field.name,
-                      ),
-                  )}
-                  invalidateKeys={[["customer", customerId], ["customers"]]}
-                />
-              }
-              <details className="rounded border border-border bg-surface px-4 py-3 text-sm">
-                <summary className="cursor-pointer font-medium">Source information</summary>
-                <div className="mt-4">
-                  <FieldGrid columns={4}>
-                    <Field label="Source system">{orDash(customer.source_system)}</Field>
-                    <Field label="Source file">{orDash(customer.source_file)}</Field>
-                    <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
-                    <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
-                  </FieldGrid>
-                </div>
-              </details>
-            </TabsContent>
-            <TabsContent value="operations" className="mt-4 space-y-6">
-              <Panel title="Sites" actions={addButton("Add site", "sites", siteFields)}>
-                <DataTable
-                  embedded
-                  columns={siteColumns}
-                  recordTable="sites"
-                  rows={data?.sites ?? []}
-                  isLoading={related.isLoading}
-                  exportName="customer-sites"
-                  onRowClick={(row) =>
-                    navigate({ to: "/sites/$siteId", params: { siteId: row.id as string } })
-                  }
-                  emptyTitle="No sites recorded"
-                  emptyDescription="Add the locations HEG picks up from or delivers to for this customer."
-                />
-              </Panel>
-
-              <Panel title="Contacts" actions={addButton("Add contact", "contacts", contactFields)}>
-                <DataTable
-                  embedded
-                  columns={[
-                    {
-                      key: "name",
-                      header: "Name",
-                      value: (row) => `${row.first_name ?? ""} ${row.last_name ?? ""}`,
-                    },
-                    { key: "title", header: "Title" },
-                    { key: "contact_type", header: "Type" },
-                    { key: "email", header: "Email" },
-                    { key: "phone", header: "Phone" },
-                  ]}
-                  recordTable="contacts"
-                  rows={data?.contacts ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="No contacts recorded"
-                  emptyDescription="Capture who HEG works with so the knowledge isn't held by one person."
-                />
-              </Panel>
-
-              <Panel
-                title="Customer requirements"
-                actions={addButton("Add requirement", "requirements", requirementFields)}
-              >
-                <DataTable
-                  embedded
-                  columns={[
-                    { key: "requirement", header: "Requirement" },
-                    { key: "category", header: "Category" },
-                    {
-                      key: "mandatory",
-                      header: "Mandatory",
-                      render: (row) => (row.mandatory ? "Yes" : "No"),
-                    },
-                    {
-                      key: "expiration_date",
-                      header: "Expires",
-                      render: (row) => formatDate(row.expiration_date),
-                    },
-                  ]}
-                  recordTable="requirements"
-                  rows={data?.requirements ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="No requirements recorded"
-                  emptyDescription="Record the rules this customer expects HEG to follow."
-                />
-              </Panel>
-
-              <Panel
-                title="Products and materials"
-                actions={addButton("Add product", "products", productFields)}
-              >
-                <DataTable
-                  embedded
-                  columns={[
-                    { key: "product_name", header: "Product" },
-                    { key: "hazard_classification", header: "Hazard class" },
-                    { key: "un_number", header: "UN number" },
-                    { key: "physical_state", header: "State" },
-                    { key: "data_quality_status", header: "Data quality" },
-                  ]}
-                  recordTable="products"
-                  rows={data?.products ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="No products recorded"
-                  emptyDescription="Add materials HEG moves for this customer. Leave hazard details blank if unverified."
-                />
-              </Panel>
-
-              <Panel title="Lanes" actions={addButton("Add lane", "lanes", laneFields)}>
-                <DataTable
-                  embedded
-                  recordTable="lanes"
-                  rows={data?.lanes ?? []}
-                  error={related.error}
-                  columns={[
-                    { key: "lane_name", header: "Lane" },
-                    { key: "origin_description", header: "Origin" },
-                    { key: "destination_description", header: "Destination" },
-                  ]}
-                />
-              </Panel>
-
-              <Panel title="Current equipment assignments">
-                <DataTable
-                  embedded
-                  recordTable="equipment_assignments"
-                  rows={data?.equipment ?? []}
-                  error={related.error}
-                  columns={[
-                    {
-                      key: "unit",
-                      header: "Unit",
-                      value: (row) => row.equipment?.unit_number ?? "",
-                    },
-                    { key: "assignment_type", header: "Assignment" },
-                    {
-                      key: "start_date",
-                      header: "Start",
-                      render: (row) => formatDate(row.start_date),
-                    },
-                  ]}
-                />
-              </Panel>
-            </TabsContent>
-            <TabsContent value="commercial" className="mt-4 space-y-6">
-              <Panel
-                title="Rates"
-                description="Quoted, contracted and historical pricing"
-                actions={addButton("Add rate", "rates", rateFields)}
-              >
-                <DataTable
-                  embedded
-                  columns={[
-                    { key: "rate_type", header: "Type" },
-                    {
-                      key: "amount",
-                      header: "Amount",
-                      align: "right",
-                      render: (row) => formatMoney(row.amount),
-                    },
-                    { key: "unit", header: "Unit" },
-                    {
-                      key: "status",
-                      header: "Status",
-                      render: (row) => <StatusBadge status={row.status} />,
-                    },
-                    {
-                      key: "effective_date",
-                      header: "Effective",
-                      render: (row) => formatDate(row.effective_date),
-                    },
-                    {
-                      key: "expiration_date",
-                      header: "Expires",
-                      render: (row) => formatDate(row.expiration_date),
-                    },
-                  ]}
-                  recordTable="rates"
-                  rows={data?.rates ?? []}
-                  onRowClick={canEdit("rates") ? setEditingRate : undefined}
-                  isLoading={related.isLoading}
-                  exportName="customer-rates"
-                  emptyTitle="No rates recorded"
-                  emptyDescription="Rate history is how HEG stops re-quoting from memory."
-                />
-              </Panel>
-
-              <Panel
-                title="Opportunities"
-                actions={addButton("Add opportunity", "opportunities", opportunityFields)}
-              >
-                <DataTable
-                  embedded
-                  columns={[
-                    { key: "name", header: "Opportunity" },
-                    {
-                      key: "stage",
-                      header: "Stage",
-                      render: (row) => <StatusBadge status={row.stage} />,
-                    },
-                    {
-                      key: "capacity_status",
-                      header: "Can we service it?",
-                      render: (row) => <StatusBadge status={row.capacity_status} />,
-                    },
-                    {
-                      key: "estimated_revenue",
-                      header: "Estimated revenue",
-                      align: "right",
-                      render: (row) => formatMoney(row.estimated_revenue),
-                    },
-                    {
-                      key: "expected_close_date",
-                      header: "Expected close",
-                      render: (row) => formatDate(row.expected_close_date),
-                    },
-                  ]}
-                  recordTable="opportunities"
-                  rows={data?.opportunities ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="No opportunities recorded"
-                />
-              </Panel>
-              <Panel title="Bids">
-                <DataTable
-                  embedded
-                  columns={[
-                    { key: "bid_name", header: "Bid" },
-                    {
-                      key: "status",
-                      header: "Status",
-                      render: (row) => <StatusBadge status={row.status} />,
-                    },
-                    { key: "due_date", header: "Due", render: (row) => formatDate(row.due_date) },
-                    {
-                      key: "estimated_revenue",
-                      header: "Estimated revenue",
-                      align: "right",
-                      render: (row) => formatMoney(row.estimated_revenue),
-                    },
-                  ]}
-                  recordTable="bids"
-                  rows={data?.bids ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="No bids recorded"
-                  emptyDescription="Bids are created in the Bid Center."
-                  emptyAction={
-                    <Link to="/bids" className="text-sm font-medium text-primary hover:underline">
-                      Go to Bid Center
-                    </Link>
-                  }
-                />
-              </Panel>
-
-              <Panel
-                title="Contracts"
-                actions={addButton("Add contract", "contracts", contractFields)}
-              >
-                <DataTable
-                  embedded
-                  columns={[
-                    { key: "contract_name", header: "Contract" },
-                    { key: "contract_number", header: "Number" },
-                    {
-                      key: "status",
-                      header: "Status",
-                      render: (row) => <StatusBadge status={row.status} />,
-                    },
-                    {
-                      key: "effective_date",
-                      header: "Effective",
-                      render: (row) => formatDate(row.effective_date),
-                    },
-                    {
-                      key: "expiration_date",
-                      header: "Expires",
-                      render: (row) => formatDate(row.expiration_date),
-                    },
-                  ]}
-                  recordTable="contracts"
-                  rows={data?.contracts ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="No contracts recorded"
-                />
-              </Panel>
-              <Panel
-                title="Documents"
-                actions={addButton("Add document", "documents", documentFields)}
-              >
-                <DataTable
-                  embedded
-                  columns={[
-                    { key: "document_name", header: "Document" },
-                    { key: "document_type", header: "Type" },
-                    { key: "classification", header: "Sensitivity" },
-                    {
-                      key: "expiration_date",
-                      header: "Expires",
-                      render: (row) => formatDate(row.expiration_date),
-                    },
-                  ]}
-                  recordTable="documents"
-                  rows={data?.documents ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="No documents recorded"
-                  emptyDescription="Record where a document lives so the team can always find it."
-                />
-              </Panel>
-            </TabsContent>
-            <TabsContent value="history" className="mt-4 space-y-6">
-              <Panel
-                title="Business we could not serve"
-                description="Why HEG lost or declined work — the record that drives capacity decisions"
-                actions={addButton("Record lost business", "lost_business", lostBusinessFields)}
-              >
-                <DataTable
-                  embedded
-                  columns={[
-                    {
-                      key: "occurred_on",
-                      header: "Date",
-                      render: (row) => formatDate(row.occurred_on),
-                    },
-                    { key: "reason_category", header: "Reason" },
-                    {
-                      key: "estimated_revenue",
-                      header: "Revenue lost",
-                      align: "right",
-                      render: (row) => formatMoney(row.estimated_revenue),
-                    },
-                    { key: "competitor", header: "Competitor" },
-                    {
-                      key: "recoverable",
-                      header: "Recoverable",
-                      render: (row) => (row.recoverable ? "Yes" : "No"),
-                    },
-                  ]}
-                  recordTable="lost_business"
-                  rows={data?.lost ?? []}
-                  isLoading={related.isLoading}
-                  emptyTitle="Nothing recorded"
-                  emptyDescription="Recording declined work is how HEG proves where capacity is costing revenue."
-                />
-              </Panel>
-
-              <Panel
-                title="Refused Loads"
-                description="Individual requests HEG could not accept. Separate from broader commercial losses."
-              >
-                <DataTable
-                  embedded
-                  recordTable="refused_loads"
-                  rows={data?.refused ?? []}
-                  isLoading={related.isLoading}
-                  error={related.error}
-                  columns={[
-                    {
-                      key: "call_in_date",
-                      header: "Call in date",
-                      render: (row) => formatDate(row.call_in_date),
-                    },
-                    { key: "equipment_type", header: "Equipment needed" },
-                    { key: "load_count", header: "Loads" },
-                    { key: "loss_reason", header: "Reason" },
-                    {
-                      key: "estimated_lost_revenue",
-                      header: "Lost revenue",
-                      render: (row) => formatMoney(row.estimated_lost_revenue),
-                    },
-                  ]}
-                  emptyTitle="No refused loads recorded"
-                />
-              </Panel>
-            </TabsContent>
-          </Tabs>
-          <section aria-label="Notes" className="pt-4">
+        <Tabs defaultValue="overview">
+          <TabsList className="flex w-full flex-wrap justify-start">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="operations">Operations</TabsTrigger>
+            <TabsTrigger value="commercial">Commercial</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
+          <TabsContent forceMount value="overview" className="mt-4 space-y-6">
             {
               <RecordForm
                 readOnly={!canWrite}
                 presentation="record"
                 open
                 onOpenChange={() => undefined}
-                title="Notes"
+                title="Customer details"
                 table="customers"
                 recordId={customerId}
                 initialValues={customer}
-                fields={customerFields.filter((field) =>
-                  ["qualification_notes", "commercial_notes", "risk_notes"].includes(field.name),
+                fields={customerFields.filter(
+                  (field) =>
+                    !["qualification_notes", "commercial_notes", "risk_notes"].includes(field.name),
                 )}
                 invalidateKeys={[["customer", customerId], ["customers"]]}
               />
             }
-          </section>
-        </div>
-      </div>
+            <details className="record-disclosure">
+              <summary className="cursor-pointer font-medium">Source information</summary>
+              <div className="mt-4">
+                <FieldGrid columns={4}>
+                  <Field label="Source system">{orDash(customer.source_system)}</Field>
+                  <Field label="Source file">{orDash(customer.source_file)}</Field>
+                  <Field label="Source sheet">{orDash(customer.source_sheet)}</Field>
+                  <Field label="Last verified">{formatDate(customer.updated_at)}</Field>
+                </FieldGrid>
+              </div>
+            </details>
+          </TabsContent>
+          <TabsContent value="operations" className="mt-4 space-y-6">
+            <Panel title="Sites" actions={addButton("Add site", "sites", siteFields)}>
+              <DataTable
+                embedded
+                columns={siteColumns}
+                recordTable="sites"
+                rows={data?.sites ?? []}
+                isLoading={related.isLoading}
+                exportName="customer-sites"
+                onRowClick={(row) =>
+                  navigate({ to: "/sites/$siteId", params: { siteId: row.id as string } })
+                }
+                emptyTitle="No sites recorded"
+                emptyDescription="Add the locations HEG picks up from or delivers to for this customer."
+              />
+            </Panel>
 
-      <RelatedRecords table="customers" id={customerId} />
+            <Panel title="Contacts" actions={addButton("Add contact", "contacts", contactFields)}>
+              <DataTable
+                embedded
+                columns={[
+                  {
+                    key: "name",
+                    header: "Name",
+                    value: (row) => `${row.first_name ?? ""} ${row.last_name ?? ""}`,
+                  },
+                  { key: "title", header: "Title" },
+                  { key: "contact_type", header: "Type" },
+                  { key: "email", header: "Email" },
+                  { key: "phone", header: "Phone" },
+                ]}
+                recordTable="contacts"
+                rows={data?.contacts ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="No contacts recorded"
+                emptyDescription="Capture who HEG works with so the knowledge isn't held by one person."
+              />
+            </Panel>
+
+            <Panel
+              title="Customer requirements"
+              actions={addButton("Add requirement", "requirements", requirementFields)}
+            >
+              <DataTable
+                embedded
+                columns={[
+                  { key: "requirement", header: "Requirement" },
+                  { key: "category", header: "Category" },
+                  {
+                    key: "mandatory",
+                    header: "Mandatory",
+                    render: (row) => (row.mandatory ? "Yes" : "No"),
+                  },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
+                ]}
+                recordTable="requirements"
+                rows={data?.requirements ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="No requirements recorded"
+                emptyDescription="Record the rules this customer expects HEG to follow."
+              />
+            </Panel>
+
+            <Panel
+              title="Products and materials"
+              actions={addButton("Add product", "products", productFields)}
+            >
+              <DataTable
+                embedded
+                columns={[
+                  { key: "product_name", header: "Product" },
+                  { key: "hazard_classification", header: "Hazard class" },
+                  { key: "un_number", header: "UN number" },
+                  { key: "physical_state", header: "State" },
+                  { key: "data_quality_status", header: "Data quality" },
+                ]}
+                recordTable="products"
+                rows={data?.products ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="No products recorded"
+                emptyDescription="Add materials HEG moves for this customer. Leave hazard details blank if unverified."
+              />
+            </Panel>
+
+            <Panel title="Lanes" actions={addButton("Add lane", "lanes", laneFields)}>
+              <DataTable
+                embedded
+                recordTable="lanes"
+                rows={data?.lanes ?? []}
+                error={related.error}
+                columns={[
+                  { key: "lane_name", header: "Lane" },
+                  { key: "origin_description", header: "Origin" },
+                  { key: "destination_description", header: "Destination" },
+                ]}
+              />
+            </Panel>
+
+            <Panel title="Current equipment assignments">
+              <DataTable
+                embedded
+                recordTable="equipment_assignments"
+                rows={data?.equipment ?? []}
+                error={related.error}
+                columns={[
+                  {
+                    key: "unit",
+                    header: "Unit",
+                    value: (row) => row.equipment?.unit_number ?? "",
+                  },
+                  { key: "assignment_type", header: "Assignment" },
+                  {
+                    key: "start_date",
+                    header: "Start",
+                    render: (row) => formatDate(row.start_date),
+                  },
+                ]}
+              />
+            </Panel>
+          </TabsContent>
+          <TabsContent value="commercial" className="mt-4 space-y-6">
+            <Panel
+              title="Rates"
+              description="Quoted, contracted and historical pricing"
+              actions={addButton("Add rate", "rates", rateFields)}
+            >
+              <DataTable
+                embedded
+                columns={[
+                  { key: "rate_type", header: "Type" },
+                  {
+                    key: "amount",
+                    header: "Amount",
+                    align: "right",
+                    render: (row) => formatMoney(row.amount),
+                  },
+                  { key: "unit", header: "Unit" },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
+                  {
+                    key: "effective_date",
+                    header: "Effective",
+                    render: (row) => formatDate(row.effective_date),
+                  },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
+                ]}
+                recordTable="rates"
+                rows={data?.rates ?? []}
+                onRowClick={canEdit("rates") ? setEditingRate : undefined}
+                isLoading={related.isLoading}
+                exportName="customer-rates"
+                emptyTitle="No rates recorded"
+                emptyDescription="Rate history is how HEG stops re-quoting from memory."
+              />
+            </Panel>
+
+            <Panel
+              title="Opportunities"
+              actions={addButton("Add opportunity", "opportunities", opportunityFields)}
+            >
+              <DataTable
+                embedded
+                columns={[
+                  { key: "name", header: "Opportunity" },
+                  {
+                    key: "stage",
+                    header: "Stage",
+                    render: (row) => <StatusBadge status={row.stage} />,
+                  },
+                  {
+                    key: "capacity_status",
+                    header: "Can we service it?",
+                    render: (row) => <StatusBadge status={row.capacity_status} />,
+                  },
+                  {
+                    key: "estimated_revenue",
+                    header: "Estimated revenue",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
+                  {
+                    key: "expected_close_date",
+                    header: "Expected close",
+                    render: (row) => formatDate(row.expected_close_date),
+                  },
+                ]}
+                recordTable="opportunities"
+                rows={data?.opportunities ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="No opportunities recorded"
+              />
+            </Panel>
+            <Panel title="Bids">
+              <DataTable
+                embedded
+                columns={[
+                  { key: "bid_name", header: "Bid" },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
+                  { key: "due_date", header: "Due", render: (row) => formatDate(row.due_date) },
+                  {
+                    key: "estimated_revenue",
+                    header: "Estimated revenue",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
+                ]}
+                recordTable="bids"
+                rows={data?.bids ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="No bids recorded"
+                emptyDescription="Bids are created in the Bid Center."
+                emptyAction={
+                  <Link to="/bids" className="text-sm font-medium text-primary hover:underline">
+                    Go to Bid Center
+                  </Link>
+                }
+              />
+            </Panel>
+
+            <Panel
+              title="Contracts"
+              actions={addButton("Add contract", "contracts", contractFields)}
+            >
+              <DataTable
+                embedded
+                columns={[
+                  { key: "contract_name", header: "Contract" },
+                  { key: "contract_number", header: "Number" },
+                  {
+                    key: "status",
+                    header: "Status",
+                    render: (row) => <StatusBadge status={row.status} />,
+                  },
+                  {
+                    key: "effective_date",
+                    header: "Effective",
+                    render: (row) => formatDate(row.effective_date),
+                  },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
+                ]}
+                recordTable="contracts"
+                rows={data?.contracts ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="No contracts recorded"
+              />
+            </Panel>
+            <Panel
+              title="Documents"
+              actions={addButton("Add document", "documents", documentFields)}
+            >
+              <DataTable
+                embedded
+                columns={[
+                  { key: "document_name", header: "Document" },
+                  { key: "document_type", header: "Type" },
+                  { key: "classification", header: "Sensitivity" },
+                  {
+                    key: "expiration_date",
+                    header: "Expires",
+                    render: (row) => formatDate(row.expiration_date),
+                  },
+                ]}
+                recordTable="documents"
+                rows={data?.documents ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="No documents recorded"
+                emptyDescription="Record where a document lives so the team can always find it."
+              />
+            </Panel>
+          </TabsContent>
+          <TabsContent value="history" className="mt-4 space-y-6">
+            <Panel
+              title="Business we could not serve"
+              description="Why HEG lost or declined work — the record that drives capacity decisions"
+              actions={addButton("Record lost business", "lost_business", lostBusinessFields)}
+            >
+              <DataTable
+                embedded
+                columns={[
+                  {
+                    key: "occurred_on",
+                    header: "Date",
+                    render: (row) => formatDate(row.occurred_on),
+                  },
+                  { key: "reason_category", header: "Reason" },
+                  {
+                    key: "estimated_revenue",
+                    header: "Revenue lost",
+                    align: "right",
+                    render: (row) => formatMoney(row.estimated_revenue),
+                  },
+                  { key: "competitor", header: "Competitor" },
+                  {
+                    key: "recoverable",
+                    header: "Recoverable",
+                    render: (row) => (row.recoverable ? "Yes" : "No"),
+                  },
+                ]}
+                recordTable="lost_business"
+                rows={data?.lost ?? []}
+                isLoading={related.isLoading}
+                emptyTitle="Nothing recorded"
+                emptyDescription="Recording declined work is how HEG proves where capacity is costing revenue."
+              />
+            </Panel>
+
+            <Panel
+              title="Refused Loads"
+              description="Individual requests HEG could not accept. Separate from broader commercial losses."
+            >
+              <DataTable
+                embedded
+                recordTable="refused_loads"
+                rows={data?.refused ?? []}
+                isLoading={related.isLoading}
+                error={related.error}
+                columns={[
+                  {
+                    key: "call_in_date",
+                    header: "Call in date",
+                    render: (row) => formatDate(row.call_in_date),
+                  },
+                  { key: "equipment_type", header: "Equipment needed" },
+                  { key: "load_count", header: "Loads" },
+                  { key: "loss_reason", header: "Reason" },
+                  {
+                    key: "estimated_lost_revenue",
+                    header: "Lost revenue",
+                    render: (row) => formatMoney(row.estimated_lost_revenue),
+                  },
+                ]}
+                emptyTitle="No refused loads recorded"
+              />
+            </Panel>
+          </TabsContent>
+        </Tabs>
+        <section aria-label="Notes" className="pt-4">
+          {
+            <RecordForm
+              readOnly={!canWrite}
+              presentation="record"
+              open
+              onOpenChange={() => undefined}
+              title="Notes"
+              table="customers"
+              recordId={customerId}
+              initialValues={customer}
+              fields={customerFields.filter((field) =>
+                ["qualification_notes", "commercial_notes", "risk_notes"].includes(field.name),
+              )}
+              invalidateKeys={[["customer", customerId], ["customers"]]}
+            />
+          }
+        </section>
+      </RecordLayout>
 
       {editingRate && (
         <RecordForm

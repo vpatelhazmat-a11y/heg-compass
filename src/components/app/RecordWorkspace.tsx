@@ -29,8 +29,7 @@ import { DataTable, type Column } from "./DataTable";
 import { SavedViews } from "./SavedViews";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { RecordLink, RecordRelations } from "./RecordLink";
-import { RelatedRecords } from "./RelatedRecords";
-import { RecordChatter } from "./RecordChatter";
+import { RecordLayout } from "./RecordLayout";
 import { DocumentFile } from "./DocumentFile";
 import { RichTextView } from "./RichText";
 import { DocumentFolderTree } from "./DocumentFolderTree";
@@ -674,124 +673,123 @@ export function RecordDetailPage({
           { label: recordLabel(table, row) },
         ]}
       />
-      <RecordRelations row={row} returnTo={recordHref(table, id, returnTo)} />
-      <div className="record-workspace-layout">
-        <RecordChatter table={table} id={id} />
-        <div className="record-workspace-main space-y-6 px-3 pb-6 sm:px-6">
-          {editing && table === "refused_loads" ? (
-            <RefusedLoadForm
-              recordId={id}
-              expectedUpdatedAt={row.updated_at}
-              initial={toFormState(row)}
-              onCancel={() => setEditing(false)}
-              onSaved={() => {
-                setEditing(false);
-                void record.refetch();
-              }}
+      <RecordLayout
+        table={table}
+        id={id}
+        links={<RecordRelations row={row} returnTo={recordHref(table, id, returnTo)} />}
+      >
+        {editing && table === "refused_loads" ? (
+          <RefusedLoadForm
+            recordId={id}
+            expectedUpdatedAt={row.updated_at}
+            initial={toFormState(row)}
+            onCancel={() => setEditing(false)}
+            onSaved={() => {
+              setEditing(false);
+              void record.refetch();
+            }}
+          />
+        ) : canEdit(table) && table !== "refused_loads" ? (
+          <RecordEditor table={table} row={row} />
+        ) : editing ? (
+          <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
+        ) : (
+          <article className="record-sheet" aria-label="Record details">
+            {[...grouped]
+              .sort(([a], [b]) => Number(a === "Notes") - Number(b === "Notes"))
+              .map(([section, fields]) => (
+                <section
+                  className={`record-section ${section === "Notes" || section === "Record information" ? "record-section-wide" : ""}`}
+                  key={section}
+                >
+                  <h2>{section}</h2>
+                  <dl className="grid gap-x-12">
+                    {fields.map(([key, value]) => (
+                      <div key={key} className="record-field">
+                        <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
+                        <dd>
+                          {table === "refused_loads" &&
+                          canEdit(table) &&
+                          refusedEditableKeys.has(key) ? (
+                            <button
+                              type="button"
+                              className="record-edit-value"
+                              onClick={() => setEditing(true)}
+                              aria-label={`Edit ${labels.get(key) ?? fieldLabel(key)}`}
+                            >
+                              {displayValue(key, value)}
+                            </button>
+                          ) : (
+                            displayValue(key, value)
+                          )}
+                        </dd>
+                      </div>
+                    ))}
+                  </dl>
+                </section>
+              ))}
+          </article>
+        )}
+        {table === "rates" && (
+          <section aria-label="Rate history">
+            <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
+            <DataTable
+              embedded
+              rows={history.data ?? []}
+              isLoading={history.isLoading}
+              error={history.error}
+              columns={[
+                { key: "created_at", header: "Changed" },
+                { key: "previous_amount", header: "Previous amount" },
+                { key: "new_amount", header: "New amount" },
+                { key: "effective_date", header: "Effective" },
+                { key: "reason", header: "Reason" },
+              ]}
+              emptyTitle="No revisions recorded"
             />
-          ) : canEdit(table) && table !== "refused_loads" ? (
-            <RecordEditor table={table} row={row} />
-          ) : editing ? (
-            <RecordEditor table={table} row={row} onClose={() => setEditing(false)} />
-          ) : (
-            <article className="record-sheet" aria-label="Record details">
-              {[...grouped]
-                .sort(([a], [b]) => Number(a === "Notes") - Number(b === "Notes"))
-                .map(([section, fields]) => (
-                  <section
-                    className={`record-section ${section === "Notes" || section === "Record information" ? "record-section-wide" : ""}`}
-                    key={section}
-                  >
-                    <h2>{section}</h2>
-                    <dl className="grid gap-x-12">
-                      {fields.map(([key, value]) => (
-                        <div key={key} className="record-field">
-                          <dt>{labels.get(key) ?? fieldLabel(key)}</dt>
-                          <dd>
-                            {table === "refused_loads" &&
-                            canEdit(table) &&
-                            refusedEditableKeys.has(key) ? (
-                              <button
-                                type="button"
-                                className="record-edit-value"
-                                onClick={() => setEditing(true)}
-                                aria-label={`Edit ${labels.get(key) ?? fieldLabel(key)}`}
-                              >
-                                {displayValue(key, value)}
-                              </button>
-                            ) : (
-                              displayValue(key, value)
-                            )}
-                          </dd>
-                        </div>
-                      ))}
-                    </dl>
-                  </section>
-                ))}
-            </article>
-          )}
-          {table === "rates" && (
-            <section aria-label="Rate history">
-              <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
-              <DataTable
-                embedded
-                rows={history.data ?? []}
-                isLoading={history.isLoading}
-                error={history.error}
-                columns={[
-                  { key: "created_at", header: "Changed" },
-                  { key: "previous_amount", header: "Previous amount" },
-                  { key: "new_amount", header: "New amount" },
-                  { key: "effective_date", header: "Effective" },
-                  { key: "reason", header: "Reason" },
-                ]}
-                emptyTitle="No revisions recorded"
-              />
-            </section>
-          )}
-          {table === "equipment_leases" && (
-            <section aria-label="Equipment rate history">
-              <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
-              <DataTable
-                rows={history.data ?? []}
-                isLoading={history.isLoading}
-                error={history.error}
-                columns={[
-                  {
-                    key: "changed_at",
-                    header: "Changed",
-                    render: (entry) => formatDate(entry.changed_at),
-                  },
-                  { key: "event_type", header: "Event" },
-                  {
-                    key: "previous_rate",
-                    header: "Previous",
-                    value: (entry) => entry.previous_record?.rate,
-                    render: (entry) =>
-                      formatMoney(
-                        entry.previous_record?.rate,
-                        entry.previous_record?.currency_code,
-                        2,
-                      ),
-                  },
-                  {
-                    key: "rate",
-                    header: "New amount",
-                    value: (entry) => entry.new_record?.rate,
-                    render: (entry) =>
-                      formatMoney(entry.new_record?.rate, entry.new_record?.currency_code, 2),
-                  },
-                  { key: "unit", header: "Unit", value: (entry) => entry.new_record?.rate_unit },
-                  { key: "reason", header: "Reason" },
-                ]}
-                emptyTitle="No rate history"
-              />
-            </section>
-          )}
-          {table === "documents" && <DocumentFile document={row} />}
-          <RelatedRecords table={table} id={id} />
-        </div>
-      </div>
+          </section>
+        )}
+        {table === "equipment_leases" && (
+          <section aria-label="Equipment rate history">
+            <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
+            <DataTable
+              rows={history.data ?? []}
+              isLoading={history.isLoading}
+              error={history.error}
+              columns={[
+                {
+                  key: "changed_at",
+                  header: "Changed",
+                  render: (entry) => formatDate(entry.changed_at),
+                },
+                { key: "event_type", header: "Event" },
+                {
+                  key: "previous_rate",
+                  header: "Previous",
+                  value: (entry) => entry.previous_record?.rate,
+                  render: (entry) =>
+                    formatMoney(
+                      entry.previous_record?.rate,
+                      entry.previous_record?.currency_code,
+                      2,
+                    ),
+                },
+                {
+                  key: "rate",
+                  header: "New amount",
+                  value: (entry) => entry.new_record?.rate,
+                  render: (entry) =>
+                    formatMoney(entry.new_record?.rate, entry.new_record?.currency_code, 2),
+                },
+                { key: "unit", header: "Unit", value: (entry) => entry.new_record?.rate_unit },
+                { key: "reason", header: "Reason" },
+              ]}
+              emptyTitle="No rate history"
+            />
+          </section>
+        )}
+        {table === "documents" && <DocumentFile document={row} />}
+      </RecordLayout>
     </>
   );
 }

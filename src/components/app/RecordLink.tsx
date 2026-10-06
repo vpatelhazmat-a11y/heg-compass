@@ -59,10 +59,7 @@ export function RecordRelations({ row, returnTo }: { row: Row; returnTo?: string
   const polyTable = type && Object.hasOwn(ENTITY_TABLES, type) ? ENTITY_TABLES[type] : undefined;
   if (!links.length && !(polyTable && id)) return null;
   return (
-    <section
-      aria-label="Linked records"
-      className="flex flex-wrap gap-x-8 gap-y-3 border-b border-border bg-surface px-6 py-4"
-    >
+    <section aria-label="Linked records" className="record-linked-fields">
       {links.map(([key, table]) => (
         <div key={key}>
           <p className="field-label">{fieldLabel(key)}</p>

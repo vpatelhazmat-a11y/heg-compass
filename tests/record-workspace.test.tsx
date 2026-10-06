@@ -7,6 +7,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecordDetailPage, RecordListPage } from "../src/components/app/RecordWorkspace";
 import { DataTable } from "../src/components/app/DataTable";
 import { RecordForm } from "../src/components/app/RecordForm";
+import { RecordLayout } from "../src/components/app/RecordLayout";
 import { SmartButtons } from "../src/components/app/SmartButtons";
 import { AppLauncher } from "../src/components/app/AppLauncher";
 
@@ -560,4 +561,24 @@ test("record money values show currency and cents before direct editing", () => 
     />,
   );
   expect(screen.getByRole("button", { name: /^Edit Amount:/ }).textContent).toBe("CA$1,620.25");
+});
+
+test("secondary relationships stay with the record and load counts only on demand", async () => {
+  mount(
+    <RecordLayout table="customers" id={customer} master>
+      <section aria-label="Record information">Customer fields</section>
+      <section aria-label="Record notes">Customer notes</section>
+    </RecordLayout>,
+  );
+  const information = screen.getByRole("region", { name: "Record information" });
+  const main = information.parentElement!;
+  const disclosure = screen.getByText("Related records").closest("details")!;
+  expect(main.contains(disclosure)).toBe(true);
+  expect(main.contains(screen.getByRole("region", { name: "Chatter" }))).toBe(false);
+  expect(mocks.countRows).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByText("Related records"));
+  await waitFor(() =>
+    expect(mocks.countRows).toHaveBeenCalledWith("contacts", { customer_id: customer }),
+  );
+  await screen.findByRole("link", { name: "Contacts, 3 records" });
 });
