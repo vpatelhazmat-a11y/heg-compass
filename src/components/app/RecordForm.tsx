@@ -79,7 +79,7 @@ export function RecordForm({
   presentation = "sheet",
   readOnly = false,
 }: {
-  presentation?: "sheet" | "inline" | "record";
+  presentation?: "sheet" | "inline" | "record" | "create";
   readOnly?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -197,9 +197,10 @@ export function RecordForm({
     mutation.mutate();
   };
 
+  const recordStyle = presentation === "record" || presentation === "create";
   const contents = (
     <>
-      {presentation !== "record" && (
+      {!recordStyle && (
         <SheetHeader className="border-b border-border px-6 py-4">
           {presentation === "inline" ? (
             <h2 className="text-lg font-semibold">{title}</h2>
@@ -226,7 +227,7 @@ export function RecordForm({
                 <h3 className="section-title">{sectionName}</h3>
                 <div
                   className={
-                    presentation === "record"
+                    recordStyle
                       ? "grid grid-cols-1 gap-x-6 gap-y-1"
                       : presentation !== "sheet"
                         ? "grid grid-cols-1 gap-4"
@@ -263,7 +264,7 @@ export function RecordForm({
                         key={field.name}
                         className={
                           [
-                            presentation === "record"
+                            recordStyle
                               ? `record-data-field ${field.type === "richtext" || field.type === "textarea" ? "record-data-field-long" : ""}`
                               : "",
                             presentation === "sheet" && (field.full || field.type === "textarea")
@@ -502,7 +503,7 @@ export function RecordForm({
   if (presentation !== "sheet")
     return open ? (
       <section
-        className={`record-editor inline-record-editor ${presentation === "record" ? "always-editable-record" : ""}`}
+        className={`record-editor inline-record-editor ${recordStyle ? "always-editable-record" : ""}`}
         aria-label={title}
       >
         {contents}

@@ -34,6 +34,8 @@ import { RecordLayout } from "./RecordLayout";
 import { DocumentFile } from "./DocumentFile";
 import { RichTextView } from "./RichText";
 import { DocumentFolderTree } from "./DocumentFolderTree";
+import { RecordCreator } from "./RecordCreator";
+import { supportsRecordCreation } from "@/lib/record-creation";
 import { ArchiveVisibility, RecordArchiveActions } from "./RecordArchiveActions";
 import { SmartButtons } from "./SmartButtons";
 import { RecordForm, type FieldConfig } from "./RecordForm";
@@ -109,6 +111,7 @@ export function RecordListPage({
     definition?.fields.find((field) => field.name === name)?.label ?? fieldLabel(name);
   const [searchInput, setSearchInput] = useState(state.search ?? "");
   const [creatingDocument, setCreatingDocument] = useState(false);
+  const [creating, setCreating] = useState(false);
   useEffect(() => setSearchInput(state.search ?? ""), [state.search]);
   useEffect(() => {
     if (searchInput === (state.search ?? "") || !onChange) return;
@@ -148,6 +151,31 @@ export function RecordListPage({
         <EmptyState title="Record type not found" />
       </div>
     );
+  if (creating && canEdit(table))
+    return (
+      <>
+        <PageHeader
+          title={`New ${definition.singular.toLowerCase()}`}
+          breadcrumbs={[
+            { label: "Apps", to: "/command-center" },
+            { label: definition.label, to: returnTo ?? recordListHref(table) },
+            { label: "New" },
+          ]}
+        />
+        <div className="record-workspace-main">
+          <RecordCreator
+            table={table}
+            parent={parent}
+            parentId={parentId}
+            onClose={() => setCreating(false)}
+            onSaved={(saved) => {
+              setCreating(false);
+              void navigate({ to: recordHref(table, saved.id, returnTo) });
+            }}
+          />
+        </div>
+      </>
+    );
   return (
     <>
       <PageHeader
@@ -157,6 +185,10 @@ export function RecordListPage({
           (table === "documents" && canEdit("documents") ? (
             <Button onClick={() => setCreatingDocument(true)}>
               <Plus className="h-4 w-4" /> New document
+            </Button>
+          ) : supportsRecordCreation(table) && canEdit(table) ? (
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" /> New {definition.singular.toLowerCase()}
             </Button>
           ) : undefined)
         }
