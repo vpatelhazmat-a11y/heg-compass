@@ -162,17 +162,19 @@ export function RecordListPage({
             { label: "New" },
           ]}
         />
-        <div className="record-workspace-main">
-          <RecordCreator
-            table={table}
-            parent={parent}
-            parentId={parentId}
-            onClose={() => setCreating(false)}
-            onSaved={(saved) => {
-              setCreating(false);
-              void navigate({ to: recordHref(table, saved.id, returnTo) });
-            }}
-          />
+        <div className="record-workspace-layout">
+          <div className="record-workspace-main">
+            <RecordCreator
+              table={table}
+              parent={parent}
+              parentId={parentId}
+              onClose={() => setCreating(false)}
+              onSaved={(saved) => {
+                setCreating(false);
+                void navigate({ to: recordHref(table, saved.id, returnTo) });
+              }}
+            />
+          </div>
         </div>
       </>
     );
