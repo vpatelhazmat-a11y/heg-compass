@@ -15,6 +15,13 @@ This is the remaining delivery plan, reconciled against the original ten-phase r
 - Saved views now use the shared accessible popover and retain the visible saved list when storage writes fail. Views remain personal and device-local.
 - These changes do not complete all-record attachment support, shared views, notifications, imports, or the broader original plan. No database migration is included.
 
+## Current pass — creation from record lists
+
+- Full-workspace creation is implemented for 20 registered record types, with parent links, customer-dependent relation choices, recoverable choice loading, and permission checks. Refused Loads, Documents, and Requirements retain their dedicated creation paths.
+- Inherited visible links are initial values, so clearing or changing a relationship does not silently restore the previous parent during saving. Failed saves preserve the draft.
+- Local verification includes minimum-valid inserts for all 20 forms against the complete migrated schema in a rolled-back trial. Live business records are not created for acceptance.
+- All-record chatter, rich-note assets, guided imports, reporting, notifications, and settings remain open below.
+
 ## Remaining original-plan work
 
 | Area                           | Remaining work and acceptance gate                                                                                                                                                                                                                                                                                                         |

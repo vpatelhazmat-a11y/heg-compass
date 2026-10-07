@@ -3,6 +3,9 @@ import type { AppRole } from "../src/hooks/use-session";
 import { beforeAll, afterAll, test, expect } from "vitest";
 import { createDatabase } from "./database.mjs";
 import * as forms from "../src/lib/entities";
+import { RECORDS, RELATION_TARGETS } from "../src/lib/record-registry";
+import { supportsRecordCreation, requiredRecordRelation } from "../src/lib/record-creation";
+import { formPayload } from "../src/lib/form-values";
 
 let db: Awaited<ReturnType<typeof createDatabase>>;
 const users = Object.fromEntries(
@@ -803,4 +806,63 @@ test("document-folder visibility matches parent-table database read permissions"
     await db.exec("rollback");
   }
   expect(canViewTable([], "customers")).toBe(false);
+});
+test("every supported new-record form can create its minimum valid record in the migrated database", async () => {
+  await db.exec("begin");
+  try {
+    const parent = (
+      await asRole(
+        "admin",
+        "insert into customers(legal_name) values('Creation trial') returning id",
+      )
+    ).rows[0].id;
+    const location = (
+      await asRole(
+        "admin",
+        "insert into sites(customer_id,site_name) values($1,'Creation trial') returning id",
+        [parent],
+      )
+    ).rows[0].id;
+    const unit = (
+      await asRole(
+        "admin",
+        "insert into equipment(unit_number) values('Creation trial') returning id",
+      )
+    ).rows[0].id;
+    const ids: Record<string, string> = { customers: parent, sites: location, equipment: unit };
+    for (const [table, definition] of Object.entries(RECORDS)) {
+      if (!supportsRecordCreation(table)) continue;
+      const relationFields = definition.relations.map((name) => ({
+        name,
+        label: name,
+        type: "select" as const,
+        required: requiredRecordRelation(table, name),
+      }));
+      const fields = [...relationFields, ...definition.fields];
+      const values: Record<string, unknown> = {};
+      for (const field of fields)
+        if (field.required) {
+          values[field.name] = RELATION_TARGETS[field.name]
+            ? ids[RELATION_TARGETS[field.name]!]
+            : (field.options?.[0]?.value ??
+              (field.name === "currency_code"
+                ? "USD"
+                : field.type === "date"
+                  ? "2026-10-07"
+                  : ["number", "money"].includes(field.type ?? "")
+                    ? 1
+                    : "Creation trial"));
+        }
+      const payload = formPayload(fields, values, false);
+      const names = Object.keys(payload);
+      const saved = await asRole(
+        "admin",
+        `insert into ${table} (${names.map((name) => '"' + name + '"').join(",")}) values (${names.map((_, i) => "$" + (i + 1)).join(",")}) returning id`,
+        Object.values(payload),
+      );
+      expect(saved.rows, table).toHaveLength(1);
+    }
+  } finally {
+    await db.exec("rollback");
+  }
 });

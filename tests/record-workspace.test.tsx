@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   listRowsPage: vi.fn(),
   countRows: vi.fn(),
   update: vi.fn(),
+  insert: vi.fn(),
   rpc: vi.fn(),
   canEdit: vi.fn(),
   toastError: vi.fn(),
@@ -28,7 +29,7 @@ vi.mock("../src/lib/data", () => ({
   listRowsPage: mocks.listRowsPage,
   countRows: mocks.countRows,
   updateRow: mocks.update,
-  insertRow: vi.fn(),
+  insertRow: mocks.insert,
 }));
 vi.mock("../src/hooks/use-session", () => ({
   useSession: () => ({
@@ -83,6 +84,82 @@ function mount(children: React.ReactNode) {
   clients.push(client);
   return render(<QueryClientProvider client={client}>{children}</QueryClientProvider>);
 }
+test("new contacts inherit their site and customer and return to the saved record", async () => {
+  mocks.getRow.mockResolvedValue({ id, site_name: "North site", customer_id: customer });
+  mocks.listRows.mockImplementation(async (table) =>
+    table === "customers"
+      ? [{ id: customer, legal_name: "Example customer" }]
+      : [{ id, site_name: "North site", customer_id: customer }],
+  );
+  mocks.insert.mockResolvedValue({ id: "33333333-3333-4333-8333-333333333333" });
+  mount(<RecordListPage table="contacts" parent="sites" parentId={id} />);
+  fireEvent.click(screen.getByRole("button", { name: "New contact" }));
+  const first = await screen.findByLabelText(/^First name/);
+  expect(screen.getByLabelText(/^Customer/)).toHaveProperty("value", customer);
+  expect(screen.getByLabelText("Site")).toHaveProperty("value", id);
+  fireEvent.change(first, { target: { value: "Avery" } });
+  fireEvent.change(screen.getByLabelText(/^Last name/), { target: { value: "Example" } });
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  await waitFor(() =>
+    expect(mocks.insert).toHaveBeenCalledWith(
+      "contacts",
+      expect.objectContaining({
+        customer_id: customer,
+        site_id: id,
+        first_name: "Avery",
+        last_name: "Example",
+      }),
+    ),
+  );
+  await waitFor(() =>
+    expect(mocks.navigate).toHaveBeenCalledWith(
+      expect.objectContaining({ to: expect.stringContaining("/records/contacts/33333333") }),
+    ),
+  );
+});
+test("creation waits for recoverable relation choices and obeys edit permissions", async () => {
+  mocks.listRows.mockRejectedValueOnce(new Error("offline"));
+  mount(<RecordListPage table="equipment_compliance" />);
+  fireEvent.click(screen.getByRole("button", { name: "New compliance record" }));
+  await screen.findByText("Linked records could not load. Your record has not been created.");
+  expect(screen.queryByRole("button", { name: "Create" })).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await screen.findByLabelText(/^Equipment/);
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await screen.findByRole("button", { name: "New compliance record" });
+  cleanup();
+  mocks.canEdit.mockReturnValue(false);
+  mount(<RecordListPage table="contacts" />);
+  expect(screen.queryByRole("button", { name: "New contact" })).toBeNull();
+});
+test("changing a new contact customer clears the inherited site and failed saves retain the draft", async () => {
+  const other = "44444444-4444-4444-8444-444444444444";
+  mocks.getRow.mockResolvedValue({ id, site_name: "North site", customer_id: customer });
+  mocks.listRows.mockImplementation(async (table) =>
+    table === "customers"
+      ? [
+          { id: customer, legal_name: "Example customer" },
+          { id: other, legal_name: "Other customer" },
+        ]
+      : [{ id, site_name: "North site", customer_id: customer }],
+  );
+  mocks.insert.mockRejectedValueOnce(new Error("The record could not be saved."));
+  mount(<RecordListPage table="contacts" parent="sites" parentId={id} />);
+  fireEvent.click(screen.getByRole("button", { name: "New contact" }));
+  fireEvent.change(await screen.findByLabelText(/^First name/), { target: { value: "Avery" } });
+  fireEvent.change(screen.getByLabelText(/^Last name/), { target: { value: "Example" } });
+  fireEvent.change(screen.getByLabelText(/^Customer/), { target: { value: other } });
+  expect(screen.getByLabelText("Site")).toHaveProperty("value", "");
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  await screen.findByRole("alert");
+  expect(mocks.insert.mock.calls[0]?.[1]).not.toHaveProperty("site_id");
+  expect(mocks.insert.mock.calls[0]?.[1]).toHaveProperty("customer_id", other);
+  expect(screen.getByLabelText(/^First name/)).toHaveProperty("value", "Avery");
+  expect(mocks.navigate).not.toHaveBeenCalled();
+  mocks.insert.mockResolvedValue({ id });
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  await waitFor(() => expect(mocks.navigate).toHaveBeenCalled());
+});
 test("module search options retain URL filters and expose removable conditions", async () => {
   const change = vi.fn();
   mount(
