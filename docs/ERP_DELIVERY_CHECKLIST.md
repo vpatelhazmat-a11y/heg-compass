@@ -22,6 +22,13 @@ This is the remaining delivery plan, reconciled against the original ten-phase r
 - Local verification includes minimum-valid inserts for all 20 forms against the complete migrated schema in a rolled-back trial. Live business records are not created for acceptance.
 - All-record chatter, rich-note assets, guided imports, reporting, notifications, and settings remain open below.
 
+## Prepared pass — expanded record threads
+
+- Messages, notes, and readable field-change tracking are prepared for 24 record kinds (all registered generic types plus Drivers), with generated parent foreign keys and record-specific read/write checks. Document classification and linked-parent restrictions are enforced; archived records are read only.
+- Existing activity links remain limited to the original nine kinds. The new thread controls wait for the database capability before appearing; this does not complete mentions, followers, notifications, or all-record activities.
+- 148 tests passed in the full suite; a further migration-preservation trial passed against a seeded local database. Type/schema/relation checks, lint (zero errors; 12 existing warnings), build, and diff checks passed.
+- Live read-only preflight found one message, nine existing tracking triggers, and no unexpected kinds. Automatic approval review rejected a rolled-back production migration trial because this broader security migration needs specific authorization. No live schema change has been made. Approval must cover a rollback trial and, after it passes, the persistent migration.
+
 ## Remaining original-plan work
 
 | Area                           | Remaining work and acceptance gate                                                                                                                                                                                                                                                                                                         |

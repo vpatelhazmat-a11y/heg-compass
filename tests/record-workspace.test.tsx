@@ -38,7 +38,14 @@ vi.mock("../src/hooks/use-session", () => ({
     session: { userId: "test-user" },
   }),
 }));
-vi.mock("../src/integrations/supabase/client", () => ({ supabase: { rpc: mocks.rpc } }));
+vi.mock("../src/integrations/supabase/client", () => ({
+  supabase: {
+    rpc: (name: string, args: unknown) =>
+      name === "record_thread_access"
+        ? Promise.resolve({ data: null, error: { message: "Migration not installed" } })
+        : mocks.rpc(name, args),
+  },
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: mocks.toastError } }));
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => mocks.navigate,

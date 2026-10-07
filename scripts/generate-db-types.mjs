@@ -70,6 +70,9 @@ ${tables
   .join("\n")}
   };
   Functions: {
+    record_thread_access: { Args: {_kind:string;_id:string}; Returns:Json };
+    record_chatter_kinds: { Args: Record<PropertyKey,never>; Returns:string[] };
+    can_access_chatter_record: { Args: {_kind:string;_id:string;_write:boolean}; Returns:boolean };
     has_role: { Args: {_user_id:string;_role:AppRole}; Returns:boolean };
     has_any_role: { Args: {_user_id:string;_roles:AppRole[]}; Returns:boolean };
     can_access_table: { Args: {_table:string;_write?:boolean}; Returns:boolean };

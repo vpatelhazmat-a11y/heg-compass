@@ -9,12 +9,36 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 
 import { SHARED_RECORD_KINDS } from "@/lib/record-registry";
+import { CHATTER_RECORD_KINDS } from "@/lib/chatter-kinds";
+import { supabase } from "@/integrations/supabase/client";
 import { todayISO } from "@/lib/format";
 
 export function RecordChatter({ table, id }: { table: string; id: string }) {
-  const kind = Object.hasOwn(SHARED_RECORD_KINDS, table) ? SHARED_RECORD_KINDS[table] : undefined;
+  const activityKind = Object.hasOwn(SHARED_RECORD_KINDS, table)
+    ? SHARED_RECORD_KINDS[table]
+    : undefined;
+  const candidateKind = Object.hasOwn(CHATTER_RECORD_KINDS, table)
+    ? CHATTER_RECORD_KINDS[table]
+    : undefined;
   const composerId = useId();
   const { session, canEdit } = useSession();
+  const access = useQuery({
+    queryKey: ["record-thread-access", table, id, session?.userId],
+    enabled: Boolean(candidateKind),
+    retry: false,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("record_thread_access", {
+        _kind: candidateKind!,
+        _id: id,
+      });
+      if (error) throw new Error(error.message);
+      const result = data as { readable: boolean; writable: boolean };
+      return result;
+    },
+  });
+  // Existing thread kinds still work while the reviewed migration is pending.
+  const kind = access.data ? (access.data.readable ? candidateKind : undefined) : activityKind;
+  const writable = canEdit(table) && (access.data?.writable ?? Boolean(activityKind));
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"message" | "note" | "activity" | null>(null);
   const [body, setBody] = useState("");
@@ -33,7 +57,9 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
       const filters = { linked_entity_type: kind, linked_entity_id: id };
       const [messages, activities] = await Promise.all([
         listRows("mail_messages", { filters, order: { column: "created_at", ascending: false } }),
-        listRows("tasks", { filters, order: { column: "created_at", ascending: false } }),
+        activityKind
+          ? listRows("tasks", { filters, order: { column: "created_at", ascending: false } })
+          : Promise.resolve([]),
       ]);
       return [
         ...messages.map((row) => ({ ...row, entry: "message" })),
@@ -52,11 +78,11 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
   });
   const save = useMutation({
     mutationFn: async () => {
-      if (!kind || !canEdit(table)) throw new Error("You cannot add activity to this record.");
+      if (!kind || !writable) throw new Error("You cannot add activity to this record.");
       const value = body.trim();
       if (!value) throw new Error("Enter a message or activity title.");
       if (mode === "activity") {
-        if (!canEdit("tasks")) throw new Error("You cannot create activities.");
+        if (!activityKind || !canEdit("tasks")) throw new Error("You cannot create activities.");
         if (!dueDate) throw new Error("Choose a due date.");
         if (
           !owner ||
@@ -115,7 +141,6 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
   }
 
   if (!kind) return null;
-  const writable = canEdit(table);
   return (
     <section
       aria-label="Chatter"
@@ -147,17 +172,19 @@ export function RecordChatter({ table, id }: { table: string; id: string }) {
             >
               Log note
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              disabled={save.isPending || !canEdit("tasks")}
-              onClick={() => {
-                save.reset();
-                setMode("activity");
-              }}
-            >
-              Activity
-            </Button>
+            {activityKind && (
+              <Button
+                size="sm"
+                variant="ghost"
+                disabled={save.isPending || !canEdit("tasks")}
+                onClick={() => {
+                  save.reset();
+                  setMode("activity");
+                }}
+              >
+                Activity
+              </Button>
+            )}
           </div>
         )}
       </div>

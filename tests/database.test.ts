@@ -6,6 +6,7 @@ import * as forms from "../src/lib/entities";
 import { RECORDS, RELATION_TARGETS } from "../src/lib/record-registry";
 import { supportsRecordCreation, requiredRecordRelation } from "../src/lib/record-creation";
 import { formPayload } from "../src/lib/form-values";
+import { CHATTER_RECORD_KINDS } from "../src/lib/chatter-kinds";
 
 let db: Awaited<ReturnType<typeof createDatabase>>;
 const users = Object.fromEntries(
@@ -864,5 +865,144 @@ test("every supported new-record form can create its minimum valid record in the
     }
   } finally {
     await db.exec("rollback");
+  }
+});
+test("expanded record threads respect document sensitivity and linked parent write restrictions", async () => {
+  await db.exec("begin");
+  try {
+    const doc = (
+      await asRole(
+        "admin",
+        "insert into documents(document_name,classification) values('Restricted thread','Safety') returning id",
+      )
+    ).rows[0].id;
+    await asRole(
+      "admin",
+      "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body) values('document',$1,'note','Restricted note')",
+      [doc],
+    );
+    expect(
+      (await asRole("sales", "select * from mail_messages where linked_document_fk=$1", [doc]))
+        .rows,
+    ).toHaveLength(0);
+    expect(
+      (await asRole("safety", "select * from mail_messages where linked_document_fk=$1", [doc]))
+        .rows,
+    ).toHaveLength(1);
+    await db.exec("savepoint denied_write");
+    await expect(
+      asRole(
+        "sales",
+        "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body) values('document',$1,'note','Forbidden')",
+        [doc],
+      ),
+    ).rejects.toThrow();
+    await db.exec("rollback to savepoint denied_write");
+    const task = (
+      await asRole(
+        "admin",
+        "insert into tasks(title,linked_entity_type,linked_entity_id) values('Commercial task','rate',$1) returning id",
+        [rate],
+      )
+    ).rows[0].id;
+    const access = (
+      await asRole("operations", "select public.record_thread_access('task',$1) as access", [task])
+    ).rows[0].access;
+    expect(access).toEqual({ readable: true, writable: false });
+    await expect(
+      asRole(
+        "operations",
+        "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body) values('task',$1,'note','Forbidden')",
+        [task],
+      ),
+    ).rejects.toThrow();
+    await db.exec("rollback to savepoint denied_write");
+    expect(
+      (
+        await asRole(
+          "admin",
+          "select public.can_access_chatter_record('unknown',$1,false) as allowed",
+          [task],
+        )
+      ).rows[0].allowed,
+    ).toBe(false);
+    expect(
+      (
+        await asRole(
+          "admin",
+          "select public.can_access_chatter_record('contact','ffffffff-ffff-4fff-8fff-ffffffffffff',true) as allowed",
+        )
+      ).rows[0].allowed,
+    ).toBe(false);
+  } finally {
+    await db.exec("rollback");
+  }
+});
+test("every registered thread has an enforced parent FK and new contact edits are tracked", async () => {
+  const kinds = (await asRole("admin", "select public.record_chatter_kinds() as kinds")).rows[0]
+    .kinds;
+  expect(kinds.sort()).toEqual(Object.values(CHATTER_RECORD_KINDS).sort());
+  const columns = (
+    await db.query(
+      "select column_name from information_schema.columns where table_name='mail_messages'",
+    )
+  ).rows.map((row) => row.column_name);
+  for (const kind of kinds) expect(columns).toContain("linked_" + kind + "_fk");
+  await db.exec("begin");
+  try {
+    await asRole("sales", "update contacts set title='Thread trial' where id=$1", [contact]);
+    const changes = (
+      await asRole(
+        "sales",
+        "select * from mail_messages where linked_contact_fk=$1 and kind='change' and field_name='title'",
+        [contact],
+      )
+    ).rows;
+    expect(changes).toHaveLength(1);
+    await expect(
+      asRole(
+        "sales",
+        "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body,field_name) values('contact',$1,'change','Forged','title')",
+        [contact],
+      ),
+    ).rejects.toThrow();
+  } finally {
+    await db.exec("rollback");
+  }
+});
+test("thread coverage migration preserves pre-existing messages and their authors", async () => {
+  const legacyUser = "00000000-0000-0000-0000-000000000888";
+  let legacyId: string | undefined;
+  const trial = await createDatabase({
+    beforeMigration: async (database, name) => {
+      if (name !== "20261007160000_record_thread_coverage.sql") return;
+      await database.query("insert into auth.users(id,email) values($1,'legacy@example.test')", [
+        legacyUser,
+      ]);
+      await database.query("select set_config('request.jwt.claim.sub',$1,false)", [legacyUser]);
+      const parent = (
+        await database.query(
+          "insert into customers(legal_name) values('Legacy thread') returning id",
+        )
+      ).rows[0].id;
+      legacyId = (
+        await database.query(
+          "insert into mail_messages(linked_entity_type,linked_entity_id,kind,body) values('customer',$1,'note','Preserve this note') returning id",
+          [parent],
+        )
+      ).rows[0].id;
+    },
+  });
+  try {
+    const message = (
+      await trial.query("select body,author_id,linked_customer_fk from mail_messages where id=$1", [
+        legacyId,
+      ])
+    ).rows[0];
+    expect(message.body).toBe("Preserve this note");
+    expect(message.author_id).toBe(legacyUser);
+    expect(message.linked_customer_fk).toBeTruthy();
+  } finally {
+    await trial.close();
   }
 });

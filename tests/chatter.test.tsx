@@ -9,7 +9,9 @@ const mocks = vi.hoisted(() => ({
   protect: vi.fn(),
   clear: vi.fn(),
   canEdit: vi.fn(() => true),
+  access: vi.fn(async () => ({ data: null, error: { message: "Migration not installed" } })),
 }));
+vi.mock("../src/integrations/supabase/client", () => ({ supabase: { rpc: mocks.access } }));
 vi.mock("../src/lib/data", () => ({
   listRows: mocks.list,
   insertRow: mocks.insert,
@@ -26,7 +28,7 @@ vi.mock("../src/hooks/use-draft-protection", () => ({
 }));
 vi.mock("sonner", () => ({ toast: { error: vi.fn() } }));
 import { RecordChatter } from "../src/components/app/RecordChatter";
-function mount() {
+function mount(table = "customers") {
   render(
     <QueryClientProvider
       client={
@@ -35,7 +37,7 @@ function mount() {
         })
       }
     >
-      <RecordChatter table="customers" id="record" />
+      <RecordChatter table={table} id="record" />
     </QueryClientProvider>,
   );
 }
@@ -44,6 +46,47 @@ afterEach(() => {
   vi.clearAllMocks();
   mocks.canEdit.mockImplementation(() => true);
   mocks.list.mockImplementation(async () => []);
+  mocks.access.mockImplementation(async () => ({
+    data: null,
+    error: { message: "Migration not installed" },
+  }));
+});
+test("new record threads stay hidden until the database confirms access", async () => {
+  mount("contacts");
+  await waitFor(() => expect(mocks.access).toHaveBeenCalled());
+  expect(screen.queryByRole("region", { name: "Chatter" })).toBeNull();
+  expect(mocks.list).not.toHaveBeenCalled();
+});
+test("contacts support messages without advertising unsupported linked activities", async () => {
+  mocks.access.mockResolvedValue({
+    data: { readable: true, writable: true },
+    error: null,
+  } as never);
+  mocks.insert.mockResolvedValue({ id: "message" });
+  mount("contacts");
+  await screen.findByRole("button", { name: "Log note" });
+  expect(screen.queryByRole("button", { name: "Activity" })).toBeNull();
+  expect(mocks.list.mock.calls.map((call) => call[0])).not.toContain("tasks");
+  fireEvent.click(screen.getByRole("button", { name: "Log note" }));
+  fireEvent.change(screen.getByLabelText("Internal note"), {
+    target: { value: "Contact discussion" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  await waitFor(() =>
+    expect(mocks.insert).toHaveBeenCalledWith(
+      "mail_messages",
+      expect.objectContaining({ linked_entity_type: "contact", body: "Contact discussion" }),
+    ),
+  );
+});
+test("record-specific write restrictions keep a visible thread read only", async () => {
+  mocks.access.mockResolvedValue({
+    data: { readable: true, writable: false },
+    error: null,
+  } as never);
+  mount("documents");
+  await screen.findByRole("region", { name: "Chatter" });
+  expect(screen.queryByRole("button", { name: "Log note" })).toBeNull();
 });
 test("failed chatter saves preserve and protect the draft with inline feedback", async () => {
   mocks.insert.mockRejectedValue(new Error("Connection failed"));
