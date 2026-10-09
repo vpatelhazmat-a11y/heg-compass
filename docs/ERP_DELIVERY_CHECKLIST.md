@@ -54,3 +54,10 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - People, Invitations and Change log occupy separate URL-addressable tabs. Invitation drafts survive tab changes and failed sends; navigation draft protection remains active.
 - Administration tables load only for the selected section and provide recoverable retry controls. The global settings link leads administrators to Users and access and other users to Personal settings.
 - This pass does not complete granular role editing, lookup administration, notification preferences or system health.
+
+## Report workspace refinement
+
+- Configurable Analysis preserves Summary on a separate tab. Registered sources are filtered by role; grouping, search, exact group filters, record counts, revenue totals/averages, table/bar views and CSV/XLSX export operate on the same accessible records.
+- Configurations live in the URL and personal views can be saved on this device. Missing revenue does not become zero in averages; blank grouping values retain a distinct key.
+- Every supported projection was checked against the complete migrated database. Shared views, pivot/multiple grouping, dates, equipment rate-history measures and server-side aggregation for large datasets remain open.
+- PR #47 passed 153 tests and hosted CI and was merged and published; the production People and Invitations sections were verified. Browser interaction is intermittent, so broader settings and creation-layout acceptance remains pending.

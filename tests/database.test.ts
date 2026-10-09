@@ -7,6 +7,7 @@ import { RECORDS, RELATION_TARGETS } from "../src/lib/record-registry";
 import { supportsRecordCreation, requiredRecordRelation } from "../src/lib/record-creation";
 import { formPayload } from "../src/lib/form-values";
 import { CHATTER_RECORD_KINDS } from "../src/lib/chatter-kinds";
+import { reportColumns, reportGroups, reportMeasures, validReport } from "../src/lib/reporting";
 
 let db: Awaited<ReturnType<typeof createDatabase>>;
 const users = Object.fromEntries(
@@ -15,6 +16,21 @@ const users = Object.fromEntries(
   ),
 );
 let customer: string, other: string, site: string, contact: string, rate: string;
+test("every configured report projection reads from the migrated schema under database permissions", async () => {
+  for (const source of Object.keys(RECORDS)) {
+    for (const group of ["", ...reportGroups(source).map((field) => field.name)]) {
+      for (const measure of reportMeasures(source)) {
+        const config = validReport({ source, group, measure: measure.value }, ["admin"])!;
+        const columns = reportColumns(config)
+          .map((column) => `"${column}"`)
+          .join(",");
+        await expect(
+          asRole("admin", `select ${columns} from "${source}" limit 0`),
+        ).resolves.toBeTruthy();
+      }
+    }
+  }
+});
 async function asRole(role: string, sql: string, args: unknown[] = []) {
   await db.exec("reset role");
   await db.query("select set_config('request.jwt.claim.sub',$1,false)", [users[role]]);
