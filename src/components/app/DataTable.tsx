@@ -47,6 +47,7 @@ export function DataTable({
   rows,
   isLoading,
   error,
+  onRetry,
   onRowClick,
   recordTable,
   returnTo,
@@ -66,6 +67,7 @@ export function DataTable({
   rows: Row[];
   isLoading?: boolean;
   error?: unknown;
+  onRetry?: (() => void) | undefined;
   onRowClick?: ((row: Row) => void) | undefined;
   recordTable?: string | undefined;
   returnTo?: string | undefined;
@@ -180,7 +182,10 @@ export function DataTable({
   };
 
   if (isLoading) return <LoadingState />;
-  if (error) return <ErrorState message={error instanceof Error ? error.message : undefined} />;
+  if (error)
+    return (
+      <ErrorState message={error instanceof Error ? error.message : undefined} onRetry={onRetry} />
+    );
 
   return (
     <div className="workspace-table">

@@ -147,8 +147,8 @@ function ShellLayout({ children }: { children: ReactNode }) {
         </button>
         <ActivityMenu />
         <Link
-          to="/settings"
-          aria-label="Settings"
+          to={roles.includes("admin") ? "/admin" : "/settings"}
+          aria-label={roles.includes("admin") ? "Users and access" : "Personal settings"}
           className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md hover:bg-white/10"
         >
           <Settings className="h-4 w-4" aria-hidden />
@@ -185,11 +185,11 @@ function ShellLayout({ children }: { children: ReactNode }) {
               Your profile
             </DropdownMenuItem>
             <DropdownMenuItem onSelect={() => navigate({ to: "/settings" })}>
-              Settings
+              Personal settings
             </DropdownMenuItem>
             {roles.includes("admin") && (
               <DropdownMenuItem onSelect={() => navigate({ to: "/admin" })}>
-                Administration
+                Users and access
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
