@@ -6,8 +6,24 @@ import { Button } from "@/components/ui/button";
 import { LoadingState, ErrorState } from "@/components/app/EmptyState";
 import { listRows } from "@/lib/data";
 import { formatMoney } from "@/lib/format";
+import { ReportWorkbench } from "@/components/app/ReportWorkbench";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import type { ReportConfig } from "@/lib/reporting";
+import { useSession } from "@/hooks/use-session";
+import { canViewTable } from "@/lib/permissions";
 
 export const Route = createFileRoute("/_authenticated/reports/")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): Partial<ReportConfig> & { section?: "analysis" | "summary" } => ({
+    ...(search["section"] === "summary" ? { section: "summary" } : {}),
+    ...Object.fromEntries(
+      ["source", "group", "measure", "search", "filter"].flatMap((key) =>
+        typeof search[key] === "string" ? [[key, String(search[key]).slice(0, 120)]] : [],
+      ),
+    ),
+    ...(search["view"] === "bars" ? { view: "bars" } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Reports — HEG Commercial Intelligence Hub" },
@@ -23,18 +39,61 @@ export const Route = createFileRoute("/_authenticated/reports/")({
 });
 
 function ReportsPage() {
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  return (
+    <>
+      <PageHeader
+        title="Reports"
+        breadcrumbs={[{ label: "Apps", to: "/command-center" }, { label: "Reports" }]}
+      />
+      <Tabs
+        value={search.section ?? "analysis"}
+        onValueChange={(section) =>
+          void navigate({
+            search: { ...search, section: section === "summary" ? "summary" : "analysis" },
+          })
+        }
+      >
+        <TabsList className="mx-6 mt-3" aria-label="Report workspace">
+          <TabsTrigger value="analysis">Analysis</TabsTrigger>
+          <TabsTrigger value="summary">Summary</TabsTrigger>
+        </TabsList>
+        <TabsContent value="analysis">
+          <ReportWorkbench
+            value={search}
+            onChange={(config) =>
+              void navigate({ search: { ...config, section: "analysis" }, replace: true })
+            }
+          />
+        </TabsContent>
+        <TabsContent value="summary">
+          <ReportSummary />
+        </TabsContent>
+      </Tabs>
+    </>
+  );
+}
+
+function ReportSummary() {
+  const { roles, session } = useSession();
+  const visible = (kind: string) => canViewTable(roles, kind);
+  const read = (kind: string, select: string) =>
+    visible(kind) ? listRows(kind, { select }) : Promise.resolve([]);
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ["reports"],
+    queryKey: ["reports", session?.userId, roles.join(",")],
+    enabled: Boolean(session?.userId && roles.length),
     queryFn: async () => {
       const [customers, sites, equipment, bids, opportunities, lost] = await Promise.all([
-        listRows("customers", { select: "id, status" }),
-        listRows("sites", { select: "id, status" }),
-        listRows("equipment", { select: "id, status" }),
-        listRows("bids", { select: "id, status, estimated_revenue" }),
-        listRows("opportunities", { select: "id, stage, estimated_revenue, capacity_status" }),
-        listRows("lost_business", {
-          select: "id, estimated_revenue, capacity_issue, driver_issue, equipment_issue",
-        }),
+        read("customers", "id, status"),
+        read("sites", "id, status"),
+        read("equipment", "id, status"),
+        read("bids", "id, status, estimated_revenue"),
+        read("opportunities", "id, stage, estimated_revenue, capacity_status"),
+        read(
+          "lost_business",
+          "id, estimated_revenue, capacity_issue, driver_issue, equipment_issue",
+        ),
       ]);
       return { customers, sites, equipment, bids, opportunities, lost };
     },
@@ -43,7 +102,6 @@ function ReportsPage() {
   if (error)
     return (
       <>
-        <PageHeader title="Reports" />
         <div className="p-6">
           <ErrorState
             message={error instanceof Error ? error.message : "Reports could not load."}
@@ -58,7 +116,6 @@ function ReportsPage() {
   if (isLoading || !data) {
     return (
       <>
-        <PageHeader title="Reports" />
         <div className="p-6">
           <LoadingState />
         </div>
@@ -72,7 +129,6 @@ function ReportsPage() {
 
   return (
     <>
-      <PageHeader title="Reports" />
       <div className="space-y-6 p-6">
         <Panel
           title="Coverage"
@@ -82,17 +138,19 @@ function ReportsPage() {
             <StatTile label="Customers" value={data.customers.length} />
             <StatTile label="Sites" value={data.sites.length} />
             <StatTile label="Equipment units" value={data.equipment.length} />
-            <StatTile label="Bids" value={data.bids.length} />
+            {visible("bids") && <StatTile label="Bids" value={data.bids.length} />}
           </div>
         </Panel>
 
         <Panel title="Commercial performance">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile
-              label="Bid win rate"
-              value={winRate === null ? "—" : `${winRate}%`}
-              hint={decided ? `${won} of ${decided} decided` : "No decided bids yet"}
-            />
+            {visible("bids") && (
+              <StatTile
+                label="Bid win rate"
+                value={winRate === null ? "—" : `${winRate}%`}
+                hint={decided ? `${won} of ${decided} decided` : "No decided bids yet"}
+              />
+            )}
             <StatTile
               label="Open pipeline"
               value={formatMoney(
