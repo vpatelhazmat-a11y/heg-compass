@@ -113,8 +113,14 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Secondary formatting is available in a compact menu using already-supported note nodes and marks. Undo/Redo reflect editor history. Toolbar arrows/Home/End and link Enter/Escape/Cancel support keyboard editing without submitting the surrounding record form.
 - 186 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration. Images/tables/attachments and production visual acceptance remain open.
 
-## Selected-record export — verification pending
+## Selected-record export
 
 - Module lists now have page-scoped selection and CSV/XLSX export of selected rows or the current page, using the chosen visible columns. Selection clears when the query, page, view or account changes; embedded related lists remain compact. Export failures keep the selection and offer another attempt through the list menu.
-- The first targeted run passed 34 tests and exposed one asynchronous test assertion issue. That assertion now waits for the refreshed list. The latest local verification command was not executed because automatic approval review hit its usage limit. This pass remains unverified; it has not been merged or published.
+- After the execution limit reset, all 188 tests, type/schema/generated-link checks, lint (zero errors; 12 existing warnings), production build, diff checks and hosted CI passed. PR #57 was merged and publication requested. Production acceptance remains pending.
 - Notes PR #56 passed hosted CI and was merged. Its Lovable publication was requested. Production visual acceptance remains pending.
+
+## Report date filtering
+
+- Registered date fields support inclusive, open-ended calendar ranges. The same range governs counts, measures, table/bar rendering and exports. Invalid calendar dates are rejected; reversed ranges show an error and disable export.
+- Date field and bounds are preserved in the URL and personal report favorites. Only whitelisted source columns are queried. Every supported date projection was checked against the migrated schema.
+- Local verification: 192 tests, type/schema/generated-link checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes. Publication and production acceptance remain separate gates.

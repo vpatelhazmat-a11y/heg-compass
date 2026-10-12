@@ -12,6 +12,8 @@ import {
   reportColumns,
   reportGroups,
   reportMeasures,
+  reportDates,
+  reportDateError,
   summarizeReport,
   validReport,
   type ReportConfig,
@@ -61,6 +63,8 @@ export function ReportWorkbench({
       </div>
     );
   const fields = reportGroups(config.source);
+  const dates = reportDates(config.source);
+  const dateError = reportDateError(config);
   const definition = RECORDS[config.source]!;
   const report = summarizeReport(query.data ?? [], config);
   const groupLabel = fields.find((field) => field.name === config.group)?.label ?? "Group";
@@ -75,7 +79,7 @@ export function ReportWorkbench({
     ...new Set((query.data ?? []).map((row) => String(row[config.group] ?? "")).filter(Boolean)),
   ].sort((a, b) => a.localeCompare(b));
   const maximum = Math.max(...report.groups.map((group) => Math.abs(group.value ?? 0)), 1);
-  const ready = Boolean(query.data && !query.isFetching && !query.error);
+  const ready = Boolean(query.data && !query.isFetching && !query.error && !dateError);
   const exportRows = report.groups.map((group) =>
     config.measure === "count"
       ? [group.label, group.records]
@@ -110,6 +114,9 @@ export function ReportWorkbench({
                 measure: "count",
                 search: "",
                 filter: "",
+                dateField: "",
+                from: "",
+                to: "",
               })
             }
           >
@@ -150,6 +157,44 @@ export function ReportWorkbench({
               className="absolute right-0"
               filters={
                 <>
+                  {dates.length > 0 && (
+                    <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                      Date field
+                      <select
+                        value={config.dateField ?? ""}
+                        onChange={(event) =>
+                          update({ dateField: event.target.value, from: "", to: "" })
+                        }
+                      >
+                        <option value="">No date filter</option>
+                        {dates.map((field) => (
+                          <option key={field.name} value={field.name}>
+                            {field.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                  {config.dateField && (
+                    <div className="grid gap-2">
+                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                        From
+                        <input
+                          type="date"
+                          value={config.from ?? ""}
+                          onChange={(event) => update({ from: event.target.value })}
+                        />
+                      </label>
+                      <label className="flex flex-col gap-1 text-xs text-muted-foreground">
+                        Through
+                        <input
+                          type="date"
+                          value={config.to ?? ""}
+                          onChange={(event) => update({ to: event.target.value })}
+                        />
+                      </label>
+                    </div>
+                  )}
                   {config.group ? (
                     <label className="flex min-w-32 flex-col gap-1 text-xs text-muted-foreground">
                       {groupLabel}
@@ -206,6 +251,11 @@ export function ReportWorkbench({
                           filterValue: config.filter,
                           groupBy: config.group,
                           view: config.view === "bars" ? "cards" : "list",
+                          reportDate: {
+                            field: config.dateField ?? "",
+                            from: config.from ?? "",
+                            to: config.to ?? "",
+                          },
                         }}
                         onApply={(state) => {
                           onChange(
@@ -217,6 +267,9 @@ export function ReportWorkbench({
                                 measure: state.filterField,
                                 filter: state.filterValue,
                                 view: state.view === "cards" ? "bars" : "list",
+                                dateField: state.reportDate?.field ?? "",
+                                from: state.reportDate?.from ?? "",
+                                to: state.reportDate?.to ?? "",
                               },
                               roles,
                             )!,
@@ -290,6 +343,23 @@ export function ReportWorkbench({
         </div>
       </div>
       <div className="px-6 py-5" aria-busy={query.isFetching}>
+        {config.dateField && (
+          <div className="table-active-filters mb-3">
+            <button
+              type="button"
+              aria-label="Remove date filter"
+              onClick={() => update({ dateField: "", from: "", to: "" })}
+            >
+              {dates.find((field) => field.name === config.dateField)?.label}:{" "}
+              {config.from || "Any date"} – {config.to || "Any date"} ×
+            </button>
+          </div>
+        )}
+        {dateError && (
+          <p role="alert" className="mb-3 text-sm text-destructive">
+            {dateError}
+          </p>
+        )}
         {exportError && (
           <p className="mb-4 text-sm text-destructive" role="alert">
             {exportError}

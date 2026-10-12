@@ -1,5 +1,6 @@
 import type { RecordPageRequest } from "./record-lists";
 export type SavedViewState = {
+  reportDate?: { field: string; from: string; to: string };
   columns?: string[];
   refused?: RecordPageRequest["refused"];
   sort?: string;
@@ -26,6 +27,19 @@ const cleanState = (value: unknown): SavedViewState | null => {
       ? (state["refused"] as Record<string, unknown>)
       : undefined;
   return {
+    ...(state["reportDate"] && typeof state["reportDate"] === "object"
+      ? {
+          reportDate: Object.fromEntries(
+            ["field", "from", "to"].map((key) => {
+              const value = (state["reportDate"] as Record<string, unknown>)[key];
+              return [
+                key,
+                typeof value === "string" ? value.slice(0, key === "field" ? 120 : 10) : "",
+              ];
+            }),
+          ) as { field: string; from: string; to: string },
+        }
+      : {}),
     ...(Array.isArray(state["columns"]) && state["columns"].length
       ? {
           columns: [

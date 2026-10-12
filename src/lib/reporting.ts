@@ -9,12 +9,31 @@ export type ReportConfig = {
   search: string;
   filter: string;
   view: "list" | "bars";
+  dateField?: string;
+  from?: string;
+  to?: string;
 };
 export type ReportGroup = { key: string; label: string; records: number; value: number | null };
 export const reportGroups = (source: string) =>
   (RECORDS[source]?.fields ?? []).filter(
     (field) => field.type === "select" || field.type === "checkbox",
   );
+export const reportDates = (source: string) =>
+  (RECORDS[source]?.fields ?? []).filter((field) => field.type === "date");
+export function validReportDate(value: unknown): string {
+  if (
+    typeof value !== "string" ||
+    !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(value) ||
+    value.startsWith("0000")
+  )
+    return "";
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value ? value : "";
+}
+export const reportDateError = (config: ReportConfig) =>
+  config.from && config.to && config.from > config.to
+    ? "The end date must be on or after the start date."
+    : undefined;
 export function reportMeasures(source: string) {
   const field = RECORDS[source]?.fields.find((field) => field.name === "estimated_revenue");
   return [
@@ -34,6 +53,9 @@ export function validReport(value: Partial<ReportConfig>, roles: AppRole[]): Rep
   const group = reportGroups(source).some((field) => field.name === value.group)
     ? value.group!
     : "";
+  const dateField = reportDates(source).some((field) => field.name === value.dateField)
+    ? value.dateField!
+    : "";
   return {
     source,
     group,
@@ -43,6 +65,9 @@ export function validReport(value: Partial<ReportConfig>, roles: AppRole[]): Rep
     search: (value.search ?? "").slice(0, 120),
     filter: group ? (value.filter ?? "").slice(0, 120) : "",
     view: value.view === "bars" ? "bars" : "list",
+    dateField,
+    from: dateField ? validReportDate(value.from) : "",
+    to: dateField ? validReportDate(value.to) : "",
   };
 }
 export function reportColumns(config: ReportConfig): string[] {
@@ -52,12 +77,18 @@ export function reportColumns(config: ReportConfig): string[] {
     throw new Error("Unknown grouping field");
   if (!reportMeasures(config.source).some((measure) => measure.value === config.measure))
     throw new Error("Unknown report measure");
+  if (
+    config.dateField &&
+    !reportDates(config.source).some((field) => field.name === config.dateField)
+  )
+    throw new Error("Unknown date field");
   return [
     ...new Set([
       "id",
       ...definition.title,
       ...(config.group ? [config.group] : []),
       ...(config.measure === "count" ? [] : ["estimated_revenue"]),
+      ...(config.dateField ? [config.dateField] : []),
     ]),
   ];
 }
@@ -70,6 +101,14 @@ export function summarizeReport(
   const search = config.search.trim().toLocaleLowerCase();
   const matched = rows.filter(
     (row) =>
+      !reportDateError(config) &&
+      (!(config.dateField && (config.from || config.to)) ||
+        (() => {
+          const date = validReportDate(row[config.dateField!]);
+          return Boolean(
+            date && (!config.from || date >= config.from) && (!config.to || date <= config.to),
+          );
+        })()) &&
       (!search ||
         title.some((field) =>
           String(row[field] ?? "")

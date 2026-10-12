@@ -6,7 +6,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type { ReportConfig } from "../src/lib/reporting";
 const mocks = vi.hoisted(() => ({
   roles: ["sales"],
-  list: vi.fn(async () => [{ id: "fixture", legal_name: "Fixture", status: "Active" }]),
+  list: vi.fn(async (): Promise<Record<string, unknown>[]> => [
+    { id: "fixture", legal_name: "Fixture", status: "Active" },
+  ]),
   export: vi.fn(),
   spreadsheet: vi.fn(),
 }));
@@ -53,6 +55,47 @@ test("report loads only its selected source and group changes update the project
   expect(screen.getByText("No matching records")).toBeTruthy();
   expect(mocks.export).not.toHaveBeenCalled();
 });
+test("date filters govern export and personal favorites restore the range", async () => {
+  mocks.list.mockResolvedValueOnce([
+    { id: "one", bid_name: "October", status: "Won", due_date: "2026-10-01" },
+    { id: "two", bid_name: "November", status: "Won", due_date: "2026-11-01" },
+  ]);
+  mount({
+    source: "bids",
+    group: "status",
+    dateField: "due_date",
+    from: "2026-10-01",
+    to: "2026-10-31",
+  });
+  await screen.findByRole("table");
+  fireEvent.click(screen.getByRole("button", { name: "Search options" }));
+  expect(screen.getByLabelText("From")).toHaveProperty("value", "2026-10-01");
+  fireEvent.change(screen.getByLabelText("View name"), { target: { value: "October bids" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  fireEvent.click(screen.getByRole("button", { name: "Search options" }));
+  fireEvent.keyDown(screen.getByRole("button", { name: "Report actions" }), { key: "Enter" });
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Export CSV" }));
+  expect(mocks.export).toHaveBeenCalledWith("bids-report", ["Status", "Records"], [["Won", 1]]);
+  fireEvent.click(screen.getByRole("button", { name: "Remove date filter" }));
+  fireEvent.click(screen.getByRole("button", { name: "Search options" }));
+  fireEvent.click(screen.getByRole("button", { name: "October bids" }));
+  expect(screen.getByRole("button", { name: "Remove date filter" }).textContent).toContain(
+    "2026-10-31",
+  );
+});
+
+test("inverted report dates show an error and disable exports", async () => {
+  mount({ source: "bids", dateField: "due_date", from: "2026-11-01", to: "2026-10-01" });
+  expect((await screen.findByRole("alert")).textContent).toContain("end date");
+  fireEvent.keyDown(screen.getByRole("button", { name: "Report actions" }), { key: "Enter" });
+  expect(
+    (await screen.findByRole("menuitem", { name: "Export CSV" })).getAttribute("aria-disabled"),
+  ).toBe("true");
+  expect(screen.getByRole("menuitem", { name: "Export Excel" }).getAttribute("aria-disabled")).toBe(
+    "true",
+  );
+});
+
 test("failed report can retry without losing the selected source or search", async () => {
   mocks.list.mockRejectedValueOnce(new Error("Report unavailable"));
   mount({ search: "Fixture" });
