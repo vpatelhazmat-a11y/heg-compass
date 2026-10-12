@@ -2,6 +2,12 @@
 
 This is the remaining delivery plan, reconciled against the original ten-phase request. Passing automated tests or checking module landing pages does not establish completion of this plan. Implementation, local verification, production publication, and user acceptance are separate gates.
 
+## Active delivery objective
+
+The user's instruction on 2026-10-12 is to finish the entire approved app makeover and continue through the remaining work, rather than stopping at individual refinement passes. Every area below remains part of the objective until its implementation, checks, publication and acceptance gates are satisfied. Preserve business data, access controls and user launcher ordering. Do not mark the app complete while unsupported workflows or acceptance gaps remain.
+
+The native goal already covers the full ERP refurbishment, but the goal service currently reports it as usage-limited and rejects replacement while it is unfinished. Its continuation limit must be reset by the user or system; this checklist records the requested objective without claiming that the native goal was reactivated.
+
 ## Published layout refinement and current document pass
 
 - Implemented locally: secondary related-record lists derived from the database foreign keys; collapsed Related records sections on master and generic record forms; scoped links including lanes connected through either site endpoint; requirements scoped by record kind and identifier.
@@ -75,3 +81,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Module menus filter record destinations by the same role-based read rules used elsewhere in the interface. Database policies remain authoritative; no access grants are changed.
 - Settings exposes Users and access only for administrators. Equipment agreements now remain in the Equipment module and appear in its navigation, including nested record routes.
 - PR #50 passed 171 tests and hosted CI, merged, and publication was requested. Live visual acceptance of PRs #48–50 remains pending because browser control is unavailable in this session.
+
+## Refused Load choice recovery
+
+- Record and lookup loads expose loading and recoverable failure states instead of silently appearing empty. Text drafts remain editable and intact during loading and retry; saves wait until choice loading is complete.
+- Retry controls explicitly use button semantics, so retrying within a form cannot submit the draft. Existing validation, historical choices and duplicate-save protection remain covered.
+- No database migration or live business-data write is included.
