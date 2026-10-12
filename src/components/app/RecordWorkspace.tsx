@@ -54,6 +54,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { SearchMenu } from "./SearchMenu";
 import { downloadCsv } from "@/lib/csv";
+import { downloadSpreadsheet } from "@/lib/spreadsheet-export";
 import {
   ChevronLeft,
   ChevronRight,
@@ -149,6 +150,9 @@ export function RecordListPage({
   const [searchInput, setSearchInput] = useState(state.search ?? "");
   const [creatingDocument, setCreatingDocument] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
   useEffect(() => setSearchInput(state.search ?? ""), [state.search]);
   useEffect(() => {
     if (searchInput === (state.search ?? "") || !onChange) return;
@@ -182,6 +186,28 @@ export function RecordListPage({
       onChange?.({ page: Math.max(0, Math.ceil(rows.data.count / 25) - 1) });
     }
   }, [page, rows.data, onChange]);
+  useEffect(() => {
+    setSelectedIds([]);
+    setExportError(null);
+  }, [
+    rows.data,
+    table,
+    parent,
+    parentId,
+    page,
+    state.search,
+    state.searchField,
+    state.filterField,
+    state.filterValue,
+    state.groupBy,
+    state.sort,
+    state.ascending,
+    state.archived,
+    state.folder,
+    state.refused,
+    state.view,
+    session?.userId,
+  ]);
   if (!definition)
     return (
       <div className="p-6">
@@ -218,6 +244,30 @@ export function RecordListPage({
     columnChoice.visibleKeys.includes(column.key),
   );
   const visibleColumns = selectedColumns.length ? selectedColumns : allColumns;
+  const selectedRows = (rows.data?.rows ?? []).filter((row) =>
+    selectedIds.includes(String(row.id)),
+  );
+  const exportRows = async (format: "csv" | "xlsx", selected: boolean) => {
+    if (exporting) return;
+    setExporting(true);
+    setExportError(null);
+    const source = selected ? selectedRows : (rows.data?.rows ?? []);
+    try {
+      const filename = `heg-${table}-${selected ? "selected" : `page-${page + 1}`}`;
+      const headings = visibleColumns.map((column) => column.header);
+      const values = source.map((row) =>
+        visibleColumns.map((column) =>
+          column.value ? (column.value(row) ?? "") : (row[column.key] ?? ""),
+        ),
+      );
+      if (format === "csv") downloadCsv(filename, headings, values);
+      else await downloadSpreadsheet(filename, headings, values);
+    } catch (error) {
+      setExportError(error instanceof Error ? error.message : "Export failed. Try again.");
+    } finally {
+      setExporting(false);
+    }
+  };
   if (creatingDocument && table === "documents" && canEdit(table))
     return (
       <RecordCreationLayout table={table} returnTo={returnTo}>
@@ -456,6 +506,11 @@ export function RecordListPage({
               }
             />
           </div>
+          {selectedRows.length > 0 && (
+            <span className="text-sm text-muted-foreground" role="status">
+              {selectedRows.length} selected
+            </span>
+          )}
           <div className="record-list-pager">
             <span aria-live="polite">
               {rows.data?.count
@@ -514,22 +569,25 @@ export function RecordListPage({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                disabled={!rows.data?.rows.length}
-                onSelect={() =>
-                  downloadCsv(
-                    `heg-${table}-page-${page + 1}`,
-                    visibleColumns.map((column) => column.header),
-                    (rows.data?.rows ?? []).map((row) =>
-                      visibleColumns.map((column) =>
-                        column.value ? (column.value(row) ?? "") : (row[column.key] ?? ""),
-                      ),
-                    ),
-                  )
-                }
-              >
-                <Download className="h-4 w-4" /> Export this page
-              </DropdownMenuItem>
+              {(["csv", "xlsx"] as const).map((format) => (
+                <DropdownMenuItem
+                  key={format}
+                  disabled={exporting || rows.isFetching || !rows.data?.rows.length}
+                  onSelect={() => void exportRows(format, false)}
+                >
+                  <Download className="h-4 w-4" /> Export this page ({format.toUpperCase()})
+                </DropdownMenuItem>
+              ))}
+              {selectedRows.length > 0 &&
+                (["csv", "xlsx"] as const).map((format) => (
+                  <DropdownMenuItem
+                    key={`selected-${format}`}
+                    disabled={exporting || rows.isFetching}
+                    onSelect={() => void exportRows(format, true)}
+                  >
+                    <Download className="h-4 w-4" /> Export selected ({format.toUpperCase()})
+                  </DropdownMenuItem>
+                ))}
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Columns</DropdownMenuLabel>
               {allColumns.map((column) => (
@@ -559,6 +617,16 @@ export function RecordListPage({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
+        {exporting && (
+          <p role="status" className="px-4 py-2 text-sm text-muted-foreground">
+            Preparing export…
+          </p>
+        )}
+        {exportError && (
+          <p role="alert" className="px-4 py-2 text-sm text-destructive">
+            {exportError}
+          </p>
+        )}
         {rows.isLoading ? (
           <LoadingState />
         ) : rows.error ? (
@@ -612,6 +680,7 @@ export function RecordListPage({
                 groupingField={state.groupBy}
                 columns={allColumns}
                 visibleColumnKeys={visibleColumns.map((column) => column.key)}
+                selection={{ ids: selectedIds, onChange: setSelectedIds }}
                 rows={rows.data?.rows ?? []}
                 emptyTitle={`No ${definition.label.toLowerCase()} found`}
               />
