@@ -49,6 +49,7 @@ export const HUB_MODULES: HubModule[] = [
       "/equipment",
       "/records/equipment",
       "/records/equipment_assignments",
+      "/records/equipment_leases",
       "/records/equipment_compliance",
       "/records/equipment_technology",
     ],

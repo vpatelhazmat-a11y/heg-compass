@@ -127,7 +127,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
         </nav>
         {module && (
           <div className="desktop-module-menu">
-            <ModuleNavigation pathname={pathname} />
+            <ModuleNavigation pathname={pathname} roles={roles} />
           </div>
         )}
         <button
@@ -215,7 +215,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
         </DropdownMenu>
       </header>
       <div className={module ? "mobile-module-menu" : "home-module-menu"}>
-        <ModuleNavigation pathname={pathname} />
+        <ModuleNavigation pathname={pathname} roles={roles} />
       </div>
       <main id="main-content" className="min-w-0 flex-1">
         {children}

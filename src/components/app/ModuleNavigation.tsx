@@ -1,5 +1,6 @@
+import { visibleModuleLinks } from "@/lib/module-navigation";
 import { Link } from "@tanstack/react-router";
-import { activeModule } from "@/lib/modules";
+import type { AppRole } from "@/hooks/use-session";
 import { ChevronDown } from "lucide-react";
 import {
   DropdownMenu,
@@ -8,54 +9,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const menus: Record<string, [string, string][]> = {
-  Customers: [
-    ["Customers", "/customers"],
-    ["Pipeline", "/sales"],
-    ["Contacts", "/records/contacts"],
-    ["Rates", "/records/rates"],
-    ["Contracts", "/records/contracts"],
-    ["Products", "/records/products"],
-    ["Lanes", "/records/lanes"],
-    ["Requirements", "/records/requirements"],
-    ["Lost business", "/records/lost_business"],
-  ],
-  Sites: [
-    ["Sites", "/sites"],
-    ["Assessments", "/records/site_assessments"],
-  ],
-  "Site Assessments": [
-    ["Assessments", "/records/site_assessments"],
-    ["Sites", "/sites"],
-  ],
-  Equipment: [
-    ["Equipment", "/equipment"],
-    ["Assignments", "/records/equipment_assignments"],
-    ["Compliance", "/records/equipment_compliance"],
-    ["Technology", "/records/equipment_technology"],
-  ],
-  "Bids / RFPs": [["Bids / RFPs", "/bids"]],
-  "Refused Loads": [
-    ["Summary", "/lost-loads"],
-    ["Records", "/lost-loads/records"],
-    ["Analysis", "/lost-loads/analysis"],
-  ],
-  Safety: [
-    ["Safety overview", "/safety"],
-    ["Incidents", "/records/incidents"],
-    ["Corrective actions", "/records/corrective_actions"],
-  ],
-  Settings: [
-    ["Preferences", "/settings"],
-    ["Profile", "/profile"],
-  ],
-};
-
-export function ModuleNavigation({ pathname }: { pathname: string }) {
-  const module = activeModule(pathname);
-  const links = module
-    ? (menus[module.label] ?? [[module.label, module.to]]).filter(([, to]) => to !== module.to)
-    : [];
+export function ModuleNavigation({ pathname, roles }: { pathname: string; roles: AppRole[] }) {
+  const links = visibleModuleLinks(pathname, roles);
   if (!links.length) return null;
   const canonicalPath = pathname.replace(
     /^\/records\/(customers|sites|equipment|bids)(?=\/|$)/,

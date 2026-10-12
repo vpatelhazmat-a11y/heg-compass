@@ -69,3 +69,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - PR #49 passed 167 tests and hosted CI and was merged. Lovable publication was requested; new production visual acceptance remains pending.
 - PR #48 reporting passed 164 tests and hosted CI, merged, and publication was requested. Earlier production checks confirmed Refused Loads shows message/note chatter without unsupported Activity controls, and Users and access separates People and Invitations. No live business records were changed.
 - The broader remaining plan above is still open. These layout passes do not complete all-record activities, mentions/followers, imports, shared reporting, rich-note assets, notification delivery or general configuration.
+
+## Module navigation access
+
+- Module menus filter record destinations by the same role-based read rules used elsewhere in the interface. Database policies remain authoritative; no access grants are changed.
+- Settings exposes Users and access only for administrators. Equipment agreements now remain in the Equipment module and appear in its navigation, including nested record routes.
+- PR #50 passed 171 tests and hosted CI, merged, and publication was requested. Live visual acceptance of PRs #48–50 remains pending because browser control is unavailable in this session.
