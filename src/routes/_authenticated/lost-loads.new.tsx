@@ -1,11 +1,15 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { PageHeader } from "@/components/app/PageHeader";
-import { Panel } from "@/components/app/Panels";
+import { RecordCreationLayout } from "@/components/app/RecordWorkspace";
+import { recordHref, recordReturnHref } from "@/lib/record-registry";
 import { EmptyState } from "@/components/app/EmptyState";
 import { RefusedLoadForm } from "@/components/app/RefusedLoadForm";
 import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/_authenticated/lost-loads/new")({
+  validateSearch: (search: Record<string, unknown>): { returnTo?: string } =>
+    typeof search["returnTo"] === "string"
+      ? { returnTo: recordReturnHref("refused_loads", search["returnTo"]) }
+      : {},
   head: () => ({
     meta: [
       { title: "Refused Load Data Entry — HEG Commercial Intelligence Hub" },
@@ -26,38 +30,28 @@ export const Route = createFileRoute("/_authenticated/lost-loads/new")({
   component: RefusedLoadEntry,
 });
 
-function RefusedLoadEntry() {
+export function RefusedLoadEntry() {
   const { canEdit } = useSession();
   const canWrite = canEdit("refused_loads");
   const navigate = useNavigate();
+  const { returnTo } = Route.useSearch();
+  const list = recordReturnHref("refused_loads", returnTo);
 
   return (
-    <>
-      <PageHeader
-        title="Refused load data entry"
-        description="Enter refused load details for tracking and revenue analysis."
-      />
-      <div className="p-6">
-        {canWrite ? (
-          <Panel title="Refused load" description="Required fields are marked with an asterisk.">
-            <RefusedLoadForm
-              onSaved={(row, mode) => {
-                if (mode === "view")
-                  navigate({
-                    to: "/records/$entityType/$recordId",
-                    params: { entityType: "refused_loads", recordId: row.id },
-                  });
-              }}
-              onCancel={() => navigate({ to: "/lost-loads" })}
-            />
-          </Panel>
-        ) : (
-          <EmptyState
-            title="You have view-only access"
-            description="An administrator can give you permission to record refused loads."
-          />
-        )}
-      </div>
-    </>
+    <RecordCreationLayout table="refused_loads" returnTo={list}>
+      {canWrite ? (
+        <RefusedLoadForm
+          onSaved={(row, mode) => {
+            if (mode === "view") void navigate({ to: recordHref("refused_loads", row.id, list) });
+          }}
+          onCancel={() => void navigate({ to: list })}
+        />
+      ) : (
+        <EmptyState
+          title="You have view-only access"
+          description="An administrator can give you permission to record refused loads."
+        />
+      )}
+    </RecordCreationLayout>
   );
 }
