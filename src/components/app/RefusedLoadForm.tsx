@@ -276,7 +276,7 @@ export function RefusedLoadForm({
   return (
     <form
       ref={formRef}
-      className={recordId ? "refused-load-form refused-load-editor" : "refused-load-form"}
+      className="refused-load-form refused-load-editor"
       onSubmit={(event) => {
         event.preventDefault();
         submit("view");

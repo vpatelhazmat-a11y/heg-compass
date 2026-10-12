@@ -1917,6 +1917,9 @@ html {
 .refused-load-editor {
   padding: 24px 0;
 }
+.record-workspace-main > .refused-load-editor {
+  padding: 0;
+}
 .refused-load-editor .refused-load-field:not(.refused-load-field-long) {
   display: grid;
   grid-template-columns: minmax(104px, 0.42fr) minmax(0, 1fr);
@@ -1932,11 +1935,15 @@ html {
 .refused-load-editor input,
 .refused-load-editor textarea,
 .refused-load-editor [role="combobox"] {
+  min-width: 0;
   border-color: transparent;
   border-bottom-color: var(--border);
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
+.refused-load-editor [aria-invalid="true"] {
+  border-bottom-color: var(--danger);
 }
 .refused-load-editor input:focus-visible,
 .refused-load-editor textarea:focus-visible,

@@ -132,7 +132,15 @@ function LostLoadRecords() {
         actions={
           canWrite ? (
             <Button asChild>
-              <Link to="/lost-loads/new">
+              <Link
+                to="/lost-loads/new"
+                search={{
+                  returnTo:
+                    typeof window === "undefined"
+                      ? "/lost-loads/records"
+                      : window.location.pathname + window.location.search,
+                }}
+              >
                 <Plus className="h-4 w-4" aria-hidden /> Enter refused load
               </Link>
             </Button>

@@ -61,3 +61,11 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Configurations live in the URL and personal views can be saved on this device. Missing revenue does not become zero in averages; blank grouping values retain a distinct key.
 - Every supported projection was checked against the complete migrated database. Shared views, pivot/multiple grouping, dates, equipment rate-history measures and server-side aggregation for large datasets remain open.
 - PR #47 passed 153 tests and hosted CI and was merged and published; the production People and Invitations sections were verified. Browser interaction is intermittent, so broader settings and creation-layout acceptance remains pending.
+
+## Creation consistency and Refused Load navigation
+
+- PR #49 unifies master-list creation with the shared full-page record workspace. Supplied field labels and required links are preserved; relationship loading supports retry and cancellation. Explicitly disabled and archived creation cannot fall back to a generic New action.
+- Refused Load entry adopts the same layout and flat field styling. Entry from its list preserves the filtered list URL for Cancel and the saved record breadcrumb. External return URLs fall back to the app list. Save-and-enter-another remains on the entry page.
+- PR #49 passed 167 tests and hosted CI and was merged. Lovable publication was requested; new production visual acceptance remains pending.
+- PR #48 reporting passed 164 tests and hosted CI, merged, and publication was requested. Earlier production checks confirmed Refused Loads shows message/note chatter without unsupported Activity controls, and Users and access separates People and Invitations. No live business records were changed.
+- The broader remaining plan above is still open. These layout passes do not complete all-record activities, mentions/followers, imports, shared reporting, rich-note assets, notification delivery or general configuration.
