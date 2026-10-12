@@ -95,3 +95,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Module paging moves beside view controls. Filter/group tags sit inside the search field. Failed module lists can retry while retaining search and grouping. Empty states use plain text and optional supplied artwork instead of generic dashed cards.
 - Automated interaction and regression checks cover the shared behavior. A temporary sample-data preview was prepared but not visually verified because desktop control was interrupted. No new production visual acceptance is claimed.
 - No database migration or live business write is included. Shared/cloud views, advanced report modes, imports, notifications and the other remaining gates above are still open.
+
+## Column controls refinement
+
+- Master and generic module lists use the same column chooser. Choices persist per account and module on this device; personal favorites capture the visible fields. At least one column stays visible. Grouping still operates when its field is hidden.
+- CSV exports follow the visible columns. Generic exports remain explicitly limited to the current page, rather than claiming a complete filtered dataset. Storage failures retain the active selection and show a recoverable explanation.
+- Local verification: 182 tests passed, type/schema/generated-link checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes. Publication and production acceptance remain separate gates.

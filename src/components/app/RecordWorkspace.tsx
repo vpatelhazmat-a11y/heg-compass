@@ -25,6 +25,7 @@ import {
   type RecordPageRequest,
 } from "@/lib/record-lists";
 import { useSession } from "@/hooks/use-session";
+import { useColumnChoice } from "@/hooks/use-column-choice";
 import { PageHeader } from "./PageHeader";
 import { DataTable, type Column } from "./DataTable";
 import { SavedViews } from "./SavedViews";
@@ -46,6 +47,9 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuCheckboxItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { SearchMenu } from "./SearchMenu";
@@ -131,6 +135,13 @@ export function RecordListPage({
   const navigate = useNavigate();
   const definition = recordDefinition(table);
   const fields = recordListFields(table);
+  const knownKeys = [
+    ...new Set([
+      ...(columns?.map((column) => column.key) ?? definition?.columns ?? []),
+      ...fields.group,
+    ]),
+  ];
+  const columnChoice = useColumnChoice(session?.userId, `record-${table}`, knownKeys);
   const returnTo =
     typeof window === "undefined" ? undefined : window.location.pathname + window.location.search;
   const labelFor = (name: string) =>
@@ -177,6 +188,36 @@ export function RecordListPage({
         <EmptyState title="Record type not found" />
       </div>
     );
+  const baseColumns: Column[] =
+    columns ??
+    definition.columns.map((key) => ({
+      key,
+      header: labelFor(key),
+      sortable: !RELATION_TARGETS[key],
+      render: (row: Row) => listValue(table, key, row),
+      align: ["money", "number"].includes(
+        definition.fields.find((field) => field.name === key)?.type ?? "",
+      )
+        ? "right"
+        : "left",
+    }));
+  const allColumns: Column[] = [
+    ...baseColumns,
+    ...(state.groupBy && !baseColumns.some((column) => column.key === state.groupBy)
+      ? [
+          {
+            key: state.groupBy,
+            header: labelFor(state.groupBy),
+            sortable: false,
+            render: (row: Row) => listValue(table, state.groupBy!, row),
+          },
+        ]
+      : []),
+  ];
+  const selectedColumns = allColumns.filter((column) =>
+    columnChoice.visibleKeys.includes(column.key),
+  );
+  const visibleColumns = selectedColumns.length ? selectedColumns : allColumns;
   if (creating && canEdit(table))
     return (
       <RecordCreationLayout table={table} returnTo={returnTo}>
@@ -369,8 +410,10 @@ export function RecordListPage({
                           filterValue: state.filterValue ?? "",
                           groupBy: state.groupBy ?? "",
                           view: state.view ?? "list",
+                          columns: visibleColumns.map((column) => column.key),
                         }}
                         onApply={(saved) => {
+                          columnChoice.select(saved.columns ?? knownKeys);
                           onChange?.({
                             refused: saved.refused,
                             sort: saved.sort ?? "",
@@ -454,18 +497,43 @@ export function RecordListPage({
                 onSelect={() =>
                   downloadCsv(
                     `heg-${table}-page-${page + 1}`,
-                    columns?.map((column) => column.header) ?? definition.columns.map(labelFor),
-                    (rows.data?.rows ?? []).map(
-                      (row) =>
-                        columns?.map((column) =>
-                          column.value ? (column.value(row) ?? "") : (row[column.key] ?? ""),
-                        ) ?? definition.columns.map((key) => row[key] ?? ""),
+                    visibleColumns.map((column) => column.header),
+                    (rows.data?.rows ?? []).map((row) =>
+                      visibleColumns.map((column) =>
+                        column.value ? (column.value(row) ?? "") : (row[column.key] ?? ""),
+                      ),
                     ),
                   )
                 }
               >
                 <Download className="h-4 w-4" /> Export this page
               </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Columns</DropdownMenuLabel>
+              {allColumns.map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.key}
+                  checked={visibleColumns.some((visible) => visible.key === column.key)}
+                  disabled={visibleColumns.length === 1 && visibleColumns[0]?.key === column.key}
+                  onSelect={(event) => event.preventDefault()}
+                  onCheckedChange={(checked) =>
+                    columnChoice.select(
+                      checked
+                        ? [...visibleColumns.map((visible) => visible.key), column.key]
+                        : visibleColumns
+                            .filter((visible) => visible.key !== column.key)
+                            .map((visible) => visible.key),
+                    )
+                  }
+                >
+                  {column.header}
+                </DropdownMenuCheckboxItem>
+              ))}
+              {columnChoice.error && (
+                <p role="alert" className="px-2 py-1 text-sm text-destructive">
+                  {columnChoice.error}
+                </p>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -520,38 +588,8 @@ export function RecordListPage({
                 recordTable={table}
                 returnTo={returnTo}
                 groupingField={state.groupBy}
-                columns={
-                  columns
-                    ? [
-                        ...columns,
-                        ...(state.groupBy && !columns.some((column) => column.key === state.groupBy)
-                          ? [
-                              {
-                                key: state.groupBy,
-                                header: labelFor(state.groupBy),
-                                sortable: false,
-                                render: (row: Row) => listValue(table, state.groupBy!, row),
-                              },
-                            ]
-                          : []),
-                      ]
-                    : [
-                        ...definition.columns,
-                        ...(state.groupBy && !definition.columns.includes(state.groupBy)
-                          ? [state.groupBy]
-                          : []),
-                      ].map((key) => ({
-                        key,
-                        header: labelFor(key),
-                        sortable: !RELATION_TARGETS[key],
-                        render: (row: Row) => listValue(table, key, row),
-                        align: ["money", "number"].includes(
-                          definition.fields.find((field) => field.name === key)?.type ?? "",
-                        )
-                          ? ("right" as const)
-                          : ("left" as const),
-                      }))
-                }
+                columns={allColumns}
+                visibleColumnKeys={visibleColumns.map((column) => column.key)}
                 rows={rows.data?.rows ?? []}
                 emptyTitle={`No ${definition.label.toLowerCase()} found`}
               />
