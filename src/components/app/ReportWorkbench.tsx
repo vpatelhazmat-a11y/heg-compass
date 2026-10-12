@@ -17,6 +17,7 @@ import {
   type ReportConfig,
 } from "@/lib/reporting";
 import { SavedViews } from "./SavedViews";
+import { SearchMenu } from "./SearchMenu";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
 import { Button } from "@/components/ui/button";
 import {
@@ -119,21 +120,7 @@ export function ReportWorkbench({
             ))}
           </select>
         </label>
-        <label className="flex min-w-32 flex-col gap-1 text-xs text-muted-foreground">
-          Group by
-          <select
-            className="h-8 border-b border-border bg-transparent text-sm text-foreground"
-            value={config.group}
-            onChange={(event) => update({ group: event.target.value, filter: "" })}
-          >
-            <option value="">None</option>
-            {fields.map((field) => (
-              <option key={field.name} value={field.name}>
-                {field.label}
-              </option>
-            ))}
-          </select>
-        </label>
+
         <label className="flex min-w-36 flex-col gap-1 text-xs text-muted-foreground">
           Measure
           <select
@@ -150,32 +137,100 @@ export function ReportWorkbench({
         </label>
         <label className="flex min-w-40 flex-1 flex-col gap-1 text-xs text-muted-foreground">
           Search records
-          <input
-            type="search"
-            className="h-8 border-b border-border bg-transparent text-sm text-foreground"
-            placeholder={`Search ${definition.label.toLowerCase()}`}
-            maxLength={120}
-            value={config.search}
-            onChange={(event) => update({ search: event.target.value })}
-          />
+          <div className="relative flex items-center">
+            <input
+              type="search"
+              className="h-8 w-full min-w-0 border-b border-border bg-transparent pr-8 text-sm text-foreground"
+              placeholder={`Search ${definition.label.toLowerCase()}`}
+              maxLength={120}
+              value={config.search}
+              onChange={(event) => update({ search: event.target.value })}
+            />
+            <SearchMenu
+              className="absolute right-0"
+              filters={
+                <>
+                  {config.group ? (
+                    <label className="flex min-w-32 flex-col gap-1 text-xs text-muted-foreground">
+                      {groupLabel}
+                      <select
+                        className="h-8 border-b border-border bg-transparent text-sm text-foreground"
+                        value={config.filter}
+                        onChange={(event) => update({ filter: event.target.value })}
+                      >
+                        <option value="">All</option>
+                        {values.map((value) => (
+                          <option key={value} value={value}>
+                            {value === "true" ? "Yes" : value === "false" ? "No" : value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  ) : (
+                    <p>Select a grouping field to filter its values.</p>
+                  )}
+                </>
+              }
+              grouping={
+                fields.length ? (
+                  <label className="flex min-w-32 flex-col gap-1 text-xs text-muted-foreground">
+                    <span className="sr-only">Group by</span>
+                    <select
+                      className="h-8 border-b border-border bg-transparent text-sm text-foreground"
+                      value={config.group}
+                      onChange={(event) => update({ group: event.target.value, filter: "" })}
+                    >
+                      <option value="">None</option>
+                      {fields.map((field) => (
+                        <option key={field.name} value={field.name}>
+                          {field.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                ) : (
+                  <p>No grouping fields available.</p>
+                )
+              }
+              favorites={
+                session?.userId
+                  ? (close) => (
+                      <SavedViews
+                        inline
+                        userId={session?.userId}
+                        scope="report-analysis"
+                        value={{
+                          search: config.search,
+                          searchField: config.source,
+                          filterField: config.measure,
+                          filterValue: config.filter,
+                          groupBy: config.group,
+                          view: config.view === "bars" ? "cards" : "list",
+                        }}
+                        onApply={(state) => {
+                          onChange(
+                            validReport(
+                              {
+                                source: state.searchField,
+                                search: state.search,
+                                group: state.groupBy,
+                                measure: state.filterField,
+                                filter: state.filterValue,
+                                view: state.view === "cards" ? "bars" : "list",
+                              },
+                              roles,
+                            )!,
+                          );
+                          close();
+                        }}
+                      />
+                    )
+                  : undefined
+              }
+            />
+          </div>
         </label>
-        {config.group && (
-          <label className="flex min-w-32 flex-col gap-1 text-xs text-muted-foreground">
-            {groupLabel}
-            <select
-              className="h-8 border-b border-border bg-transparent text-sm text-foreground"
-              value={config.filter}
-              onChange={(event) => update({ filter: event.target.value })}
-            >
-              <option value="">All</option>
-              {values.map((value) => (
-                <option key={value} value={value}>
-                  {value === "true" ? "Yes" : value === "false" ? "No" : value}
-                </option>
-              ))}
-            </select>
-          </label>
-        )}
+
         <div className="flex h-8 items-center gap-1" role="group" aria-label="Report view">
           <Button
             variant="ghost"
@@ -195,33 +250,7 @@ export function ReportWorkbench({
           >
             <BarChart3 className="h-4 w-4" />
           </Button>
-          <SavedViews
-            userId={session?.userId}
-            scope="report-analysis"
-            value={{
-              search: config.search,
-              searchField: config.source,
-              filterField: config.measure,
-              filterValue: config.filter,
-              groupBy: config.group,
-              view: config.view === "bars" ? "cards" : "list",
-            }}
-            onApply={(state) =>
-              onChange(
-                validReport(
-                  {
-                    source: state.searchField,
-                    search: state.search,
-                    group: state.groupBy,
-                    measure: state.filterField,
-                    filter: state.filterValue,
-                    view: state.view === "cards" ? "bars" : "list",
-                  },
-                  roles,
-                )!,
-              )
-            }
-          />
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button size="icon" variant="ghost" aria-label="Report actions">
