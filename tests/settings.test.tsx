@@ -1,9 +1,18 @@
 // @vitest-environment jsdom
 import { afterEach, expect, test, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
-const mocks = vi.hoisted(() => ({ updateUser: vi.fn(), protect: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  updateUser: vi.fn(),
+  protect: vi.fn(),
+  navigate: vi.fn(),
+  section: "account",
+}));
 vi.mock("@tanstack/react-router", () => ({
-  createFileRoute: () => (options: unknown) => ({ options }),
+  createFileRoute: () => (options: unknown) => ({
+    options,
+    useSearch: () => ({ section: mocks.section }),
+    useNavigate: () => mocks.navigate,
+  }),
   Link: ({ children, to }: { children: React.ReactNode; to: string }) => (
     <a href={to}>{children}</a>
   ),
@@ -27,6 +36,40 @@ const Settings = (Route.options as { component: React.ComponentType }).component
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  vi.restoreAllMocks();
+  mocks.section = "account";
+  localStorage.clear();
+});
+
+test("settings uses the requested tab and retains account drafts across tab navigation", () => {
+  const page = render(<Settings />);
+  fireEvent.change(screen.getByLabelText("Email address"), {
+    target: { value: "draft@example.test" },
+  });
+  fireEvent.mouseDown(screen.getByRole("tab", { name: "Security" }), { button: 0, ctrlKey: false });
+  expect(mocks.navigate).toHaveBeenCalledWith({ search: { section: "security" } });
+  mocks.section = "security";
+  page.rerender(<Settings />);
+  expect(screen.getByRole("tab", { name: "Security" }).getAttribute("aria-selected")).toBe("true");
+  expect(screen.getByLabelText("Email address")).toHaveProperty("value", "draft@example.test");
+  expect(mocks.updateUser).not.toHaveBeenCalled();
+});
+
+test("failed notification preferences keep the current setting and support retry", () => {
+  mocks.section = "notifications";
+  const storage = vi.spyOn(Storage.prototype, "setItem").mockImplementationOnce(() => {
+    throw new Error("Storage full");
+  });
+  render(<Settings />);
+  const toggle = screen.getByRole("switch", { name: "Activity alerts" });
+  fireEvent.click(toggle);
+  expect(screen.getByRole("alert").textContent).toContain("could not be saved");
+  expect(toggle.getAttribute("aria-checked")).toBe("true");
+  storage.mockRestore();
+  fireEvent.click(toggle);
+  expect(screen.queryByRole("alert")).toBeNull();
+  expect(toggle.getAttribute("aria-checked")).toBe("false");
+  expect(localStorage.getItem("heg-task-alerts:test")).toBe("off");
 });
 test("email updates show feedback beside the account action and prevent duplicate requests", async () => {
   let finish!: (value: { error: null }) => void;
