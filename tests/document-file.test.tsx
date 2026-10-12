@@ -55,6 +55,17 @@ test("read-only users receive a missing-file explanation rather than an upload c
   expect(screen.queryByRole("button", { name: "Download file" })).toBeNull();
   expect(screen.queryByText(/Retry upload/)).toBeNull();
 });
+test("a returned storage failure offers retry without treating it as a missing attachment", async () => {
+  mocks.exists
+    .mockResolvedValueOnce({ data: false, error: { originalError: { status: 400 } } })
+    .mockResolvedValueOnce({ data: true, error: null });
+  mount();
+  await screen.findByRole("alert");
+  expect(screen.queryByText(/Retry upload/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await screen.findByRole("button", { name: "Download file" });
+});
+
 test("failed signed downloads display an actionable inline error", async () => {
   mocks.exists.mockResolvedValue({ data: true, error: null });
   mocks.signed.mockResolvedValue({ data: null, error: new Error("Access expired. Try again.") });

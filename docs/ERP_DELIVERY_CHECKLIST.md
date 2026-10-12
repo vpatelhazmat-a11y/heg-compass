@@ -101,3 +101,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Master and generic module lists use the same column chooser. Choices persist per account and module on this device; personal favorites capture the visible fields. At least one column stays visible. Grouping still operates when its field is hidden.
 - CSV exports follow the visible columns. Generic exports remain explicitly limited to the current page, rather than claiming a complete filtered dataset. Storage failures retain the active selection and show a recoverable explanation.
 - Local verification: 182 tests passed, type/schema/generated-link checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes. Publication and production acceptance remain separate gates.
+
+## Documents workspace consistency
+
+- Document creation now uses the shared full-page record workspace with breadcrumbs and flat fields. Cancel returns to the active list; failed saves keep the draft and inherited parent link.
+- Attachment checks distinguish a returned storage request failure from a missing/inaccessible file. Retry stays available without offering an upload for an unchecked attachment. Signed downloads and server access policies are unchanged.
+- Local verification: 185 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes. Production acceptance remains pending.

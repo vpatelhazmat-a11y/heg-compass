@@ -218,6 +218,28 @@ export function RecordListPage({
     columnChoice.visibleKeys.includes(column.key),
   );
   const visibleColumns = selectedColumns.length ? selectedColumns : allColumns;
+  if (creatingDocument && table === "documents" && canEdit(table))
+    return (
+      <RecordCreationLayout table={table} returnTo={returnTo}>
+        <RecordForm
+          open
+          presentation="create"
+          onOpenChange={setCreatingDocument}
+          title="New document"
+          table="documents"
+          fields={documentFields}
+          onSaved={(saved) => navigate({ to: recordHref("documents", saved.id, returnTo) })}
+          defaults={
+            parent && parentId
+              ? {
+                  linked_entity_type: SHARED_RECORD_KINDS[parent],
+                  linked_entity_id: parentId,
+                }
+              : undefined
+          }
+        />
+      </RecordCreationLayout>
+    );
   if (creating && canEdit(table))
     return (
       <RecordCreationLayout table={table} returnTo={returnTo}>
@@ -597,24 +619,6 @@ export function RecordListPage({
           </>
         )}
       </div>
-      {table === "documents" && (
-        <RecordForm
-          open={creatingDocument}
-          onOpenChange={setCreatingDocument}
-          title="New document"
-          table="documents"
-          fields={documentFields}
-          onSaved={(saved) => navigate({ to: recordHref("documents", saved.id, returnTo) })}
-          defaults={
-            parent && parentId
-              ? {
-                  linked_entity_type: SHARED_RECORD_KINDS[parent],
-                  linked_entity_id: parentId,
-                }
-              : undefined
-          }
-        />
-      )}
     </>
   );
 }
