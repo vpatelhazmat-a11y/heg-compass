@@ -1896,13 +1896,17 @@
   border-radius: 3px;
   color: var(--muted-foreground);
 }
-.rich-note-toolbar button:hover,
+.rich-note-toolbar button:hover:not(:disabled),
 .rich-note-toolbar button[aria-pressed="true"] {
   color: var(--primary);
   background: var(--muted);
 }
 .rich-note-toolbar button:focus-visible {
   outline: 2px solid var(--ring);
+}
+.rich-note-toolbar button:disabled {
+  opacity: 0.35;
+  cursor: default;
 }
 .rich-note-input {
   min-height: 100px;

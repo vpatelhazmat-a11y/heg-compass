@@ -1,7 +1,23 @@
 import { useState } from "react";
 import { EditorContent, useEditor, useEditorState } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
-import { Bold, Heading2, Italic, Link, List, ListOrdered, Undo2, Redo2 } from "lucide-react";
+import {
+  Bold,
+  Heading2,
+  Italic,
+  Link,
+  List,
+  ListOrdered,
+  Undo2,
+  Redo2,
+  Ellipsis,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { noteDocument, parseNoteValue, safeNoteLink, sanitizeRichNode } from "@/lib/rich-text";
 
 export default function RichTextEditor({
@@ -54,6 +70,8 @@ export default function RichTextEditor({
       heading: current?.isActive("heading") ?? false,
       bullets: current?.isActive("bulletList") ?? false,
       numbered: current?.isActive("orderedList") ?? false,
+      canUndo: current?.can().undo() ?? false,
+      canRedo: current?.can().redo() ?? false,
     }),
   });
   if (!editor) return <div className="rich-note-loading">Loading editor…</div>;
@@ -98,12 +116,51 @@ export default function RichTextEditor({
         setLinking(!linking);
       },
     },
-    { label: "Undo", icon: Undo2, run: () => editor.chain().focus().undo().run() },
-    { label: "Redo", icon: Redo2, run: () => editor.chain().focus().redo().run() },
+    {
+      label: "Undo",
+      icon: Undo2,
+      disabled: !state?.canUndo,
+      run: () => editor.chain().focus().undo().run(),
+    },
+    {
+      label: "Redo",
+      icon: Redo2,
+      disabled: !state?.canRedo,
+      run: () => editor.chain().focus().redo().run(),
+    },
   ];
+  const applyLink = () => {
+    const href = safeNoteLink(url.trim());
+    if (!href) {
+      setLinkError("Enter an http, https, or email link.");
+      return;
+    }
+    editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
+    setLinking(false);
+  };
   return (
     <div className="rich-note-editor">
-      <div className="rich-note-toolbar" role="toolbar" aria-label={`${label} formatting`}>
+      <div
+        className="rich-note-toolbar"
+        role="toolbar"
+        aria-label={`${label} formatting`}
+        onKeyDown={(event) => {
+          if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+          const buttons = Array.from(
+            event.currentTarget.querySelectorAll<HTMLButtonElement>("button:not(:disabled)"),
+          );
+          const index = buttons.indexOf(event.target as HTMLButtonElement);
+          if (index < 0) return;
+          event.preventDefault();
+          const next =
+            event.key === "Home"
+              ? 0
+              : event.key === "End"
+                ? buttons.length - 1
+                : (index + (event.key === "ArrowRight" ? 1 : -1) + buttons.length) % buttons.length;
+          buttons[next]?.focus();
+        }}
+      >
         {tools.map((tool) => (
           <button
             key={tool.label}
@@ -111,33 +168,68 @@ export default function RichTextEditor({
             title={tool.label}
             aria-label={tool.label}
             aria-pressed={tool.active}
+            disabled={tool.disabled}
             onMouseDown={(event) => event.preventDefault()}
             onClick={tool.run}
           >
             <tool.icon className="h-4 w-4" aria-hidden />
           </button>
         ))}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button type="button" title="More formatting" aria-label="More formatting">
+              <Ellipsis className="h-4 w-4" aria-hidden />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              editor.commands.focus();
+            }}
+          >
+            <DropdownMenuItem onSelect={() => editor.chain().focus().toggleUnderline().run()}>
+              Underline
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => editor.chain().focus().toggleStrike().run()}>
+              Strikethrough
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => editor.chain().focus().toggleBlockquote().run()}>
+              Quote
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => editor.chain().focus().setParagraph().run()}>
+              Normal text
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => editor.chain().focus().unsetAllMarks().run()}>
+              Clear text formatting
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
       {linking && (
         <div className="rich-note-link">
           <input
             aria-label="Link address"
             placeholder="https://…"
+            autoFocus
             value={url}
-            onChange={(event) => setUrl(event.target.value)}
-          />
-          <button
-            type="button"
-            onClick={() => {
-              const href = safeNoteLink(url.trim());
-              if (!href) {
-                setLinkError("Enter an http, https, or email link.");
-                return;
-              }
-              editor.chain().focus().extendMarkRange("link").setLink({ href }).run();
-              setLinking(false);
+            onChange={(event) => {
+              setUrl(event.target.value);
+              setLinkError("");
             }}
-          >
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                applyLink();
+              }
+              if (event.key === "Escape") {
+                event.preventDefault();
+                setLinking(false);
+                editor.commands.focus();
+              }
+            }}
+          />
+          <button type="button" onClick={applyLink}>
             Apply
           </button>
           <button
@@ -148,6 +240,15 @@ export default function RichTextEditor({
             }}
           >
             Remove
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setLinking(false);
+              editor.commands.focus();
+            }}
+          >
+            Cancel
           </button>
           {linkError && <span role="alert">{linkError}</span>}
         </div>

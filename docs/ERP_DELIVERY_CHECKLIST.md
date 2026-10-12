@@ -107,3 +107,8 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Document creation now uses the shared full-page record workspace with breadcrumbs and flat fields. Cancel returns to the active list; failed saves keep the draft and inherited parent link.
 - Attachment checks distinguish a returned storage request failure from a missing/inaccessible file. Retry stays available without offering an upload for an unchecked attachment. Signed downloads and server access policies are unchanged.
 - Local verification: 185 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes. Production acceptance remains pending.
+
+## Notes control refinement
+
+- Secondary formatting is available in a compact menu using already-supported note nodes and marks. Undo/Redo reflect editor history. Toolbar arrows/Home/End and link Enter/Escape/Cancel support keyboard editing without submitting the surrounding record form.
+- 186 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration. Images/tables/attachments and production visual acceptance remain open.
