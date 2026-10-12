@@ -18,8 +18,9 @@ export const Route = createFileRoute("/_authenticated/reports/")({
   ): Partial<ReportConfig> & { section?: "analysis" | "summary" } => ({
     ...(search["section"] === "summary" ? { section: "summary" } : {}),
     ...Object.fromEntries(
-      ["source", "group", "measure", "search", "filter"].flatMap((key) =>
-        typeof search[key] === "string" ? [[key, String(search[key]).slice(0, 120)]] : [],
+      ["source", "group", "measure", "search", "filter", "dateField", "from", "to"].flatMap(
+        (key) =>
+          typeof search[key] === "string" ? [[key, String(search[key]).slice(0, 120)]] : [],
       ),
     ),
     ...(search["view"] === "bars" ? { view: "bars" } : {}),

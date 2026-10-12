@@ -1,5 +1,43 @@
 import { expect, test } from "vitest";
-import { validReport, reportColumns, summarizeReport } from "../src/lib/reporting";
+import {
+  validReport,
+  reportColumns,
+  summarizeReport,
+  validReportDate,
+  reportDateError,
+} from "../src/lib/reporting";
+
+test("date ranges use real calendar dates and include both bounds", () => {
+  expect(validReportDate("2026-02-30")).toBe("");
+  expect(validReportDate("2024-02-29")).toBe("2024-02-29");
+  const config = validReport(
+    { source: "bids", dateField: "due_date", from: "2026-10-01", to: "2026-10-31" },
+    ["admin"],
+  )!;
+  expect(reportColumns(config)).toContain("due_date");
+  const report = summarizeReport(
+    [
+      { due_date: "2026-10-01" },
+      { due_date: "2026-10-31" },
+      { due_date: "2026-11-01" },
+      { due_date: null },
+      { due_date: "invalid" },
+    ],
+    config,
+  );
+  expect(report.records).toBe(2);
+  expect(summarizeReport([{ due_date: null }], { ...config, from: "", to: "" }).records).toBe(1);
+  const reversed = { ...config, from: "2026-11-01" };
+  expect(reportDateError(reversed)).toContain("end date");
+  expect(summarizeReport([{ due_date: "2026-10-31" }], reversed).records).toBe(0);
+  expect(
+    validReport({ source: "bids", dateField: "private_field", from: "2026-10-01" }, ["admin"])
+      ?.dateField,
+  ).toBe("");
+  expect(() => reportColumns({ ...config, dateField: "private_field" })).toThrow(
+    "Unknown date field",
+  );
+});
 
 test("report configuration excludes restricted sources and unregistered projections", () => {
   expect(validReport({}, [])).toBeNull();
