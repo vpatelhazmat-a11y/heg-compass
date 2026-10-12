@@ -187,6 +187,30 @@ test("module search options retain URL filters and expose removable conditions",
   expect(change).toHaveBeenCalledWith({ filterField: "", filterValue: "", page: 0 });
   await waitFor(() => expect(mocks.listRowsPage).toHaveBeenCalled());
 });
+
+test("module list errors retry without discarding the active search or group", async () => {
+  mocks.listRowsPage
+    .mockResolvedValue({ rows: [{ id, legal_name: "Example", status: "Active" }], count: 60 })
+    .mockRejectedValueOnce(new Error("List unavailable"));
+  const change = vi.fn();
+  mount(
+    <RecordListPage
+      table="customers"
+      state={{ search: "Example", groupBy: "status", page: 1 }}
+      onChange={change}
+    />,
+  );
+  await screen.findByText("List unavailable");
+  expect(screen.getByRole("button", { name: "Next page" })).toHaveProperty("disabled", true);
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(screen.queryByText("List unavailable")).toBeNull());
+  expect(screen.getByRole("textbox", { name: "Search Customers" })).toHaveProperty(
+    "value",
+    "Example",
+  );
+  expect(screen.getByRole("button", { name: "Remove grouping" })).toBeTruthy();
+  expect(change).not.toHaveBeenCalled();
+});
 beforeEach(() => {
   localStorage.clear();
   mocks.canEdit.mockReturnValue(true);

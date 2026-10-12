@@ -43,6 +43,7 @@ test("report loads only its selected source and group changes update the project
   await screen.findByRole("table");
   expect(screen.queryByRole("option", { name: "Drivers" })).toBeNull();
   expect(mocks.list).toHaveBeenCalledWith("customers", { select: "id,legal_name" });
+  fireEvent.click(screen.getByRole("button", { name: "Search options" }));
   fireEvent.change(screen.getByLabelText("Group by"), { target: { value: "status" } });
   await screen.findByText("Active", { selector: "th" });
   expect(mocks.list).toHaveBeenLastCalledWith("customers", { select: "id,legal_name,status" });

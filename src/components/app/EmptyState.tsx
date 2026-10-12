@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Inbox } from "lucide-react";
 
 export function EmptyState({
   title,
@@ -13,12 +12,10 @@ export function EmptyState({
   icon?: ReactNode | undefined;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border bg-surface px-6 py-14 text-center">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-muted-foreground">
-        {icon ?? <Inbox className="h-5 w-5" aria-hidden />}
-      </div>
+    <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+      {icon && <div className="text-muted-foreground">{icon}</div>}
       <div>
-        <p className="text-sm font-semibold text-foreground">{title}</p>
+        <p className="text-base font-medium text-foreground">{title}</p>
         {description && (
           <p className="mt-1 max-w-md text-sm text-muted-foreground">{description}</p>
         )}

@@ -48,7 +48,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { SearchMenu } from "./SearchMenu";
 import { downloadCsv } from "@/lib/csv";
 import {
   ChevronLeft,
@@ -59,7 +59,6 @@ import {
   Plus,
   Search,
   Settings2,
-  ChevronDown,
 } from "lucide-react";
 
 type ListState = RecordPageRequest & { view?: "list" | "cards" };
@@ -239,92 +238,185 @@ export function RecordListPage({
         )}
         <div className="record-list-controls">
           <div className="record-list-search">
-            <Search className="h-4 w-4" aria-hidden />
-            <input
-              aria-label={`Search ${definition.label}`}
-              placeholder={`Search ${definition.label.toLowerCase()}…`}
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-            />
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  aria-label="Search options"
-                  className="record-search-options-trigger"
-                >
-                  <ChevronDown className="h-4 w-4" aria-hidden />
-                </button>
-              </PopoverTrigger>
-              <PopoverContent align="end" className="record-search-options">
-                {extraFilters}
-                <p className="field-label">Search in</p>
-                {fields.search.length > 1 && (
-                  <select
-                    aria-label="Search field"
-                    value={state.searchField ?? fields.search[0]}
-                    onChange={(event) => onChange?.({ field: event.target.value, page: 0 })}
-                  >
-                    {fields.search.map((name) => (
-                      <option key={name} value={name}>
-                        {labelFor(name)}
-                      </option>
-                    ))}
-                  </select>
-                )}
-                {(fields.filter.length > 0 || fields.group.length > 0) && (
-                  <div className="record-list-control-group">
-                    <p className="field-label">Filters and grouping</p>
-                    {fields.filter.length > 0 && (
-                      <select
-                        aria-label="Filter field"
-                        value={state.filterField ?? ""}
-                        onChange={(event) =>
-                          onChange?.({ filterField: event.target.value, filterValue: "", page: 0 })
-                        }
-                      >
-                        <option value="">Filter</option>
-                        {fields.filter.map((name) => (
-                          <option key={name} value={name}>
-                            {labelFor(name)}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    {state.filterField && (
-                      <select
-                        aria-label="Filter value"
-                        value={state.filterValue ?? ""}
-                        onChange={(event) =>
-                          onChange?.({ filterValue: event.target.value, page: 0 })
-                        }
-                      >
-                        <option value="">All</option>
-                        {definition.fields
-                          .find((field) => field.name === state.filterField)
-                          ?.options?.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                      </select>
-                    )}
-                    <select
-                      aria-label="Group by"
-                      value={state.groupBy ?? ""}
-                      onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
+            <div className="record-search-content">
+              <Search className="h-4 w-4 shrink-0" aria-hidden />
+              {activeFilters}
+              {(state.filterValue || state.groupBy) && (
+                <div className="table-active-filters" aria-label="Active search conditions">
+                  {state.filterValue && (
+                    <button
+                      type="button"
+                      aria-label="Remove filter"
+                      onClick={() => onChange?.({ filterField: "", filterValue: "", page: 0 })}
                     >
-                      <option value="">Group by</option>
-                      {fields.group.map((name) => (
+                      {labelFor(state.filterField ?? "")}: {state.filterValue} ×
+                    </button>
+                  )}
+                  {state.groupBy && (
+                    <button
+                      type="button"
+                      aria-label="Remove grouping"
+                      onClick={() => onChange?.({ groupBy: "", page: 0 })}
+                    >
+                      Group: {labelFor(state.groupBy)} ×
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <input
+                aria-label={`Search ${definition.label}`}
+                placeholder={`Search ${definition.label.toLowerCase()}…`}
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+              />
+            </div>
+            <SearchMenu
+              filters={
+                <>
+                  {extraFilters}
+                  <p className="field-label">Search in</p>
+                  {fields.search.length > 1 && (
+                    <select
+                      aria-label="Search field"
+                      value={state.searchField ?? fields.search[0]}
+                      onChange={(event) => onChange?.({ field: event.target.value, page: 0 })}
+                    >
+                      {fields.search.map((name) => (
                         <option key={name} value={name}>
                           {labelFor(name)}
                         </option>
                       ))}
                     </select>
-                  </div>
-                )}
-              </PopoverContent>
-            </Popover>
+                  )}
+                  {fields.filter.length > 0 && (
+                    <div className="record-list-control-group">
+                      {fields.filter.length > 0 && (
+                        <select
+                          aria-label="Filter field"
+                          value={state.filterField ?? ""}
+                          onChange={(event) =>
+                            onChange?.({
+                              filterField: event.target.value,
+                              filterValue: "",
+                              page: 0,
+                            })
+                          }
+                        >
+                          <option value="">Filter</option>
+                          {fields.filter.map((name) => (
+                            <option key={name} value={name}>
+                              {labelFor(name)}
+                            </option>
+                          ))}
+                        </select>
+                      )}
+                      {state.filterField && (
+                        <select
+                          aria-label="Filter value"
+                          value={state.filterValue ?? ""}
+                          onChange={(event) =>
+                            onChange?.({ filterValue: event.target.value, page: 0 })
+                          }
+                        >
+                          <option value="">All</option>
+                          {definition.fields
+                            .find((field) => field.name === state.filterField)
+                            ?.options?.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                        </select>
+                      )}
+                    </div>
+                  )}
+                </>
+              }
+              grouping={
+                fields.group.length ? (
+                  <select
+                    aria-label="Group by"
+                    value={state.groupBy ?? ""}
+                    onChange={(event) => onChange?.({ groupBy: event.target.value, page: 0 })}
+                  >
+                    <option value="">Group by</option>
+                    {fields.group.map((name) => (
+                      <option key={name} value={name}>
+                        {labelFor(name)}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <p>No grouping fields available.</p>
+                )
+              }
+              favorites={
+                session?.userId
+                  ? (close) => (
+                      <SavedViews
+                        inline
+                        userId={session?.userId}
+                        scope={`record-${table}`}
+                        value={{
+                          ...(state.refused ? { refused: state.refused } : {}),
+                          ...(state.sort
+                            ? { sort: state.sort, ascending: Boolean(state.ascending) }
+                            : {}),
+                          search: state.search ?? "",
+                          searchField: state.searchField ?? "",
+                          filterField: state.filterField ?? "",
+                          filterValue: state.filterValue ?? "",
+                          groupBy: state.groupBy ?? "",
+                          view: state.view ?? "list",
+                        }}
+                        onApply={(saved) => {
+                          onChange?.({
+                            refused: saved.refused,
+                            sort: saved.sort ?? "",
+                            ascending: Boolean(saved.ascending),
+                            q: saved.search,
+                            field: saved.searchField,
+                            filterField: saved.filterField,
+                            filterValue: saved.filterValue,
+                            groupBy: saved.groupBy,
+                            view: saved.view,
+                            page: 0,
+                          });
+                          close();
+                        }}
+                      />
+                    )
+                  : undefined
+              }
+            />
+          </div>
+          <div className="record-list-pager">
+            <span aria-live="polite">
+              {rows.data?.count
+                ? `${page * 25 + 1}–${Math.min(rows.data.count, (page + 1) * 25)} of ${rows.data.count}`
+                : rows.data
+                  ? "0 records"
+                  : rows.error
+                    ? "Unavailable"
+                    : "Loading…"}
+            </span>
+            <button
+              type="button"
+              aria-label="Previous page"
+              disabled={page === 0 || rows.isFetching}
+              onClick={() => onChange?.({ page: page - 1 })}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              aria-label="Next page"
+              disabled={rows.isFetching || !rows.data || (page + 1) * 25 >= rows.data.count}
+              onClick={() => onChange?.({ page: page + 1 })}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
           </div>
           <div className="record-list-view" aria-label="View mode">
             <button
@@ -344,34 +436,6 @@ export function RecordListPage({
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
-          <SavedViews
-            userId={session?.userId}
-            scope={`record-${table}`}
-            value={{
-              ...(state.refused ? { refused: state.refused } : {}),
-              ...(state.sort ? { sort: state.sort, ascending: Boolean(state.ascending) } : {}),
-              search: state.search ?? "",
-              searchField: state.searchField ?? "",
-              filterField: state.filterField ?? "",
-              filterValue: state.filterValue ?? "",
-              groupBy: state.groupBy ?? "",
-              view: state.view ?? "list",
-            }}
-            onApply={(saved) =>
-              onChange?.({
-                refused: saved.refused,
-                sort: saved.sort ?? "",
-                ascending: Boolean(saved.ascending),
-                q: saved.search,
-                field: saved.searchField,
-                filterField: saved.filterField,
-                filterValue: saved.filterValue,
-                groupBy: saved.groupBy,
-                view: saved.view,
-                page: 0,
-              })
-            }
-          />
           {["customers", "sites", "equipment"].includes(table) && (
             <ArchiveVisibility
               archived={Boolean(state.archived)}
@@ -405,33 +469,10 @@ export function RecordListPage({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        {activeFilters}
-        {(state.filterValue || state.groupBy) && (
-          <div className="table-active-filters" aria-label="Active search conditions">
-            {state.filterValue && (
-              <button
-                type="button"
-                aria-label="Remove filter"
-                onClick={() => onChange?.({ filterField: "", filterValue: "", page: 0 })}
-              >
-                {labelFor(state.filterField ?? "")}: {state.filterValue} ×
-              </button>
-            )}
-            {state.groupBy && (
-              <button
-                type="button"
-                aria-label="Remove grouping"
-                onClick={() => onChange?.({ groupBy: "", page: 0 })}
-              >
-                Group: {labelFor(state.groupBy)} ×
-              </button>
-            )}
-          </div>
-        )}
         {rows.isLoading ? (
           <LoadingState />
         ) : rows.error ? (
-          <ErrorState message={rows.error.message} />
+          <ErrorState message={rows.error.message} onRetry={() => void rows.refetch()} />
         ) : (
           <>
             {state.view === "cards" ? (
@@ -515,29 +556,6 @@ export function RecordListPage({
                 emptyTitle={`No ${definition.label.toLowerCase()} found`}
               />
             )}
-            <div className="record-list-pager">
-              <span aria-live="polite">
-                {rows.data?.count
-                  ? `${page * 25 + 1}–${Math.min(rows.data.count, (page + 1) * 25)} of ${rows.data.count}`
-                  : "0 records"}
-              </span>
-              <button
-                type="button"
-                aria-label="Previous page"
-                disabled={page === 0}
-                onClick={() => onChange?.({ page: page - 1 })}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                aria-label="Next page"
-                disabled={!rows.data || (page + 1) * 25 >= rows.data.count}
-                onClick={() => onChange?.({ page: page + 1 })}
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
           </>
         )}
       </div>

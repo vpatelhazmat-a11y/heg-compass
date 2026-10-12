@@ -16,7 +16,6 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   LayoutGrid,
   List,
   Settings2,
@@ -31,6 +30,7 @@ import { RecordLink } from "./RecordLink";
 import { downloadCsv } from "@/lib/csv";
 import { useSession } from "@/hooks/use-session";
 import { SavedViews } from "./SavedViews";
+import { SearchMenu } from "./SearchMenu";
 
 export type Column = {
   key: string;
@@ -99,7 +99,6 @@ export function DataTable({
   const [filterValue, setFilterValue] = useState("");
   const [groupBy, setGroupBy] = useState("");
   const [view, setView] = useState<"list" | "cards">("list");
-  const [searchOptionsOpen, setSearchOptionsOpen] = useState(false);
   const activeGroupBy = bare ? (groupingField ?? "") : groupBy;
   const selectedColumns = columns.filter((column) => !hiddenColumns.includes(column.key));
   const visibleColumns = selectedColumns.length ? selectedColumns : columns;
@@ -191,86 +190,108 @@ export function DataTable({
     <div className="workspace-table">
       {!bare && !embedded && (
         <div className="table-tools flex flex-wrap items-center gap-2">
-          <div className="relative flex min-w-[180px] max-w-xl flex-1 items-center">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden
-            />
-            <Input
-              value={search}
-              onChange={(event) => {
-                setSearch(event.target.value);
-                setPage(0);
-              }}
-              placeholder={searchPlaceholder}
-              aria-label={searchPlaceholder}
-              className="pl-9 pr-9"
-            />
-            <button
-              type="button"
-              aria-label="Search options"
-              aria-expanded={searchOptionsOpen}
-              onClick={() => setSearchOptionsOpen((open) => !open)}
-              className="absolute right-1 grid h-7 w-7 place-items-center rounded hover:bg-muted"
-            >
-              <ChevronDown className="h-4 w-4" aria-hidden />
-            </button>
-            {searchOptionsOpen && (
-              <div className="table-search-options">
-                <label>
-                  Search in
-                  <select
-                    value={searchField}
-                    onChange={(event) => {
-                      setSearchField(event.target.value);
-                      setPage(0);
-                    }}
-                  >
-                    <option value="">All fields</option>
-                    {columns.map((column) => (
-                      <option key={column.key} value={column.key}>
-                        {column.header}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label>
-                  Filter
-                  <select
-                    value={filterField}
-                    onChange={(event) => {
-                      setFilterField(event.target.value);
-                      setFilterValue("");
-                      setPage(0);
-                    }}
-                  >
-                    <option value="">All records</option>
-                    {columns.map((column) => (
-                      <option key={column.key} value={column.key}>
-                        {column.header}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {filterField && (
-                  <label>
-                    Value
-                    <select
-                      value={filterValue}
-                      onChange={(event) => {
-                        setFilterValue(event.target.value);
+          <div className="record-list-search relative">
+            <div className="record-search-content">
+              <Search className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+              {!bare && (filterValue || groupBy) && (
+                <div className="table-active-filters">
+                  {filterValue && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFilterField("");
+                        setFilterValue("");
                         setPage(0);
                       }}
                     >
-                      <option value="">All values</option>
-                      {filterOptions.map((value) => (
-                        <option key={value} value={value}>
-                          {value}
+                      {filterColumn?.header}: {filterValue} <span aria-hidden>×</span>
+                    </button>
+                  )}
+                  {groupBy && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setGroupBy("");
+                        setPage(0);
+                      }}
+                    >
+                      Grouped by {groupColumn?.header} <span aria-hidden>×</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              <Input
+                value={search}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setPage(0);
+                }}
+                placeholder={searchPlaceholder}
+                aria-label={searchPlaceholder}
+                className="h-8 min-w-28 flex-1 border-0 bg-transparent p-0 shadow-none focus-visible:ring-0"
+              />
+            </div>
+            <SearchMenu
+              filters={
+                <>
+                  <label>
+                    Search in
+                    <select
+                      value={searchField}
+                      onChange={(event) => {
+                        setSearchField(event.target.value);
+                        setPage(0);
+                      }}
+                    >
+                      <option value="">All fields</option>
+                      {columns.map((column) => (
+                        <option key={column.key} value={column.key}>
+                          {column.header}
                         </option>
                       ))}
                     </select>
                   </label>
-                )}
+                  <label>
+                    Filter
+                    <select
+                      value={filterField}
+                      onChange={(event) => {
+                        setFilterField(event.target.value);
+                        setFilterValue("");
+                        setPage(0);
+                      }}
+                    >
+                      <option value="">All records</option>
+                      {columns.map((column) => (
+                        <option key={column.key} value={column.key}>
+                          {column.header}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {filterField && (
+                    <label>
+                      Value
+                      <select
+                        value={filterValue}
+                        onChange={(event) => {
+                          setFilterValue(event.target.value);
+                          setPage(0);
+                        }}
+                      >
+                        <option value="">All values</option>
+                        {filterOptions.map((value) => (
+                          <option key={value} value={value}>
+                            {value}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
+                </>
+              }
+              grouping={
                 <label>
                   Group by
                   <select
@@ -289,26 +310,33 @@ export function DataTable({
                     ))}
                   </select>
                 </label>
-              </div>
-            )}
-          </div>
-          {exportName && (
-            <SavedViews
-              userId={session?.userId}
-              scope={exportName}
-              value={{ search, searchField, filterField, filterValue, groupBy, view }}
-              onApply={(saved) => {
-                setSearch(saved.search);
-                setSearchField(saved.searchField);
-                setFilterField(saved.filterField);
-                setFilterValue(saved.filterValue);
-                setGroupBy(saved.groupBy);
-                setView(saved.view);
-                setSort(null);
-                setPage(0);
-              }}
+              }
+              favorites={
+                exportName && session?.userId
+                  ? (close) => (
+                      <SavedViews
+                        inline
+                        userId={session?.userId}
+                        scope={exportName}
+                        value={{ search, searchField, filterField, filterValue, groupBy, view }}
+                        onApply={(saved) => {
+                          setSearch(saved.search);
+                          setSearchField(saved.searchField);
+                          setFilterField(saved.filterField);
+                          setFilterValue(saved.filterValue);
+                          setGroupBy(saved.groupBy);
+                          setView(saved.view);
+                          setSort(null);
+                          setPage(0);
+                          close();
+                        }}
+                      />
+                    )
+                  : undefined
+              }
             />
-          )}
+          </div>
+
           <span className="table-count" aria-live="polite">
             {sorted.length
               ? `${current * pageSize + 1}–${Math.min(sorted.length, (current + 1) * pageSize)} of ${sorted.length}`
@@ -387,34 +415,6 @@ export function DataTable({
           {toolbar}
         </div>
       )}
-      {!bare && (filterValue || groupBy) && (
-        <div className="table-active-filters">
-          {filterValue && (
-            <button
-              type="button"
-              onClick={() => {
-                setFilterField("");
-                setFilterValue("");
-                setPage(0);
-              }}
-            >
-              {filterColumn?.header}: {filterValue} <span aria-hidden>×</span>
-            </button>
-          )}
-          {groupBy && (
-            <button
-              type="button"
-              onClick={() => {
-                setGroupBy("");
-                setPage(0);
-              }}
-            >
-              Grouped by {groupColumn?.header} <span aria-hidden>×</span>
-            </button>
-          )}
-        </div>
-      )}
-
       {rows.length === 0 ? (
         embedded ? (
           <div className="py-3 text-sm text-muted-foreground">

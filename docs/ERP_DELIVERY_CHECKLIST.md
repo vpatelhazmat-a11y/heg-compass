@@ -87,3 +87,11 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Record and lookup loads expose loading and recoverable failure states instead of silently appearing empty. Text drafts remain editable and intact during loading and retry; saves wait until choice loading is complete.
 - Retry controls explicitly use button semantics, so retrying within a form cannot submit the draft. Existing validation, historical choices and duplicate-save protection remain covered.
 - No database migration or live business-data write is included.
+
+## Shared Odoo-style list controls
+
+- Module lists, local tables and report analysis use one accessible search dropdown with Filters, Group By and Favorites, following Odoo's documented search organization: https://www.odoo.com/documentation/18.0/applications/essentials/search.html.
+- Favorites preserve their existing account/device storage and error handling; applying a favorite closes the menu and restores focus. Separate favorite toolbar icons are removed from these workspaces.
+- Module paging moves beside view controls. Filter/group tags sit inside the search field. Failed module lists can retry while retaining search and grouping. Empty states use plain text and optional supplied artwork instead of generic dashed cards.
+- Automated interaction and regression checks cover the shared behavior. A temporary sample-data preview was prepared but not visually verified because desktop control was interrupted. No new production visual acceptance is claimed.
+- No database migration or live business write is included. Shared/cloud views, advanced report modes, imports, notifications and the other remaining gates above are still open.
