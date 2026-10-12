@@ -2,7 +2,7 @@
 import { MasterRecordList } from "../src/components/app/MasterRecordList";
 import { parseRecordListSearch } from "../src/lib/record-lists";
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RecordDetailPage, RecordListPage } from "../src/components/app/RecordWorkspace";
 import { DataTable } from "../src/components/app/DataTable";
@@ -327,6 +327,62 @@ test("read-only rate detail offers navigation and history without edit controls"
   expect(screen.queryByRole("button", { name: "Edit" })).toBeNull();
   expect(await screen.findByRole("link", { name: "Example customer" })).toBeTruthy();
   expect(screen.getByRole("region", { name: "Rate history" })).toBeTruthy();
+});
+
+test("rate history retries and displays snapshot currencies without guessing legacy currency", async () => {
+  mocks.canEdit.mockReturnValue(false);
+  let attempts = 0;
+  mocks.listRows.mockImplementation(async (table) => {
+    if (table !== "rate_history") return [];
+    if (attempts++ === 0) throw new Error("History unavailable");
+    return [
+      {
+        id: "revision",
+        previous_amount: 100,
+        new_amount: 120,
+        previous_record: { currency: "CAD" },
+        new_record: { currency: "USD" },
+        created_at: "2026-10-01",
+        effective_date: "2026-10-02",
+        reason: "Annual review",
+      },
+      { id: "legacy", previous_amount: 150 },
+    ];
+  });
+  mount(<RecordDetailPage table="rates" id={id} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
+  const history = within(screen.getByRole("region", { name: "Rate history" }));
+  expect(await history.findByText("CA$100.00")).toBeTruthy();
+  expect(history.getByText("$120.00")).toBeTruthy();
+  expect(history.getByText("150 (currency not recorded)")).toBeTruthy();
+  expect(history.getByText("Oct 2, 2026")).toBeTruthy();
+  expect(history.queryByRole("textbox", { name: "Search" })).toBeNull();
+  expect(mocks.update).not.toHaveBeenCalled();
+});
+
+test("equipment history stays embedded and can recover a failed load", async () => {
+  mocks.canEdit.mockReturnValue(false);
+  let attempts = 0;
+  mocks.listRows.mockImplementation(async (table) => {
+    if (table !== "equipment_rate_history") return [];
+    if (attempts++ === 0) throw new Error("History unavailable");
+    return [
+      {
+        id: "revision",
+        changed_at: "2026-10-01",
+        event_type: "Revised",
+        previous_record: { rate: 0, currency_code: "CAD" },
+        new_record: { rate: 100, currency_code: "USD", rate_unit: "Per month" },
+      },
+    ];
+  });
+  mount(<RecordDetailPage table="equipment_leases" id={id} />);
+  fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
+  const history = within(screen.getByRole("region", { name: "Equipment rate history" }));
+  expect(await history.findByText("CA$0.00")).toBeTruthy();
+  expect(history.getByText("$100.00")).toBeTruthy();
+  expect(history.queryByRole("textbox", { name: "Search" })).toBeNull();
+  expect(history.queryByRole("button", { name: "List actions" })).toBeNull();
 });
 
 test("rate editor requires a fresh reason and uses the versioned RPC without identity fields", async () => {

@@ -124,3 +124,8 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Registered date fields support inclusive, open-ended calendar ranges. The same range governs counts, measures, table/bar rendering and exports. Invalid calendar dates are rejected; reversed ranges show an error and disable export.
 - Date field and bounds are preserved in the URL and personal report favorites. Only whitelisted source columns are queried. Every supported date projection was checked against the migrated schema.
 - Local verification: 192 tests, type/schema/generated-link checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes. Publication and production acceptance remain separate gates.
+
+## Rate history refinement
+
+- Commercial and equipment rate histories share compact embedded tables and retry failed loads. Amounts use the currency in each stored snapshot; legacy entries without a recorded currency are identified instead of being silently labeled USD. Dates are readable and zero amounts stay visible.
+- Local verification: 194 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live rate saves. Production acceptance remains pending.

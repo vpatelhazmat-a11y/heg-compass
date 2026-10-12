@@ -2,7 +2,7 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { StatusBadge } from "./StatusBadge";
-import { formatDate, formatMoney, dueLabel } from "@/lib/format";
+import { formatDate, formatMoney, formatNumber, dueLabel } from "@/lib/format";
 import { getRow, listRows, type Row } from "@/lib/data";
 import {
   recordDefinition,
@@ -916,11 +916,29 @@ export function RecordDetailPage({
               rows={history.data ?? []}
               isLoading={history.isLoading}
               error={history.error}
+              onRetry={() => void history.refetch()}
               columns={[
-                { key: "created_at", header: "Changed" },
-                { key: "previous_amount", header: "Previous amount" },
-                { key: "new_amount", header: "New amount" },
-                { key: "effective_date", header: "Effective" },
+                {
+                  key: "created_at",
+                  header: "Changed",
+                  render: (entry) => formatDate(entry.created_at),
+                },
+                {
+                  key: "previous_amount",
+                  header: "Previous amount",
+                  render: (entry) =>
+                    historyMoney(entry.previous_amount, entry.previous_record?.currency),
+                },
+                {
+                  key: "new_amount",
+                  header: "New amount",
+                  render: (entry) => historyMoney(entry.new_amount, entry.new_record?.currency),
+                },
+                {
+                  key: "effective_date",
+                  header: "Effective",
+                  render: (entry) => formatDate(entry.effective_date),
+                },
                 { key: "reason", header: "Reason" },
               ]}
               emptyTitle="No revisions recorded"
@@ -931,9 +949,11 @@ export function RecordDetailPage({
           <section aria-label="Equipment rate history">
             <h2 className="mb-3 text-lg font-semibold">Rate history</h2>
             <DataTable
+              embedded
               rows={history.data ?? []}
               isLoading={history.isLoading}
               error={history.error}
+              onRetry={() => void history.refetch()}
               columns={[
                 {
                   key: "changed_at",
@@ -946,18 +966,14 @@ export function RecordDetailPage({
                   header: "Previous",
                   value: (entry) => entry.previous_record?.rate,
                   render: (entry) =>
-                    formatMoney(
-                      entry.previous_record?.rate,
-                      entry.previous_record?.currency_code,
-                      2,
-                    ),
+                    historyMoney(entry.previous_record?.rate, entry.previous_record?.currency_code),
                 },
                 {
                   key: "rate",
                   header: "New amount",
                   value: (entry) => entry.new_record?.rate,
                   render: (entry) =>
-                    formatMoney(entry.new_record?.rate, entry.new_record?.currency_code, 2),
+                    historyMoney(entry.new_record?.rate, entry.new_record?.currency_code),
                 },
                 { key: "unit", header: "Unit", value: (entry) => entry.new_record?.rate_unit },
                 { key: "reason", header: "Reason" },
@@ -970,6 +986,13 @@ export function RecordDetailPage({
       </RecordLayout>
     </>
   );
+}
+
+function historyMoney(value: number | string | null | undefined, currency?: string) {
+  if (value === null || value === undefined || value === "") return "—";
+  return currency
+    ? formatMoney(value, currency, 2)
+    : `${formatNumber(value)} (currency not recorded)`;
 }
 
 function RecordEditor({ table, row, onClose }: { table: string; row: Row; onClose?: () => void }) {
