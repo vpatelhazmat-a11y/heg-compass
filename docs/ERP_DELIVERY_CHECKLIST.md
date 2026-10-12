@@ -129,3 +129,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 
 - Commercial and equipment rate histories share compact embedded tables and retry failed loads. Amounts use the currency in each stored snapshot; legacy entries without a recorded currency are identified instead of being silently labeled USD. Dates are readable and zero amounts stay visible.
 - Local verification: 194 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live rate saves. Production acceptance remains pending.
+
+## Settings and activity navigation
+
+- Settings tabs are URL-addressable and preserve unsaved account drafts across tab changes. Failed alert-preference storage leaves the existing setting intact and displays a retryable error.
+- Activity loading offers retry. Activity links use the app router and retain the originating screen in the return breadcrumb rather than reloading the whole document.
+- Local verification: 197 tests, type/schema/generated-link checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live account changes. Production visual acceptance remains pending.

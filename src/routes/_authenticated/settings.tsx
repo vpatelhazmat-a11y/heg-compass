@@ -15,6 +15,16 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { orDash } from "@/lib/format";
 
 export const Route = createFileRoute("/_authenticated/settings")({
+  validateSearch: (
+    search: Record<string, unknown>,
+  ): { section?: "account" | "notifications" | "security" | "workstation" } => ({
+    ...(["account", "notifications", "security", "workstation"].includes(String(search["section"]))
+      ? {
+          section: String(search["section"]) as
+            "account" | "notifications" | "security" | "workstation",
+        }
+      : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Settings — HEG Commercial Intelligence Hub" },
@@ -25,10 +35,13 @@ export const Route = createFileRoute("/_authenticated/settings")({
 });
 
 function SettingsPage() {
+  const { section = "account" } = Route.useSearch();
+  const navigate = Route.useNavigate();
   const { session } = useSession();
   const [email, setEmail] = useState(session?.email ?? "");
   const [password, setPassword] = useState("");
   const [taskAlerts, setTaskAlerts] = useState(true);
+  const [preferenceError, setPreferenceError] = useState<string | null>(null);
   const [emailStatus, setEmailStatus] = useState<string | null>(null);
   const [passwordStatus, setPasswordStatus] = useState<string | null>(null);
   const [pending, setPending] = useState<"email" | "password" | null>(null);
@@ -51,13 +64,14 @@ function SettingsPage() {
 
   const saveTaskAlerts = (value: boolean) => {
     if (!session?.userId) return;
-    setTaskAlerts(value);
+    setPreferenceError(null);
     try {
       localStorage.setItem(`heg-task-alerts:${session.userId}`, value ? "on" : "off");
+      setTaskAlerts(value);
+      window.dispatchEvent(new Event("heg:preference-changed"));
     } catch {
-      /* The preference still applies to this page until reload. */
+      setPreferenceError("Activity alerts could not be saved on this device. Try again.");
     }
-    window.dispatchEvent(new Event("heg:preference-changed"));
   };
 
   const updateEmail = async () => {
@@ -102,8 +116,19 @@ function SettingsPage() {
 
   return (
     <>
-      <PageHeader title="Settings" />
-      <Tabs defaultValue="account" className="settings-workspace">
+      <PageHeader
+        title="Settings"
+        breadcrumbs={[{ label: "Apps", to: "/command-center" }, { label: "Settings" }]}
+      />
+      <Tabs
+        value={section}
+        onValueChange={(value) =>
+          void navigate({
+            search: { section: value as "account" | "notifications" | "security" | "workstation" },
+          })
+        }
+        className="settings-workspace"
+      >
         <TabsList aria-label="Settings categories" className="settings-categories">
           <TabsTrigger value="account">Account</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -175,6 +200,11 @@ function SettingsPage() {
                     onCheckedChange={saveTaskAlerts}
                   />
                 </SettingRow>
+                {preferenceError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    {preferenceError}
+                  </p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Email digests are not available until an email service is connected.
                 </p>

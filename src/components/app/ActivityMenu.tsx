@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bell } from "lucide-react";
 import {
@@ -55,6 +56,8 @@ export function ActivityMenu() {
   });
   const items = enabled ? (feed.data ?? []) : [];
   const urgent = items.filter((item) => item.daysAway <= 0).length;
+  const origin =
+    typeof window === "undefined" ? undefined : window.location.pathname + window.location.search;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -80,13 +83,25 @@ export function ActivityMenu() {
         ) : feed.error ? (
           <p role="alert" className="activity-empty">
             Activity could not be loaded.
+            <button
+              type="button"
+              className="ml-2 text-primary underline"
+              disabled={feed.isFetching}
+              onClick={() => void feed.refetch()}
+            >
+              Try again
+            </button>
           </p>
         ) : items.length === 0 ? (
           <p className="activity-empty">Nothing due soon.</p>
         ) : (
           <div className="activity-items">
             {items.map((item) => (
-              <a key={item.id} href={item.href} className="activity-item">
+              <Link
+                key={item.id}
+                to={origin ? `${item.href}?returnTo=${encodeURIComponent(origin)}` : item.href}
+                className="activity-item"
+              >
                 <span>
                   <strong>{item.title}</strong>
                   <small>
@@ -100,7 +115,7 @@ export function ActivityMenu() {
                       ? "Today"
                       : `${item.daysAway}d`}
                 </em>
-              </a>
+              </Link>
             ))}
           </div>
         )}
