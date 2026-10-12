@@ -112,3 +112,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 
 - Secondary formatting is available in a compact menu using already-supported note nodes and marks. Undo/Redo reflect editor history. Toolbar arrows/Home/End and link Enter/Escape/Cancel support keyboard editing without submitting the surrounding record form.
 - 186 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration. Images/tables/attachments and production visual acceptance remain open.
+
+## Selected-record export — verification pending
+
+- Module lists now have page-scoped selection and CSV/XLSX export of selected rows or the current page, using the chosen visible columns. Selection clears when the query, page, view or account changes; embedded related lists remain compact. Export failures keep the selection and offer another attempt through the list menu.
+- The first targeted run passed 34 tests and exposed one asynchronous test assertion issue. That assertion now waits for the refreshed list. The latest local verification command was not executed because automatic approval review hit its usage limit. This pass remains unverified; it has not been merged or published.
+- Notes PR #56 passed hosted CI and was merged. Its Lovable publication was requested. Production visual acceptance remains pending.

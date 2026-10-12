@@ -21,6 +21,7 @@ import {
   Settings2,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { EmptyState, ErrorState, LoadingState } from "./EmptyState";
@@ -64,6 +65,7 @@ export function DataTable({
   groupingField,
   serverSort,
   visibleColumnKeys,
+  selection,
 }: {
   columns: Column[];
   rows: Row[];
@@ -84,6 +86,7 @@ export function DataTable({
   embedded?: boolean;
   groupingField?: string | undefined;
   visibleColumnKeys?: string[] | undefined;
+  selection?: { ids: string[]; onChange: (ids: string[]) => void } | undefined;
   serverSort?: {
     key?: string | undefined;
     asc: boolean;
@@ -180,6 +183,8 @@ export function DataTable({
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const current = Math.min(page, pageCount - 1);
   const visible = sorted.slice(current * pageSize, current * pageSize + pageSize);
+  const selectableIds = visible.filter((row) => row.id != null).map((row) => String(row.id));
+  const selectedIds = selection?.ids.filter((id) => selectableIds.includes(id)) ?? [];
 
   const exportCsv = () => {
     downloadCsv(
@@ -525,6 +530,24 @@ export function DataTable({
             <table className="w-full border-collapse text-sm">
               <thead className="sticky top-0 z-10 bg-secondary">
                 <tr>
+                  {selection && (
+                    <th scope="col" className="w-10 px-3 py-2.5">
+                      <Checkbox
+                        aria-label="Select this page"
+                        disabled={!selectableIds.length}
+                        checked={
+                          selectedIds.length === selectableIds.length && selectableIds.length > 0
+                            ? true
+                            : selectedIds.length
+                              ? "indeterminate"
+                              : false
+                        }
+                        onCheckedChange={(checked) =>
+                          selection.onChange(checked ? selectableIds : [])
+                        }
+                      />
+                    </th>
+                  )}
                   {visibleColumns.map((column) => (
                     <th
                       key={column.key}
@@ -587,7 +610,11 @@ export function DataTable({
                         <tr className="record-list-group-row">
                           <th
                             scope="rowgroup"
-                            colSpan={visibleColumns.length + (recordTable && !primaryLink ? 1 : 0)}
+                            colSpan={
+                              visibleColumns.length +
+                              (recordTable && !primaryLink ? 1 : 0) +
+                              (selection ? 1 : 0)
+                            }
                           >
                             {groupColumn.header}: {cellValue(row, groupColumn) || "Not set"}
                           </th>
@@ -620,6 +647,22 @@ export function DataTable({
                           : undefined
                       }
                     >
+                      {selection && (
+                        <td className="w-10 px-3 py-2.5">
+                          <Checkbox
+                            aria-label={`Select ${recordTable ? recordLabel(recordTable, row) : String(row[visibleColumns[0]?.key ?? "id"] ?? row.id)}`}
+                            disabled={row.id == null}
+                            checked={selectedIds.includes(String(row.id))}
+                            onCheckedChange={(checked) =>
+                              selection.onChange(
+                                checked
+                                  ? [...selectedIds, String(row.id)]
+                                  : selectedIds.filter((id) => id !== String(row.id)),
+                              )
+                            }
+                          />
+                        </td>
+                      )}
                       {visibleColumns.map((column) => (
                         <td
                           key={column.key}

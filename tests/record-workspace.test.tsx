@@ -22,7 +22,11 @@ const mocks = vi.hoisted(() => ({
   canEdit: vi.fn(),
   toastError: vi.fn(),
   navigate: vi.fn(),
+  exportCsv: vi.fn(),
+  exportSpreadsheet: vi.fn(),
 }));
+vi.mock("../src/lib/csv", () => ({ downloadCsv: mocks.exportCsv }));
+vi.mock("../src/lib/spreadsheet-export", () => ({ downloadSpreadsheet: mocks.exportSpreadsheet }));
 vi.mock("../src/lib/data", () => ({
   getRow: mocks.getRow,
   listRows: mocks.listRows,
@@ -605,6 +609,59 @@ test("column picker hides a column while keeping at least one visible", async ()
   await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
   expect(screen.queryByRole("columnheader", { name: "Status" })).toBeNull();
   expect(screen.getByRole("columnheader", { name: "Name" })).toBeTruthy();
+});
+
+test("selected export uses visible columns and clears selection when the list changes", async () => {
+  mocks.listRowsPage.mockResolvedValue({
+    rows: [
+      { id, legal_name: "Alpha", status: "Active" },
+      { id: customer, legal_name: "Beta", status: "Pending" },
+    ],
+    count: 2,
+  });
+  const columns = [
+    { key: "legal_name", header: "Name" },
+    { key: "status", header: "Status" },
+  ];
+  const rendered = mount(<RecordListPage table="customers" columns={columns} />);
+  fireEvent.click(await screen.findByRole("checkbox", { name: "Select Alpha" }));
+  expect(mocks.navigate).not.toHaveBeenCalled();
+  expect(screen.getByRole("status").textContent).toBe("1 selected");
+  fireEvent.keyDown(screen.getByRole("button", { name: "List actions" }), { key: "Enter" });
+  fireEvent.click(await screen.findByRole("menuitemcheckbox", { name: "Status" }));
+  fireEvent.click(screen.getByRole("menuitem", { name: "Export selected (CSV)" }));
+  expect(mocks.exportCsv).toHaveBeenCalledWith("heg-customers-selected", ["Name"], [["Alpha"]]);
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  rendered.rerender(
+    <QueryClientProvider client={clients.at(-1)!}>
+      <RecordListPage table="customers" columns={columns} state={{ search: "Beta" }} />
+    </QueryClientProvider>,
+  );
+  await waitFor(() => expect(screen.queryByText("1 selected")).toBeNull());
+  expect(
+    (await screen.findByRole("checkbox", { name: "Select Alpha" })).getAttribute("aria-checked"),
+  ).toBe("false");
+});
+
+test("spreadsheet export failures remain recoverable and select-page stays local", async () => {
+  mocks.listRowsPage.mockResolvedValue({ rows: [{ id, legal_name: "Alpha" }], count: 100 });
+  mocks.exportSpreadsheet
+    .mockRejectedValueOnce(new Error("Workbook unavailable"))
+    .mockResolvedValueOnce(undefined);
+  mount(<RecordListPage table="customers" columns={[{ key: "legal_name", header: "Name" }]} />);
+  fireEvent.click(await screen.findByRole("checkbox", { name: "Select this page" }));
+  expect(screen.getByRole("status").textContent).toBe("1 selected");
+  fireEvent.keyDown(screen.getByRole("button", { name: "List actions" }), { key: "Enter" });
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Export selected (XLSX)" }));
+  expect((await screen.findByRole("alert")).textContent).toBe("Workbook unavailable");
+  fireEvent.keyDown(screen.getByRole("button", { name: "List actions" }), { key: "Enter" });
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Export selected (XLSX)" }));
+  await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+  expect(mocks.exportSpreadsheet).toHaveBeenLastCalledWith(
+    "heg-customers-selected",
+    ["Name"],
+    [["Alpha"]],
+  );
 });
 
 test("module column choices survive remount and keep grouping when its field is hidden", async () => {
