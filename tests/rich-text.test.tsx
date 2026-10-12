@@ -35,6 +35,44 @@ test("the notes toolbar edits the document and rejects unsafe link addresses", a
   expect(screen.getByRole("alert").textContent).toContain("Enter an http");
 });
 
+test("secondary formatting and link cancellation preserve editing without submitting the parent", async () => {
+  Object.defineProperty(Range.prototype, "getClientRects", { configurable: true, value: () => [] });
+  Object.defineProperty(Range.prototype, "getBoundingClientRect", {
+    configurable: true,
+    value: () => new DOMRect(),
+  });
+  const changed = vi.fn();
+  const submitted = vi.fn((event: React.FormEvent) => event.preventDefault());
+  render(
+    <form onSubmit={submitted}>
+      <RichTextEditor
+        id="notes"
+        label="Notes"
+        value={JSON.stringify(noteDocument(undefined, "Review notes"))}
+        onChange={changed}
+      />
+    </form>,
+  );
+  await screen.findByRole("textbox", { name: "Notes" });
+  expect(screen.getByRole("button", { name: "Undo" })).toHaveProperty("disabled", true);
+  fireEvent.keyDown(screen.getByRole("button", { name: "More formatting" }), { key: "Enter" });
+  fireEvent.click(await screen.findByRole("menuitem", { name: "Quote" }));
+  await waitFor(() =>
+    expect(JSON.parse(changed.mock.calls.at(-1)![0]).content[0].type).toBe("blockquote"),
+  );
+  expect(screen.getByRole("button", { name: "Undo" })).toHaveProperty("disabled", false);
+  fireEvent.click(screen.getByRole("button", { name: "Link" }));
+  const address = screen.getByRole("textbox", { name: "Link address" });
+  fireEvent.change(address, { target: { value: "https://example.test" } });
+  fireEvent.keyDown(address, { key: "Escape" });
+  expect(screen.queryByRole("textbox", { name: "Link address" })).toBeNull();
+  expect(submitted).not.toHaveBeenCalled();
+  const bold = screen.getByRole("button", { name: "Bold" });
+  bold.focus();
+  fireEvent.keyDown(bold, { key: "ArrowRight" });
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Italic" }));
+});
+
 test("legacy notes preserve literal text and line breaks without treating HTML as markup", () => {
   const text = "First line\n<script>alert('x')</script>";
   expect(notePlainText(noteDocument(undefined, text))).toBe(text);
