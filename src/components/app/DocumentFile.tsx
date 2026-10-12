@@ -20,6 +20,10 @@ export function DocumentFile({ document }: { document: Row }) {
     enabled: Boolean(document.file_path),
     queryFn: async () => {
       const result = await supabase.storage.from(BUCKET).exists(document.file_path);
+      if (result.error) {
+        const error = result.error as { status?: number; originalError?: { status?: number } };
+        if ((error.status ?? error.originalError?.status) !== 404) throw result.error;
+      }
       return result.data;
     },
     retry: false,
@@ -145,7 +149,7 @@ export function DocumentFile({ document }: { document: Row }) {
       ) : (
         <p className="text-sm text-muted-foreground">
           {document.file_path
-            ? "The attached file is missing. Ask a document editor to upload it again."
+            ? "The attached file is missing or inaccessible. Ask a document editor to review it."
             : "No file uploaded."}
         </p>
       )}

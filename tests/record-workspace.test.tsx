@@ -91,6 +91,39 @@ function mount(children: React.ReactNode) {
   clients.push(client);
   return render(<QueryClientProvider client={client}>{children}</QueryClientProvider>);
 }
+test("document creation uses the record workspace and preserves its parent through a failed save", async () => {
+  mocks.insert.mockRejectedValueOnce(new Error("Save unavailable")).mockResolvedValueOnce({ id });
+  mount(<RecordListPage table="documents" parent="customers" parentId={customer} />);
+  fireEvent.click(screen.getByRole("button", { name: "New document" }));
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(screen.getByRole("heading", { name: "New document" })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText(/^Document name/), {
+    target: { value: "Insurance certificate" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  await screen.findByRole("alert");
+  expect(screen.getByLabelText(/^Document name/)).toHaveProperty("value", "Insurance certificate");
+  fireEvent.click(screen.getByRole("button", { name: "Create" }));
+  await waitFor(() => expect(mocks.navigate).toHaveBeenCalled());
+  expect(mocks.insert).toHaveBeenLastCalledWith(
+    "documents",
+    expect.objectContaining({
+      document_name: "Insurance certificate",
+      linked_entity_type: "customer",
+      linked_entity_id: customer,
+    }),
+  );
+});
+
+test("canceling document creation returns to the existing list without saving", () => {
+  mount(<RecordListPage table="documents" />);
+  fireEvent.click(screen.getByRole("button", { name: "New document" }));
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(screen.getByRole("heading", { name: "Documents" })).toBeTruthy();
+  expect(screen.getByRole("button", { name: "New document" })).toBeTruthy();
+  expect(mocks.insert).not.toHaveBeenCalled();
+});
+
 test("new contacts inherit their site and customer and return to the saved record", async () => {
   mocks.getRow.mockResolvedValue({ id, site_name: "North site", customer_id: customer });
   mocks.listRows.mockImplementation(async (table) =>
