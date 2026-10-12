@@ -595,6 +595,54 @@ test("master lists preserve creation permissions and display customer dates cons
   await screen.findByText("Sep 18, 2026");
   fireEvent.click(screen.getByRole("button", { name: "New", exact: true }));
   expect(await screen.findByRole("heading", { name: "New customer" })).toBeTruthy();
+  expect(screen.queryByRole("dialog")).toBeNull();
+  expect(await screen.findByRole("textbox", { name: /Legal name/ })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Cancel", exact: true }));
+  expect(await screen.findByText("Sep 18, 2026")).toBeTruthy();
+});
+
+test("explicitly disabled module creation does not fall back to a generic New action", () => {
+  mount(
+    <MasterRecordList
+      table="sites"
+      search={parseRecordListSearch({})}
+      onChange={vi.fn()}
+      creatable={false}
+    />,
+  );
+  expect(screen.queryByRole("button", { name: /^New/ })).toBeNull();
+});
+
+test("archived master lists do not fall back to generic creation", () => {
+  mount(
+    <MasterRecordList
+      table="customers"
+      search={parseRecordListSearch({ archived: true })}
+      onChange={vi.fn()}
+    />,
+  );
+  expect(screen.queryByRole("button", { name: /^New/ })).toBeNull();
+});
+
+test("master creation retries failed relationships and retains supplied field labels", async () => {
+  mocks.listRows.mockRejectedValueOnce(new Error("Choices unavailable"));
+  mount(
+    <MasterRecordList
+      table="bids"
+      search={parseRecordListSearch({})}
+      onChange={vi.fn()}
+      fields={[
+        { name: "customer_id", label: "Account", type: "select", required: true, options: [] },
+        { name: "bid_name", label: "Proposal name", required: true },
+      ]}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "New", exact: true }));
+  fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
+  expect(await screen.findByLabelText(/^Account/)).toBeTruthy();
+  expect(screen.getByLabelText(/^Proposal name/)).toBeTruthy();
+  expect(screen.getAllByLabelText(/^Account/)).toHaveLength(1);
+  expect(mocks.insert).not.toHaveBeenCalled();
 });
 test("read-only master lists show search and views without creation controls", async () => {
   mocks.canEdit.mockReturnValue(false);

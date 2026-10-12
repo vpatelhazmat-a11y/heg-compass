@@ -80,6 +80,33 @@ type ListPatch = {
   page?: number;
 };
 
+export function RecordCreationLayout({
+  table,
+  returnTo,
+  children,
+}: {
+  table: string;
+  returnTo?: string | undefined;
+  children: ReactNode;
+}) {
+  const definition = recordDefinition(table)!;
+  return (
+    <>
+      <PageHeader
+        title={`New ${definition.singular.toLowerCase()}`}
+        breadcrumbs={[
+          { label: "Apps", to: "/command-center" },
+          { label: definition.label, to: returnTo ?? recordListHref(table) },
+          { label: "New" },
+        ]}
+      />
+      <div className="record-workspace-layout">
+        <div className="record-workspace-main">{children}</div>
+      </div>
+    </>
+  );
+}
+
 export function RecordListPage({
   table,
   parent,
@@ -153,30 +180,18 @@ export function RecordListPage({
     );
   if (creating && canEdit(table))
     return (
-      <>
-        <PageHeader
-          title={`New ${definition.singular.toLowerCase()}`}
-          breadcrumbs={[
-            { label: "Apps", to: "/command-center" },
-            { label: definition.label, to: returnTo ?? recordListHref(table) },
-            { label: "New" },
-          ]}
+      <RecordCreationLayout table={table} returnTo={returnTo}>
+        <RecordCreator
+          table={table}
+          parent={parent}
+          parentId={parentId}
+          onClose={() => setCreating(false)}
+          onSaved={(saved) => {
+            setCreating(false);
+            void navigate({ to: recordHref(table, saved.id, returnTo) });
+          }}
         />
-        <div className="record-workspace-layout">
-          <div className="record-workspace-main">
-            <RecordCreator
-              table={table}
-              parent={parent}
-              parentId={parentId}
-              onClose={() => setCreating(false)}
-              onSaved={(saved) => {
-                setCreating(false);
-                void navigate({ to: recordHref(table, saved.id, returnTo) });
-              }}
-            />
-          </div>
-        </div>
-      </>
+      </RecordCreationLayout>
     );
   return (
     <>

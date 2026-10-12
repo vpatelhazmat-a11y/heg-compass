@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
-import { RecordListPage } from "./RecordWorkspace";
-import { RecordForm, type FieldConfig } from "./RecordForm";
+import { RecordCreationLayout, RecordListPage } from "./RecordWorkspace";
+import type { FieldConfig } from "./RecordForm";
+import { RecordCreator } from "./RecordCreator";
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/hooks/use-session";
-import { recordDefinition, recordHref } from "@/lib/record-registry";
+import { recordHref } from "@/lib/record-registry";
 import { parseRecordListSearch } from "@/lib/record-lists";
 type State = ReturnType<typeof parseRecordListSearch>;
 export function MasterRecordList({
@@ -33,7 +34,19 @@ export function MasterRecordList({
   const navigate = useNavigate();
   const [creating, setCreating] = useState(false);
   const { canEdit } = useSession();
-  const definition = recordDefinition(table)!;
+  const returnTo =
+    typeof window === "undefined" ? undefined : window.location.pathname + window.location.search;
+  if (creating && canEdit(table))
+    return (
+      <RecordCreationLayout table={table} returnTo={returnTo}>
+        <RecordCreator
+          onClose={() => setCreating(false)}
+          table={table}
+          fields={fields}
+          onSaved={(row) => void navigate({ to: recordHref(table, row.id, returnTo) })}
+        />
+      </RecordCreationLayout>
+    );
   return (
     <>
       <RecordListPage
@@ -54,23 +67,11 @@ export function MasterRecordList({
         actions={
           creatable && canEdit(table) && !search.archived ? (
             <Button onClick={() => setCreating(true)}>New</Button>
-          ) : undefined
+          ) : (
+            false
+          )
         }
       />
-      {creatable && (
-        <RecordForm
-          open={creating}
-          onOpenChange={setCreating}
-          title={"New " + definition.singular.toLowerCase()}
-          table={table}
-          fields={fields ?? definition.fields}
-          onSaved={(row) =>
-            void navigate({
-              to: recordHref(table, row.id, window.location.pathname + window.location.search),
-            })
-          }
-        />
-      )}
     </>
   );
 }

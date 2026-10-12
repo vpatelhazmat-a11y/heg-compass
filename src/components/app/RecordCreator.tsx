@@ -17,16 +17,19 @@ export function RecordCreator({
   table,
   parent,
   parentId,
+  fields: suppliedFields,
   onClose,
   onSaved,
 }: {
   table: string;
   parent?: string | undefined;
   parentId?: string | undefined;
+  fields?: FieldConfig[] | undefined;
   onClose: () => void;
   onSaved: (row: Row) => void;
 }) {
   const definition = recordDefinition(table)!;
+  const baseFields = suppliedFields ?? definition.fields;
   const relationKeys = definition.relations;
   const targets = [
     ...new Set(
@@ -48,7 +51,14 @@ export function RecordCreator({
     })),
   });
   if ((scoped && source.isPending) || choices.some((choice) => choice.isPending))
-    return <LoadingState />;
+    return (
+      <>
+        <LoadingState />
+        <Button variant="outline" onClick={onClose}>
+          Cancel
+        </Button>
+      </>
+    );
   if ((scoped && source.isError) || choices.some((choice) => choice.isError))
     return (
       <>
@@ -76,16 +86,18 @@ export function RecordCreator({
   const defaults = recordCreationDefaults(table, parent, parentId, source.data);
   const relationFields: FieldConfig[] = relationKeys.map((key) => {
     const target = RELATION_TARGETS[key]!;
+    const supplied = baseFields.find((field) => field.name === key);
     const rows = [...(choices[targets.indexOf(target)]?.data ?? [])];
     // Keep a readable selected parent even when it lies beyond the option batch.
     if (target === parent && source.data && !rows.some((row) => row.id === source.data.id))
       rows.push(source.data);
     return {
+      ...supplied,
       name: key,
-      label: fieldLabel(key),
+      label: supplied?.label ?? fieldLabel(key),
       type: "select",
       section: "Linked records",
-      required: requiredRecordRelation(table, key),
+      required: requiredRecordRelation(table, key) || supplied?.required === true,
       ...(relationDependsOnCustomer(table, key) ? { dependsOn: "customer_id" } : {}),
       options: rows
         .filter((row) => !row.archived_at)
@@ -96,6 +108,10 @@ export function RecordCreator({
         })),
     };
   });
+  const formFields = [
+    ...relationFields,
+    ...baseFields.filter((field) => !relationKeys.includes(field.name)),
+  ];
   return (
     <RecordForm
       presentation="create"
@@ -105,12 +121,10 @@ export function RecordCreator({
       }}
       title={`New ${definition.singular.toLowerCase()}`}
       table={table}
-      fields={[...relationFields, ...definition.fields]}
+      fields={formFields}
       initialValues={defaults}
       defaults={Object.fromEntries(
-        Object.entries(defaults).filter(
-          ([key]) => ![...relationFields, ...definition.fields].some((field) => field.name === key),
-        ),
+        Object.entries(defaults).filter(([key]) => !formFields.some((field) => field.name === key)),
       )}
       onSaved={onSaved}
     />
