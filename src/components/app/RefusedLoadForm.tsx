@@ -28,6 +28,7 @@ import { useLookup, usePeople } from "@/lib/lookups";
 import { useSession } from "@/hooks/use-session";
 import { todayISO } from "@/lib/format";
 import { useDraftProtection } from "@/hooks/use-draft-protection";
+import { ErrorState } from "./EmptyState";
 
 const NONE = "__none__";
 
@@ -166,6 +167,19 @@ export function RefusedLoadForm({
     queryKey: ["form-equipment"],
     queryFn: () => listRows("equipment", { order: { column: "unit_number", ascending: true } }),
   });
+  const choiceQueries = [
+    customers,
+    contacts,
+    products,
+    equipment,
+    states,
+    equipmentTypes,
+    ratedOptions,
+    lossReasons,
+    people,
+  ];
+  const choicesLoading = choiceQueries.some((query) => query.isPending);
+  const choicesFailed = choiceQueries.some((query) => query.isError);
 
   const filteredContacts = useMemo(() => {
     const all = contacts.data ?? [];
@@ -260,7 +274,7 @@ export function RefusedLoadForm({
 
   const formRef = useRef<HTMLFormElement>(null);
   const submit = (mode: "again" | "view") => {
-    if (save.isPending || !canEdit("refused_loads")) return;
+    if (save.isPending || choicesLoading || choicesFailed || !canEdit("refused_loads")) return;
     setIntent(mode);
     if (!validate()) {
       toast.error("Check the highlighted fields.");
@@ -282,6 +296,21 @@ export function RefusedLoadForm({
         submit("view");
       }}
     >
+      {choicesLoading && (
+        <p className="mb-4 text-sm text-muted-foreground" role="status">
+          Loading record choices…
+        </p>
+      )}
+      {choicesFailed && (
+        <div className="mb-4" role="alert">
+          <ErrorState
+            message="Some record choices could not load. Your entered details are intact; retry before saving."
+            onRetry={() => {
+              for (const query of choiceQueries) if (query.isError) void query.refetch();
+            }}
+          />
+        </div>
+      )}
       <fieldset disabled={save.isPending} className="grid gap-5 md:grid-cols-2">
         <Field label="Call in date" required error={errors["call_in_date"]}>
           <Input
@@ -518,13 +547,20 @@ export function RefusedLoadForm({
             <Button
               type="button"
               variant="outline"
-              disabled={save.isPending || !canEdit("refused_loads")}
+              disabled={
+                save.isPending || choicesLoading || choicesFailed || !canEdit("refused_loads")
+              }
               onClick={() => submit("again")}
             >
               Save &amp; add another
             </Button>
           )}
-          <Button type="submit" disabled={save.isPending || !canEdit("refused_loads")}>
+          <Button
+            type="submit"
+            disabled={
+              save.isPending || choicesLoading || choicesFailed || !canEdit("refused_loads")
+            }
+          >
             {save.isPending ? "Saving…" : recordId ? "Save changes" : "Save & view record"}
           </Button>
         </div>

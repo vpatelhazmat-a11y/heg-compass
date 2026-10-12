@@ -12,11 +12,16 @@ vi.stubGlobal(
     disconnect() {}
   },
 );
-const mocks = vi.hoisted(() => ({ insert: vi.fn(), update: vi.fn(), canEdit: vi.fn(() => true) }));
-vi.mock("../src/lib/data", () => ({
-  listRows: vi.fn(async (table: string) =>
+const mocks = vi.hoisted(() => ({
+  insert: vi.fn(),
+  update: vi.fn(),
+  canEdit: vi.fn(() => true),
+  list: vi.fn(async (table: string) =>
     table === "customers" ? [{ id: "customer", legal_name: "Test Customer" }] : [],
   ),
+}));
+vi.mock("../src/lib/data", () => ({
+  listRows: mocks.list,
   insertRow: mocks.insert,
   updateRow: mocks.update,
   recordAudit: vi.fn(),
@@ -58,6 +63,12 @@ afterEach(() => {
 test("Refused Load form submits schema-compatible fields without client audit attribution", async () => {
   mocks.insert.mockResolvedValue({ id: "created" });
   mount();
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Save & view record" })).toHaveProperty(
+      "disabled",
+      false,
+    ),
+  );
   fireEvent.click(screen.getByRole("button", { name: "Save & view record" }));
   await waitFor(() => expect(mocks.insert).toHaveBeenCalledOnce());
   const [table, payload] = mocks.insert.mock.calls[0];
@@ -72,6 +83,12 @@ test("Refused Load form submits schema-compatible fields without client audit at
 });
 test("fractional load counts are rejected before saving", async () => {
   const { container } = mount();
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Save & view record" })).toHaveProperty(
+      "disabled",
+      false,
+    ),
+  );
   fireEvent.change(screen.getByLabelText(/Number of loads/), { target: { value: "1.5" } });
   fireEvent.submit(container.querySelector("form")!);
   expect(await screen.findByText("Enter at least one load.")).toBeTruthy();
@@ -105,6 +122,12 @@ test("pending saves lock the form and reject duplicate submission", async () => 
       }),
   );
   const { container } = mount();
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Save & view record" })).toHaveProperty(
+      "disabled",
+      false,
+    ),
+  );
   fireEvent.click(screen.getByRole("button", { name: "Save & view record" }));
   await screen.findByRole("button", { name: "Saving…" });
   expect(screen.getByLabelText(/Number of loads/).matches(":disabled")).toBe(true);
@@ -117,4 +140,49 @@ test("pending saves lock the form and reject duplicate submission", async () => 
 test("historical lost reasons remain visible when absent from current lookup options", () => {
   mount();
   expect(screen.getByLabelText(/Reason for lost revenue/).textContent).toContain("Capacity");
+});
+
+test("failed record choices preserve the draft and retry cannot accidentally save the form", async () => {
+  mocks.list.mockRejectedValueOnce(new Error("Customers unavailable"));
+  const { container } = mount();
+  await screen.findByRole("alert");
+  fireEvent.change(screen.getByLabelText(/Pickup city/), { target: { value: "Rochester" } });
+  expect(screen.getByRole("button", { name: "Save & view record" })).toHaveProperty(
+    "disabled",
+    true,
+  );
+  fireEvent.submit(container.querySelector("form")!);
+  expect(mocks.insert).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Save & view record" })).toHaveProperty(
+      "disabled",
+      false,
+    ),
+  );
+  expect(screen.getByLabelText(/Pickup city/)).toHaveProperty("value", "Rochester");
+  expect(mocks.insert).not.toHaveBeenCalled();
+});
+
+test("record choices can load while text drafts are edited, but submission waits", async () => {
+  let finish!: (rows: { id: string; legal_name: string }[]) => void;
+  mocks.list.mockImplementationOnce(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  const { container } = mount();
+  expect(screen.getByRole("status").textContent).toBe("Loading record choices…");
+  fireEvent.change(screen.getByLabelText(/Pickup city/), { target: { value: "Rochester" } });
+  fireEvent.submit(container.querySelector("form")!);
+  expect(mocks.insert).not.toHaveBeenCalled();
+  finish([{ id: "customer", legal_name: "Test Customer" }]);
+  await waitFor(() =>
+    expect(screen.getByRole("button", { name: "Save & view record" })).toHaveProperty(
+      "disabled",
+      false,
+    ),
+  );
+  expect(screen.getByLabelText(/Pickup city/)).toHaveProperty("value", "Rochester");
 });

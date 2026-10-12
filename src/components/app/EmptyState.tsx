@@ -52,6 +52,7 @@ export function ErrorState({
       <p className="mt-1 text-muted-foreground">{message ?? "Please try again in a moment."}</p>
       {onRetry && (
         <button
+          type="button"
           onClick={onRetry}
           className="mt-3 text-sm font-medium text-danger underline underline-offset-4"
         >
