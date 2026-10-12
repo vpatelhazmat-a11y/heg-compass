@@ -1,5 +1,6 @@
 import type { RecordPageRequest } from "./record-lists";
 export type SavedViewState = {
+  columns?: string[];
   refused?: RecordPageRequest["refused"];
   sort?: string;
   ascending?: boolean;
@@ -25,6 +26,18 @@ const cleanState = (value: unknown): SavedViewState | null => {
       ? (state["refused"] as Record<string, unknown>)
       : undefined;
   return {
+    ...(Array.isArray(state["columns"]) && state["columns"].length
+      ? {
+          columns: [
+            ...new Set(
+              state["columns"].filter(
+                (key): key is string =>
+                  typeof key === "string" && key.length > 0 && key.length <= 120,
+              ),
+            ),
+          ].slice(0, 80),
+        }
+      : {}),
     ...(refused
       ? {
           refused: Object.fromEntries(

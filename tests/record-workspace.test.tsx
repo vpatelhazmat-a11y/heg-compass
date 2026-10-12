@@ -574,6 +574,36 @@ test("column picker hides a column while keeping at least one visible", async ()
   expect(screen.getByRole("columnheader", { name: "Name" })).toBeTruthy();
 });
 
+test("module column choices survive remount and keep grouping when its field is hidden", async () => {
+  mocks.listRowsPage.mockResolvedValue({
+    rows: [{ id, first_name: "Avery", status: "Active" }],
+    count: 1,
+  });
+  const props = {
+    table: "contacts",
+    state: { groupBy: "status" },
+    columns: [
+      { key: "first_name", header: "First name" },
+      { key: "status", header: "Status" },
+    ],
+  };
+  const first = mount(<RecordListPage {...props} />);
+  await screen.findByText("Avery");
+  fireEvent.keyDown(screen.getByRole("button", { name: "List actions" }), { key: "Enter" });
+  fireEvent.click(await screen.findByRole("menuitemcheckbox", { name: "Status" }));
+  expect(
+    screen.getByRole("menuitemcheckbox", { name: "First name" }).getAttribute("aria-disabled"),
+  ).toBe("true");
+  fireEvent.keyDown(screen.getByRole("menuitemcheckbox", { name: "Status" }), { key: "Escape" });
+  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  expect(screen.queryByRole("columnheader", { name: "Status" })).toBeNull();
+  first.unmount();
+  mount(<RecordListPage {...props} />);
+  await screen.findByText("Avery");
+  expect(screen.queryByRole("columnheader", { name: "Status" })).toBeNull();
+  expect(screen.getByText("Status: Active")).toBeTruthy();
+});
+
 test("list controls filter, group, and switch views without changing the underlying rows", () => {
   mount(
     <DataTable

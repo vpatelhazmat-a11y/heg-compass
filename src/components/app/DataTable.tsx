@@ -31,6 +31,7 @@ import { downloadCsv } from "@/lib/csv";
 import { useSession } from "@/hooks/use-session";
 import { SavedViews } from "./SavedViews";
 import { SearchMenu } from "./SearchMenu";
+import { useColumnChoice } from "@/hooks/use-column-choice";
 
 export type Column = {
   key: string;
@@ -62,6 +63,7 @@ export function DataTable({
   embedded = false,
   groupingField,
   serverSort,
+  visibleColumnKeys,
 }: {
   columns: Column[];
   rows: Row[];
@@ -81,6 +83,7 @@ export function DataTable({
   bare?: boolean;
   embedded?: boolean;
   groupingField?: string | undefined;
+  visibleColumnKeys?: string[] | undefined;
   serverSort?: {
     key?: string | undefined;
     asc: boolean;
@@ -93,14 +96,20 @@ export function DataTable({
   const [sort, setSort] = useState<{ key: string; asc: boolean } | null>(null);
   const displayedSort = serverSort ?? sort;
   const [page, setPage] = useState(0);
-  const [hiddenColumns, setHiddenColumns] = useState<string[]>([]);
+  const columnChoice = useColumnChoice(
+    session?.userId,
+    !bare && !embedded ? exportName : undefined,
+    columns.map((column) => column.key),
+  );
   const [searchField, setSearchField] = useState("");
   const [filterField, setFilterField] = useState("");
   const [filterValue, setFilterValue] = useState("");
   const [groupBy, setGroupBy] = useState("");
   const [view, setView] = useState<"list" | "cards">("list");
   const activeGroupBy = bare ? (groupingField ?? "") : groupBy;
-  const selectedColumns = columns.filter((column) => !hiddenColumns.includes(column.key));
+  const selectedColumns = columns.filter((column) =>
+    (visibleColumnKeys ?? columnChoice.visibleKeys).includes(column.key),
+  );
   const visibleColumns = selectedColumns.length ? selectedColumns : columns;
   const originHref =
     returnTo ??
@@ -318,7 +327,15 @@ export function DataTable({
                         inline
                         userId={session?.userId}
                         scope={exportName}
-                        value={{ search, searchField, filterField, filterValue, groupBy, view }}
+                        value={{
+                          search,
+                          searchField,
+                          filterField,
+                          filterValue,
+                          groupBy,
+                          view,
+                          columns: visibleColumns.map((column) => column.key),
+                        }}
                         onApply={(saved) => {
                           setSearch(saved.search);
                           setSearchField(saved.searchField);
@@ -326,6 +343,7 @@ export function DataTable({
                           setFilterValue(saved.filterValue);
                           setGroupBy(saved.groupBy);
                           setView(saved.view);
+                          columnChoice.select(saved.columns ?? columns.map((column) => column.key));
                           setSort(null);
                           setPage(0);
                           close();
@@ -395,16 +413,21 @@ export function DataTable({
                   disabled={visibleColumns.length === 1 && visibleColumns[0]?.key === column.key}
                   onSelect={(event) => event.preventDefault()}
                   onCheckedChange={(checked) =>
-                    setHiddenColumns((previous) =>
+                    columnChoice.select(
                       checked
-                        ? previous.filter((key) => key !== column.key)
-                        : [...previous, column.key],
+                        ? [...columnChoice.visibleKeys, column.key]
+                        : columnChoice.visibleKeys.filter((key) => key !== column.key),
                     )
                   }
                 >
                   {column.header}
                 </DropdownMenuCheckboxItem>
               ))}
+              {columnChoice.error && (
+                <p role="alert" className="px-2 py-1 text-xs text-destructive">
+                  {columnChoice.error}
+                </p>
+              )}
               {exportName && rows.length > 0 && (
                 <DropdownMenuItem onSelect={exportCsv}>
                   <Download className="h-4 w-4" aria-hidden /> Export filtered results
