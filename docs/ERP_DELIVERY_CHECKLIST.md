@@ -173,4 +173,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 ## Mobile Documents refinement — 2026-10-13
 
 - Small screens start with a compact folder disclosure showing the current folder. Search and records remain visible without scrolling through every folder. Choosing a record folder closes the disclosure; the full desktop sidebar remains visible.
-- Cloud acceptance covers opening folders, choosing a customer folder, URL scope preservation, automatic closing and search visibility in the initial viewport. Hosted checks and screenshot acceptance are pending. No database migration or live document changes.
+- Cloud acceptance covers opening folders, choosing a customer folder, URL scope preservation, automatic closing and search visibility in the initial viewport. All 202 tests, type checks, lint (zero errors; 12 existing warnings), production build, hosted CI and cloud checks passed. Collapsed/expanded mobile screenshots were reviewed. PR #67 was merged and publication requested after Lovable sync. No database migration or live document changes; production acceptance remains pending.
+
+## Keyboard navigation scope — 2026-10-13
+
+- Global search respects consumed keyboard events and composition. Typing within menus, listboxes, trees and tab controls stays within those controls; free typing on the launcher still starts search.
+- Cloud acceptance checks account-menu typeahead, launcher typing and command navigation without a document reload at desktop/mobile widths. Hosted verification is pending. No database migration or live record writes.
