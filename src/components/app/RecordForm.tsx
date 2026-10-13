@@ -1,7 +1,7 @@
 import { useSession } from "@/hooks/use-session";
 import { formPayload, validateFields } from "@/lib/form-values";
 import { supabase } from "@/integrations/supabase/client";
-import { lazy, Suspense, useEffect, useId, useMemo, useState } from "react";
+import { lazy, Suspense, useEffect, useId, useMemo, useState, type KeyboardEvent } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -198,6 +198,18 @@ export function RecordForm({
   };
 
   const recordStyle = presentation === "record" || presentation === "create";
+  const saveShortcut = (event: KeyboardEvent<HTMLElement>) => {
+    if (
+      !(event.ctrlKey || event.metaKey) ||
+      event.altKey ||
+      event.key.toLowerCase() !== "s" ||
+      readOnly
+    )
+      return;
+    event.preventDefault();
+    event.stopPropagation();
+    if (!mutation.isPending && canEdit(table) && (!recordId || dirty)) submit();
+  };
   const contents = (
     <>
       {!recordStyle && (
@@ -499,7 +511,12 @@ export function RecordForm({
           >
             {presentation === "record" ? "Discard" : "Cancel"}
           </Button>
-          <Button onClick={submit} disabled={mutation.isPending || !canEdit(table)}>
+          <Button
+            onClick={submit}
+            aria-keyshortcuts="Control+S Meta+S"
+            title="Save (Ctrl/Cmd+S)"
+            disabled={mutation.isPending || !canEdit(table)}
+          >
             {mutation.isPending ? "Saving…" : recordId ? "Save changes" : "Create"}
           </Button>
         </SheetFooter>
@@ -511,6 +528,7 @@ export function RecordForm({
       <section
         className={`record-editor inline-record-editor ${recordStyle ? "always-editable-record" : ""}`}
         aria-label={title}
+        onKeyDown={saveShortcut}
       >
         {contents}
       </section>
@@ -526,7 +544,10 @@ export function RecordForm({
           else onOpenChange(false);
         }}
       >
-        <SheetContent className="record-editor flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <SheetContent
+          onKeyDown={saveShortcut}
+          className="record-editor flex w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+        >
           {contents}
         </SheetContent>
       </Sheet>

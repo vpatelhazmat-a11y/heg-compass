@@ -146,3 +146,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 
 - Record Notes stays mounted while its formatting menu receives focus. Menu cleanup avoids focusing an editor that has already been destroyed. The regression opens the menu inside a record form, applies formatting and verifies the saved rich-note payload.
 - Local verification: 199 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live saves. Production visual acceptance remains pending.
+
+## Record keyboard saving — 2026-10-13
+
+- Ctrl/Cmd+S in an active record form uses its existing validation and save path. Pending requests cannot be repeated, clean existing records are not resaved, and read-only forms do not submit through the shortcut. The visible save action advertises the shortcut without adding another control.
+- Local verification: 201 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live saves.
+- PR #61 (group collapse) and #62 (Notes focus integration) passed hosted CI and were merged; publication was requested after Lovable synced each merge. Production visual acceptance remains pending.
