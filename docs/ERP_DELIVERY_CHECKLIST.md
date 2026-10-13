@@ -169,3 +169,8 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - The isolated fixture now renders the generated application route tree, with real guards, providers, navigation and record pages. Only the document shell and memory-only data adapter are replaced.
 - Hosted CI and cloud review passed on the initial route expansion. Thirty-two screenshots cover all twelve module home pages plus the customer record, filter menu and Notes editor at desktop/mobile widths. No external requests or uncaught browser errors occurred.
 - Visual review identified a mobile Documents issue: the entire folder tree precedes the search and records, consuming most of the screen. A compact folder disclosure is the next refinement. Production role/data acceptance and the remaining delivery phases are still open.
+
+## Mobile Documents refinement — 2026-10-13
+
+- Small screens start with a compact folder disclosure showing the current folder. Search and records remain visible without scrolling through every folder. Choosing a record folder closes the disclosure; the full desktop sidebar remains visible.
+- Cloud acceptance covers opening folders, choosing a customer folder, URL scope preservation, automatic closing and search visibility in the initial viewport. Hosted checks and screenshot acceptance are pending. No database migration or live document changes.
