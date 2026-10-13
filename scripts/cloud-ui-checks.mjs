@@ -170,6 +170,57 @@ try {
     assert.deepEqual(errors, [], `${device}: uncaught browser errors`);
     assert.deepEqual(external, [], `${device}: unexpected external requests`);
     await context.close();
+
+    const readOnlyContext = await browser.newContext({ viewport, reducedMotion: "reduce" });
+    const readOnlyPage = await readOnlyContext.newPage();
+    currentPage = readOnlyPage;
+    readOnlyPage.on("pageerror", (error) => errors.push(error.message));
+    await readOnlyPage.route("**/*", (route) => {
+      const host = new URL(route.request().url()).hostname;
+      if (host === "127.0.0.1") return route.continue();
+      external.push(host);
+      return route.abort();
+    });
+    await readOnlyPage.goto("http://127.0.0.1:4177/customers?__reviewRole=read_only");
+    await readOnlyPage
+      .getByRole("checkbox", { name: "Select Sample Freight", exact: true })
+      .waitFor();
+    assert.equal(
+      await readOnlyPage.getByRole("button", { name: "New", exact: true }).isVisible(),
+      false,
+      "Read-only lists must not offer record creation",
+    );
+    await readOnlyPage.screenshot({
+      path: `cloud-ui-results/${device}-read-only-list.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+    await readOnlyPage.goto(
+      "http://127.0.0.1:4177/customers/11111111-1111-4111-8111-111111111111?__reviewRole=read_only",
+    );
+    await readOnlyPage.getByRole("heading", { name: "Sample Freight", exact: true }).waitFor();
+    for (const action of ["Edit Legal name", "Edit Commercial notes", "Archive"])
+      assert.equal(
+        await readOnlyPage.getByRole("button", { name: action, exact: true }).isVisible(),
+        false,
+        `Read-only records must not offer ${action}`,
+      );
+    const readOnlyChatter = readOnlyPage.getByRole("region", { name: "Chatter", exact: true });
+    await readOnlyChatter.waitFor();
+    for (const action of ["Send message", "Log note", "Activity"])
+      assert.equal(
+        await readOnlyChatter.getByRole("button", { name: action, exact: true }).isVisible(),
+        false,
+        `Read-only chatter must not offer ${action}`,
+      );
+    await readOnlyPage.screenshot({
+      path: `cloud-ui-results/${device}-read-only-record.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+    assert.deepEqual(errors, [], `${device}: uncaught browser errors during role checks`);
+    assert.deepEqual(external, [], `${device}: unexpected external requests during role checks`);
+    await readOnlyContext.close();
   }
 } catch (error) {
   if (currentPage && !currentPage.isClosed())
