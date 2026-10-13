@@ -162,4 +162,10 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 ## Compact list filters — 2026-10-13
 
 - Archive visibility now lives in Search options instead of occupying its own toolbar row. Archived lists show a removable search facet, and personal favorites preserve archived/active visibility. Older favorites retain their active-record default.
-- The cloud harness now renders the application’s actual master-list component and captures its filter menu on desktop/mobile. Local verification: 202 tests, app/fixture type checks, lint (zero errors; 12 existing warnings), production and fixture builds, and diff checks passed. Cloud screenshots and publication remain pending for this pass.
+- The cloud harness now renders the application’s actual master-list component and captures its filter menu on desktop/mobile. Local verification: 202 tests, app/fixture type checks, lint (zero errors; 12 existing warnings), production and fixture builds, and diff checks passed. Hosted CI and desktop/mobile cloud checks passed; screenshots were visually reviewed. PR #65 was merged, and publication was requested after Lovable synced the merge. Production acceptance remains pending.
+
+## Full-route cloud review — 2026-10-13
+
+- The isolated fixture now renders the generated application route tree, with real guards, providers, navigation and record pages. Only the document shell and memory-only data adapter are replaced.
+- Hosted CI and cloud review passed on the initial route expansion. Thirty-two screenshots cover all twelve module home pages plus the customer record, filter menu and Notes editor at desktop/mobile widths. No external requests or uncaught browser errors occurred.
+- Visual review identified a mobile Documents issue: the entire folder tree precedes the search and records, consuming most of the screen. A compact folder disclosure is the next refinement. Production role/data acceptance and the remaining delivery phases are still open.

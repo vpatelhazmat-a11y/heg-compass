@@ -47,6 +47,7 @@ for (const [table, rows] of Object.entries(tables)) {
     ...empty,
     created_at: "2026-10-01T12:00:00Z",
     updated_at: "2026-10-01T12:00:00Z",
+    ...(["customers", "sites", "equipment"].includes(table) ? { archived_at: null } : {}),
     ...row,
   }));
 }
@@ -60,8 +61,8 @@ function matching(table: string, options: Record<string, unknown> = {}) {
 export async function listRows(table: string, options: Record<string, unknown> = {}) {
   return matching(table, options);
 }
-export async function countRows(table: string, options: Record<string, unknown> = {}) {
-  return matching(table, options).length;
+export async function countRows(table: string, filters: Record<string, unknown> = {}) {
+  return matching(table, { filters }).length;
 }
 export async function getRow(table: string, id: string) {
   return (tables[table] ?? []).find((row) => row["id"] === id) ?? null;
