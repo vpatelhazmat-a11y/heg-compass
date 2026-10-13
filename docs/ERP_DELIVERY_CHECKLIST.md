@@ -152,3 +152,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Ctrl/Cmd+S in an active record form uses its existing validation and save path. Pending requests cannot be repeated, clean existing records are not resaved, and read-only forms do not submit through the shortcut. The visible save action advertises the shortcut without adding another control.
 - Local verification: 201 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live saves.
 - PR #61 (group collapse) and #62 (Notes focus integration) passed hosted CI and were merged; publication was requested after Lovable synced each merge. Production visual acceptance remains pending.
+
+## Isolated cloud UI checks — preparation
+
+- A separate sample-data harness renders the real shell, launcher, customer list, record form and Notes editor. Its data adapter is memory-only; the harness is outside production routes and uses a separate Vite configuration.
+- GitHub’s isolated Linux runner will capture desktop/mobile screens and check Notes menu behavior. The browser blocks and reports unexpected external requests, so it cannot contact the production database. No desktop automation or production authentication state is used.
+- Fixture type checking, offline bundle compilation and lint (zero errors; 12 existing warnings) passed. Browser execution and screenshot review remain pending until the cloud workflow runs. These checks do not replace production role/data acceptance.
