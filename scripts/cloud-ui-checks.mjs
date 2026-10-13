@@ -238,6 +238,17 @@ try {
       "http://127.0.0.1:4177/customers/11111111-1111-4111-8111-111111111111?__reviewRole=read_only",
     );
     await readOnlyPage.getByRole("heading", { name: "Sample Freight", exact: true }).waitFor();
+    const smartButtons = readOnlyPage.getByRole("navigation", {
+      name: "Related records",
+      exact: true,
+    });
+    await smartButtons.waitFor();
+    for (const label of ["Bids", "Rates", "Incidents"])
+      assert.equal(
+        await smartButtons.getByRole("link", { name: new RegExp(label) }).count(),
+        0,
+        `Read-only smart buttons must not offer ${label}`,
+      );
     for (const action of ["Edit Legal name", "Edit Commercial notes", "Archive"])
       assert.equal(
         await readOnlyPage.getByRole("button", { name: action, exact: true }).isVisible(),

@@ -3,12 +3,17 @@ import { useQueries } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { RELATED_LISTS, relatedLists } from "@/lib/record-registry";
 import { countRelatedRecords } from "@/lib/record-lists";
+import { canViewTable } from "@/lib/permissions";
+import { useSession } from "@/hooks/use-session";
 
 /** Secondary relationships stay collapsed so the main sheet remains quiet. */
 export function RelatedRecords({ table, id }: { table: string; id: string }) {
+  const { roles } = useSession();
   const [open, setOpen] = useState(false);
   const primary = new Set((RELATED_LISTS[table] ?? []).map((relation) => relation.table));
-  const relations = relatedLists(table).filter((relation) => !primary.has(relation.table));
+  const relations = relatedLists(table).filter(
+    (relation) => !primary.has(relation.table) && canViewTable(roles, relation.table),
+  );
   const counts = useQueries({
     queries: relations.map((relation) => ({
       queryKey: ["related-count", table, id, relation.table],

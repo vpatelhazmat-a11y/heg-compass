@@ -9,6 +9,8 @@ import { DataTable } from "../src/components/app/DataTable";
 import { RecordForm } from "../src/components/app/RecordForm";
 import { RecordLayout } from "../src/components/app/RecordLayout";
 import { SmartButtons } from "../src/components/app/SmartButtons";
+import { RecordLink } from "../src/components/app/RecordLink";
+import type { AppRole } from "../src/hooks/use-session";
 import { AppLauncher } from "../src/components/app/AppLauncher";
 
 const mocks = vi.hoisted(() => ({
@@ -24,6 +26,7 @@ const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   exportCsv: vi.fn(),
   exportSpreadsheet: vi.fn(),
+  roles: ["admin"] as AppRole[],
 }));
 vi.mock("../src/lib/csv", () => ({ downloadCsv: mocks.exportCsv }));
 vi.mock("../src/lib/spreadsheet-export", () => ({ downloadSpreadsheet: mocks.exportSpreadsheet }));
@@ -38,7 +41,7 @@ vi.mock("../src/lib/data", () => ({
 vi.mock("../src/hooks/use-session", () => ({
   useSession: () => ({
     canEdit: mocks.canEdit,
-    roles: ["admin"],
+    roles: mocks.roles,
     session: { userId: "test-user" },
   }),
 }));
@@ -249,6 +252,7 @@ test("module list errors retry without discarding the active search or group", a
   expect(change).not.toHaveBeenCalled();
 });
 beforeEach(() => {
+  mocks.roles = ["admin"];
   localStorage.clear();
   mocks.canEdit.mockReturnValue(true);
   mocks.listRows.mockResolvedValue([]);
@@ -598,6 +602,26 @@ test("smart buttons count and link to the same scoped records", async () => {
     linked_entity_type: "customer",
     linked_entity_id: customer,
   });
+});
+
+test("read-only smart buttons omit restricted destinations and count requests", async () => {
+  mocks.roles = ["read_only"];
+  mount(<SmartButtons table="customers" id={customer} />);
+  await screen.findByRole("link", { name: /3 Sites/ });
+  for (const name of ["Bids", "Rates", "Incidents"])
+    expect(screen.queryByRole("link", { name: new RegExp(name) })).toBeNull();
+  expect(mocks.countRows.mock.calls.map(([table]) => table)).not.toContain("rates");
+  expect(mocks.countRows.mock.calls.map(([table]) => table)).not.toContain("bids");
+  expect(mocks.countRows.mock.calls.map(([table]) => table)).not.toContain("incidents");
+});
+
+test("restricted parent records are plain text without fetching their labels", () => {
+  mocks.roles = ["read_only"];
+  mount(<RecordLink table="rates" id={id} label="Confidential quote" />);
+  expect(screen.getByText("Restricted record")).toBeTruthy();
+  expect(screen.queryByRole("link")).toBeNull();
+  expect(screen.queryByText("Confidential quote")).toBeNull();
+  expect(mocks.getRow).not.toHaveBeenCalled();
 });
 
 test("record row opening uses application navigation without reloading the document", () => {
