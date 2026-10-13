@@ -16,6 +16,7 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   LayoutGrid,
   List,
   Settings2,
@@ -109,6 +110,10 @@ export function DataTable({
   const [filterValue, setFilterValue] = useState("");
   const [groupBy, setGroupBy] = useState("");
   const [view, setView] = useState<"list" | "cards">("list");
+  const [collapsed, setCollapsed] = useState<{ scope: string; keys: string[] }>({
+    scope: "",
+    keys: [],
+  });
   const activeGroupBy = bare ? (groupingField ?? "") : groupBy;
   const selectedColumns = columns.filter((column) =>
     (visibleColumnKeys ?? columnChoice.visibleKeys).includes(column.key),
@@ -183,8 +188,34 @@ export function DataTable({
   const pageCount = Math.max(1, Math.ceil(sorted.length / pageSize));
   const current = Math.min(page, pageCount - 1);
   const visible = sorted.slice(current * pageSize, current * pageSize + pageSize);
-  const selectableIds = visible.filter((row) => row.id != null).map((row) => String(row.id));
+  const groupScope = JSON.stringify([
+    recordTable,
+    activeGroupBy,
+    current,
+    visible.map((row) => row.id),
+  ]);
+  const collapsedKeys = collapsed.scope === groupScope ? collapsed.keys : [];
+  const groupKey = (row: Row) => {
+    const value = groupColumn ? cellValue(row, groupColumn) : "";
+    return value ? `value:${value}` : "missing";
+  };
+  const selectableIds = visible
+    .filter((row) => row.id != null && !collapsedKeys.includes(groupKey(row)))
+    .map((row) => String(row.id));
   const selectedIds = selection?.ids.filter((id) => selectableIds.includes(id)) ?? [];
+  const toggleGroup = (key: string) => {
+    const closing = !collapsedKeys.includes(key);
+    setCollapsed({
+      scope: groupScope,
+      keys: closing ? [...collapsedKeys, key] : collapsedKeys.filter((value) => value !== key),
+    });
+    if (closing && selection) {
+      const removed = new Set(
+        visible.filter((row) => groupKey(row) === key).map((row) => String(row.id)),
+      );
+      selection.onChange(selectedIds.filter((id) => !removed.has(id)));
+    }
+  };
 
   const exportCsv = () => {
     downloadCsv(
@@ -616,11 +647,33 @@ export function DataTable({
                               (selection ? 1 : 0)
                             }
                           >
-                            {groupColumn.header}: {cellValue(row, groupColumn) || "Not set"}
+                            <button
+                              type="button"
+                              className="flex w-full items-center gap-2 text-left"
+                              aria-expanded={!collapsedKeys.includes(groupKey(row))}
+                              onClick={() => toggleGroup(groupKey(row))}
+                            >
+                              {collapsedKeys.includes(groupKey(row)) ? (
+                                <ChevronRight className="h-3.5 w-3.5" aria-hidden />
+                              ) : (
+                                <ChevronDown className="h-3.5 w-3.5" aria-hidden />
+                              )}
+                              <span>
+                                {groupColumn.header}: {cellValue(row, groupColumn) || "Not set"}
+                              </span>
+                              <small className="font-normal text-muted-foreground">
+                                {
+                                  visible.filter((entry) => groupKey(entry) === groupKey(row))
+                                    .length
+                                }{" "}
+                                on this page
+                              </small>
+                            </button>
                           </th>
                         </tr>
                       )}
                     <tr
+                      hidden={Boolean(groupColumn && collapsedKeys.includes(groupKey(row)))}
                       className={cn(
                         "border-b border-border last:border-0",
                         openRow && "cursor-pointer hover:bg-accent/60 focus-within:bg-accent/60",

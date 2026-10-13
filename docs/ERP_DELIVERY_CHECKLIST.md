@@ -135,3 +135,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Settings tabs are URL-addressable and preserve unsaved account drafts across tab changes. Failed alert-preference storage leaves the existing setting intact and displays a retryable error.
 - Activity loading offers retry. Activity links use the app router and retain the originating screen in the return breadcrumb rather than reloading the whole document.
 - Local verification: 197 tests, type/schema/generated-link checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live account changes. Production visual acceptance remains pending.
+
+## Grouped-list refinement — 2026-10-13
+
+- List groups collapse/expand through keyboard-accessible headers. Counts are explicitly limited to the current page. Collapsing a group clears its row selection, and page selection skips collapsed rows; filtering and view switching continue to use the underlying records.
+- Local verification: 198 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes.
+- PR #60 was merged, synced to Lovable and publication requested. The user requested cloud-only visual checking; desktop automation is excluded. Production visual acceptance remains pending because this session has no isolated cloud browser.

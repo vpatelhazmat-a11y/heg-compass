@@ -667,6 +667,44 @@ test("column picker hides a column while keeping at least one visible", async ()
   expect(screen.getByRole("columnheader", { name: "Name" })).toBeTruthy();
 });
 
+test("collapsed list groups exclude hidden rows from page selection and restore on expansion", async () => {
+  mocks.listRowsPage.mockResolvedValue({
+    rows: [
+      { id, legal_name: "Alpha", status: "Active" },
+      { id: customer, legal_name: "Beta", status: "Pending" },
+    ],
+    count: 100,
+  });
+  mount(
+    <RecordListPage
+      table="customers"
+      state={{ groupBy: "status" }}
+      columns={[
+        { key: "legal_name", header: "Name" },
+        { key: "status", header: "Status" },
+      ]}
+    />,
+  );
+  fireEvent.click(await screen.findByRole("checkbox", { name: "Select Alpha" }));
+  const group = screen.getByRole("button", { name: /Status: Active/ });
+  expect(group.getAttribute("aria-expanded")).toBe("true");
+  expect(group.textContent).toContain("1 on this page");
+  fireEvent.click(group);
+  expect(group.getAttribute("aria-expanded")).toBe("false");
+  expect(screen.queryByRole("checkbox", { name: "Select Alpha" })).toBeNull();
+  expect(screen.queryByText("1 selected")).toBeNull();
+  fireEvent.click(screen.getByRole("checkbox", { name: "Select this page" }));
+  expect(screen.getByRole("status").textContent).toBe("1 selected");
+  expect(screen.getByRole("checkbox", { name: "Select Beta" }).getAttribute("aria-checked")).toBe(
+    "true",
+  );
+  fireEvent.click(group);
+  expect(screen.getByRole("checkbox", { name: "Select Alpha" }).getAttribute("aria-checked")).toBe(
+    "false",
+  );
+  expect(mocks.navigate).not.toHaveBeenCalled();
+});
+
 test("selected export uses visible columns and clears selection when the list changes", async () => {
   mocks.listRowsPage.mockResolvedValue({
     rows: [
@@ -769,7 +807,11 @@ test("list controls filter, group, and switch views without changing the underly
   fireEvent.change(screen.getByLabelText("Value"), { target: { value: "Active" } });
   expect(screen.queryByRole("cell", { name: "Beta" })).toBeNull();
   fireEvent.change(screen.getByLabelText("Group by"), { target: { value: "status" } });
-  expect(screen.getByRole("row", { name: "Status: Active" })).toBeTruthy();
+  expect(
+    screen
+      .getByRole("button", { name: /Status: Active/, expanded: true })
+      .getAttribute("aria-expanded"),
+  ).toBe("true");
   fireEvent.click(screen.getByRole("button", { name: "Card view" }));
   expect(screen.getByText("Alpha")).toBeTruthy();
   expect(screen.queryByText("Beta")).toBeNull();
