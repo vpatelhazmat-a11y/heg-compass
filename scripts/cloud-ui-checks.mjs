@@ -39,11 +39,19 @@ try {
       if (screen === "customers")
         await page.getByRole("checkbox", { name: "Select Sample Freight", exact: true }).waitFor();
       await page.evaluate(() => document.fonts.ready);
-      await page.screenshot({ path: `cloud-ui-results/${device}-${screen}.png`, fullPage: true });
+      await page.screenshot({
+        path: `cloud-ui-results/${device}-${screen}.png`,
+        fullPage: true,
+        animations: "disabled",
+      });
       if (screen === "customers") {
         await page.getByRole("button", { name: "Search options", exact: true }).click();
         await page.getByRole("combobox", { name: "Record visibility", exact: true }).waitFor();
-        await page.screenshot({ path: `cloud-ui-results/${device}-filters.png`, fullPage: true });
+        await page.screenshot({
+          path: `cloud-ui-results/${device}-filters.png`,
+          fullPage: true,
+          animations: "disabled",
+        });
         await page.keyboard.press("Escape");
       }
       if (screen === "record") {
@@ -52,7 +60,11 @@ try {
         await page.getByRole("button", { name: "More formatting", exact: true }).click();
         await page.getByRole("menuitem", { name: "Quote", exact: true }).click();
         await page.getByRole("textbox", { name: "Commercial notes", exact: true }).waitFor();
-        await page.screenshot({ path: `cloud-ui-results/${device}-notes.png`, fullPage: true });
+        await page.screenshot({
+          path: `cloud-ui-results/${device}-notes.png`,
+          fullPage: true,
+          animations: "disabled",
+        });
       }
     }
     assert.deepEqual(errors, [], `${device}: uncaught browser errors`);
@@ -61,7 +73,11 @@ try {
   }
 } catch (error) {
   if (currentPage && !currentPage.isClosed())
-    await currentPage.screenshot({ path: "cloud-ui-results/failure.png", fullPage: true });
+    await currentPage.screenshot({
+      path: "cloud-ui-results/failure.png",
+      fullPage: true,
+      animations: "disabled",
+    });
   throw error;
 } finally {
   await browser.close();
