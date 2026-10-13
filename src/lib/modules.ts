@@ -117,3 +117,25 @@ export function activeModule(pathname: string): HubModule | undefined {
     module.paths.some((path) => pathname === path || pathname.startsWith(`${path}/`)),
   );
 }
+import { canViewTable } from "./permissions";
+import type { AppRole } from "@/hooks/use-session";
+
+/** Keep launcher and command destinations aligned with existing read permissions. */
+export function visibleModules(roles: AppRole[]): HubModule[] {
+  const entryTables: Record<string, string> = {
+    customers: "customers",
+    sites: "sites",
+    "site-assessments": "site_assessments",
+    equipment: "equipment",
+    bids: "bids",
+    "refused-loads": "refused_loads",
+    safety: "incidents",
+    documents: "documents",
+    knowledge: "knowledge_articles",
+    tasks: "tasks",
+  };
+  return HUB_MODULES.filter((module) => {
+    const table = entryTables[module.id];
+    return table ? canViewTable(roles, table) : roles.length > 0;
+  });
+}

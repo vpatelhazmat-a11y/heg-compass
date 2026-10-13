@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export type AppRole = "admin" | "sales" | "operations" | "safety" | "management" | "read_only";
+const EMPTY_ROLES: AppRole[] = [];
 
 export type SessionInfo = {
   userId: string | null;
@@ -42,7 +43,7 @@ async function fetchSession(): Promise<SessionInfo> {
 
 export function useSession() {
   const query = useQuery({ queryKey: ["session"], queryFn: fetchSession, staleTime: 60_000 });
-  const roles = query.data?.roles ?? [];
+  const roles = query.data?.roles ?? EMPTY_ROLES;
 
   return {
     ...query,

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs/promises";
 import { chromium } from "../.cloud-browser/node_modules/playwright/index.mjs";
+import { checkLauncherDrag } from "./cloud-launcher-checks.mjs";
 const browser = await chromium.launch();
 let currentPage;
 await fs.mkdir("cloud-ui-results", { recursive: true });
@@ -9,7 +10,12 @@ try {
     desktop: { width: 1440, height: 1000 },
     mobile: { width: 390, height: 844 },
   })) {
-    const context = await browser.newContext({ viewport, reducedMotion: "reduce" });
+    const context = await browser.newContext({
+      viewport,
+      reducedMotion: "reduce",
+      isMobile: device === "mobile",
+      hasTouch: device === "mobile",
+    });
     const page = await context.newPage();
     currentPage = page;
     const errors = [];
@@ -70,6 +76,7 @@ try {
         animations: "disabled",
       });
       if (screen === "launcher") {
+        await checkLauncherDrag(page, context, device);
         await page.getByRole("button", { name: "Account menu", exact: true }).click();
         await page.getByRole("menu").waitFor();
         await page.keyboard.press("p");
@@ -181,6 +188,38 @@ try {
       external.push(host);
       return route.abort();
     });
+    await readOnlyPage.goto("http://127.0.0.1:4177/command-center?__reviewRole=read_only");
+    await readOnlyPage.locator('.app-grid [data-app-id="customers"]').waitFor();
+    for (const id of ["bids", "safety", "site-assessments"])
+      assert.equal(
+        await readOnlyPage.locator(`.app-grid [data-app-id="${id}"]`).count(),
+        0,
+        `Read-only launcher must not offer ${id}`,
+      );
+    await readOnlyPage.locator('.app-grid [data-app-id="equipment"] a').press("Alt+ArrowLeft");
+    await readOnlyPage.waitForFunction(
+      () => document.querySelectorAll(".app-grid [data-app-id]")[1]?.dataset.appId === "equipment",
+    );
+    const savedOrder = await readOnlyPage.evaluate(() =>
+      JSON.parse(localStorage.getItem("heg-app-order:22222222-2222-4222-8222-222222222222")),
+    );
+    assert.equal(
+      savedOrder.length,
+      12,
+      "Reordering visible apps must retain hidden apps in saved preferences",
+    );
+    assert.ok(savedOrder.includes("site-assessments"));
+    await readOnlyPage.getByRole("button", { name: "Search everything", exact: true }).click();
+    await readOnlyPage
+      .getByRole("combobox", { name: "Search apps and records", exact: true })
+      .waitFor();
+    for (const label of ["Bids / RFPs", "Safety", "Site Assessments"])
+      assert.equal(
+        await readOnlyPage.getByRole("option", { name: label, exact: true }).count(),
+        0,
+        `Read-only command search must not offer ${label}`,
+      );
+    await readOnlyPage.keyboard.press("Escape");
     await readOnlyPage.goto("http://127.0.0.1:4177/customers?__reviewRole=read_only");
     await readOnlyPage
       .getByRole("checkbox", { name: "Select Sample Freight", exact: true })

@@ -183,4 +183,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 ## Read-only cloud acceptance — 2026-10-13
 
 - The fixture no longer seeds the session query. Both actual guards and the session hook read the synthetic active profile and role through the offline adapter. A test-only query parameter selects a read-only persona.
-- Desktop/mobile acceptance checks that read-only customer lists and records offer no create, edit, archive or chatter write actions. All existing administrator layout and navigation checks remain. This verifies UI permission behavior, not production RLS. Hosted checks are pending.
+- Desktop/mobile acceptance checks that read-only customer lists and records offer no create, edit, archive or chatter write actions. All existing administrator layout and navigation checks remain. Hosted CI and cloud checks passed, and PR #69 was merged. This verifies UI permission behavior, not production RLS.
+
+## Role-aware app entry points — 2026-10-13
+
+- Home and global search filter app destinations using the existing read rules. Command record searches query and render only allowed tables. Keyboard app rearrangement skips hidden apps while preserving the complete saved order. Database access grants remain unchanged.
+- Cloud acceptance adds read-only launcher/command checks, keyboard movement across hidden apps, and native Chromium mouse/touch hold-and-drag with reload persistence. These are isolated synthetic-device checks; physical pen/touch and production role acceptance remain open. Hosted verification is pending.

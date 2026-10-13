@@ -9,7 +9,9 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
-import { HUB_MODULES } from "@/lib/modules";
+import { visibleModules } from "@/lib/modules";
+import { useSession } from "@/hooks/use-session";
+import { canViewTable } from "@/lib/permissions";
 import { recordDefinition, recordHref, recordLabel } from "@/lib/record-registry";
 import { CompassIcon } from "./CompassIcon";
 import { ArrowUpRight, FileText } from "lucide-react";
@@ -52,6 +54,7 @@ export function CommandPalette({
   initialQuery?: string;
 }) {
   const navigate = useNavigate();
+  const { roles } = useSession();
   const [term, setTerm] = useState("");
   const [hits, setHits] = useState<Hit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -66,11 +69,12 @@ export function CommandPalette({
 
   const apps = useMemo(
     () =>
-      HUB_MODULES.filter((module) =>
+      visibleModules(roles).filter((module) =>
         `${module.label} ${module.description}`.toLowerCase().includes(term.trim().toLowerCase()),
       ),
-    [term],
+    [term, roles],
   );
+  const visibleHits = hits.filter((hit) => canViewTable(roles, hit.table));
 
   useEffect(() => {
     const q = term.trim();
@@ -84,25 +88,27 @@ export function CommandPalette({
     setSearching(true);
     const timer = setTimeout(async () => {
       const result = await Promise.allSettled(
-        Object.entries(SEARCH_FIELDS).map(async ([table, field]) => {
-          // The table and column names come only from the allowlist above.
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          let query = (supabase.from(table as never) as any)
-            .select(`id,${recordDefinition(table)?.title.join(",") ?? field}`)
-            .ilike(field, `%${q}%`)
-            .abortSignal(controller.signal)
-            .limit(3);
-          if (["customers", "sites", "equipment"].includes(table))
-            query = query.is("archived_at", null);
-          const { data, error } = await query;
-          if (error) throw error;
-          return (data ?? []).map((row: Record<string, unknown>) => ({
-            id: String(row["id"]),
-            table,
-            label: recordLabel(table, row),
-            to: recordHref(table, String(row["id"])),
-          }));
-        }),
+        Object.entries(SEARCH_FIELDS)
+          .filter(([table]) => canViewTable(roles, table))
+          .map(async ([table, field]) => {
+            // The table and column names come only from the allowlist above.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            let query = (supabase.from(table as never) as any)
+              .select(`id,${recordDefinition(table)?.title.join(",") ?? field}`)
+              .ilike(field, `%${q}%`)
+              .abortSignal(controller.signal)
+              .limit(3);
+            if (["customers", "sites", "equipment"].includes(table))
+              query = query.is("archived_at", null);
+            const { data, error } = await query;
+            if (error) throw error;
+            return (data ?? []).map((row: Record<string, unknown>) => ({
+              id: String(row["id"]),
+              table,
+              label: recordLabel(table, row),
+              to: recordHref(table, String(row["id"])),
+            }));
+          }),
       );
       if (!cancelled) {
         setHits(result.flatMap((item) => (item.status === "fulfilled" ? item.value : [])));
@@ -114,7 +120,7 @@ export function CommandPalette({
       controller.abort();
       clearTimeout(timer);
     };
-  }, [open, term]);
+  }, [open, term, roles]);
 
   const go = (to: string) => {
     onOpenChange(false);
@@ -146,9 +152,9 @@ export function CommandPalette({
             ))}
           </CommandGroup>
         )}
-        {hits.length > 0 && (
+        {visibleHits.length > 0 && (
           <CommandGroup heading="Records">
-            {hits.map((hit) => (
+            {visibleHits.map((hit) => (
               <CommandItem
                 key={`${hit.table}-${hit.id}`}
                 value={`record ${hit.table} ${hit.label}`}
