@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useSession } from "@/hooks/use-session";
-import { HUB_MODULES } from "@/lib/modules";
+import { HUB_MODULES, visibleModules } from "@/lib/modules";
 import {
   moveApp,
   normalizeAppOrder,
@@ -10,14 +10,13 @@ import {
   resetAppOrder,
   saveAppOrder,
   saveSyncedAppOrder,
-  shiftApp,
 } from "@/lib/launcher-order";
 import { CompassIcon } from "./CompassIcon";
 import { RotateCcw } from "lucide-react";
 import { useAppReorder } from "@/hooks/use-app-reorder";
 
 export function AppLauncher() {
-  const { session } = useSession();
+  const { session, roles } = useSession();
   const userId = session?.userId;
   const [order, setOrder] = useState(() => normalizeAppOrder(null));
   const [syncError, setSyncError] = useState(false);
@@ -52,10 +51,12 @@ export function AppLauncher() {
     };
   }, [userId]);
 
-  const orderedModules = useMemo(
-    () => order.map((id) => HUB_MODULES.find((module) => module.id === id)!).filter(Boolean),
-    [order],
-  );
+  const orderedModules = useMemo(() => {
+    const allowed = new Set(visibleModules(roles).map((module) => module.id));
+    return order
+      .map((id) => HUB_MODULES.find((module) => module.id === id)!)
+      .filter((module) => module && allowed.has(module.id));
+  }, [order, roles]);
 
   const updateOrder = (next: string[]) => {
     setOrder(next);
@@ -125,7 +126,9 @@ export function AppLauncher() {
                   return;
                 event.preventDefault();
                 const direction = event.key === "ArrowLeft" || event.key === "ArrowUp" ? -1 : 1;
-                updateOrder(shiftApp(order, id, direction));
+                const index = orderedModules.findIndex((module) => module.id === id);
+                const target = orderedModules[index + direction];
+                if (target) updateOrder(moveApp(order, id, target.id));
               }}
               aria-keyshortcuts="Alt+ArrowLeft Alt+ArrowRight Alt+ArrowUp Alt+ArrowDown"
             >

@@ -19,7 +19,19 @@ vi.mock("@tanstack/react-router", () => ({
 }));
 import { ModuleNavigation } from "../src/components/app/ModuleNavigation";
 import { visibleModuleLinks } from "../src/lib/module-navigation";
+import { HUB_MODULES, visibleModules } from "../src/lib/modules";
 afterEach(cleanup);
+test("launcher and command apps follow existing role access", () => {
+  const readOnly = visibleModules(["read_only"]).map((module) => module.id);
+  expect(readOnly).toContain("customers");
+  expect(readOnly).toContain("settings");
+  expect(readOnly).not.toContain("bids");
+  expect(readOnly).not.toContain("safety");
+  expect(readOnly).not.toContain("site-assessments");
+  expect(visibleModules(["operations"])).toEqual(HUB_MODULES);
+  expect(visibleModules(["admin"])).toEqual(HUB_MODULES);
+  expect(visibleModules([])).toEqual([]);
+});
 test("read-only customer menus exclude restricted commercial pages", () => {
   const hrefs = visibleModuleLinks("/customers", ["read_only"]).map(([, href]) => href);
   expect(hrefs).not.toContain("/records/rates");
