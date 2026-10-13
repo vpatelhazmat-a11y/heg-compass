@@ -1,0 +1,38 @@
+name: Cloud UI checks
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.19.0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec tsc --noEmit -p tests/browser/tsconfig.json
+      - run: npm install --prefix .cloud-browser --no-save --package-lock=false playwright@1.64.0
+      - run: .cloud-browser/node_modules/.bin/playwright install --with-deps chromium
+      - name: Check isolated sample-data screens
+        run: |
+          pnpm exec vite --config tests/browser/vite.config.mjs > /tmp/heg-ui.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          for attempt in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:4177/customers >/dev/null && break
+            sleep 1
+          done
+          node scripts/cloud-ui-checks.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cloud-ui-screens
+          path: cloud-ui-results/
+          retention-days: 7
