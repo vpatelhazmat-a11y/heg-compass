@@ -141,3 +141,8 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - List groups collapse/expand through keyboard-accessible headers. Counts are explicitly limited to the current page. Collapsing a group clears its row selection, and page selection skips collapsed rows; filtering and view switching continue to use the underlying records.
 - Local verification: 198 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live data changes.
 - PR #60 was merged, synced to Lovable and publication requested. The user requested cloud-only visual checking; desktop automation is excluded. Production visual acceptance remains pending because this session has no isolated cloud browser.
+
+## Notes focus integration — 2026-10-13
+
+- Record Notes stays mounted while its formatting menu receives focus. Menu cleanup avoids focusing an editor that has already been destroyed. The regression opens the menu inside a record form, applies formatting and verifies the saved rich-note payload.
+- Local verification: 199 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live saves. Production visual acceptance remains pending.
