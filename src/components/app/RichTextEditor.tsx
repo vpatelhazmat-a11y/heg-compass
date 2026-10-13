@@ -182,10 +182,11 @@ export default function RichTextEditor({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
+            data-note-editor={id}
             align="start"
             onCloseAutoFocus={(event) => {
               event.preventDefault();
-              editor.commands.focus();
+              if (!editor.isDestroyed) editor.commands.focus();
             }}
           >
             <DropdownMenuItem onSelect={() => editor.chain().focus().toggleUnderline().run()}>

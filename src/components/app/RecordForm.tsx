@@ -277,7 +277,13 @@ export function RecordForm({
                         onBlur={(event) => {
                           if (
                             activeField === field.name &&
-                            !event.currentTarget.contains(event.relatedTarget)
+                            !event.currentTarget.contains(event.relatedTarget) &&
+                            !(
+                              event.relatedTarget instanceof HTMLElement &&
+                              event.relatedTarget
+                                .closest("[data-note-editor]")
+                                ?.getAttribute("data-note-editor") === id
+                            )
                           )
                             setActiveField(null);
                         }}

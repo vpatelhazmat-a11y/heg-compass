@@ -320,6 +320,37 @@ test("supporting records open from lists and relationship links do not activate 
   expect(rowClick).not.toHaveBeenCalled();
 });
 
+test("record Notes keeps its editor open while using the formatting menu", async () => {
+  Object.defineProperty(Range.prototype, "getClientRects", { configurable: true, value: () => [] });
+  Object.defineProperty(Range.prototype, "getBoundingClientRect", {
+    configurable: true,
+    value: () => new DOMRect(),
+  });
+  mocks.update.mockResolvedValue({ id, notes: "Review notes", updated_at: "2026-10-13T12:00:00Z" });
+  mount(
+    <RecordForm
+      open
+      presentation="record"
+      onOpenChange={vi.fn()}
+      title="Edit customer"
+      table="customers"
+      recordId={id}
+      initialValues={{ id, notes: "Review notes", updated_at: "2026-10-12T12:00:00Z" }}
+      fields={[{ name: "notes", label: "Notes", type: "richtext", section: "Notes" }]}
+    />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Edit Notes" }));
+  const noteEditor = await screen.findByRole("textbox", { name: "Notes" });
+  fireEvent.keyDown(screen.getByRole("button", { name: "More formatting" }), { key: "Enter" });
+  const quote = await screen.findByRole("menuitem", { name: "Quote" });
+  expect(noteEditor.isConnected).toBe(true);
+  fireEvent.click(quote);
+  await screen.findByRole("button", { name: "Save changes" });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  await waitFor(() => expect(mocks.update).toHaveBeenCalled());
+  expect(mocks.update.mock.calls[0]?.[2].rich_text.notes.content[0].type).toBe("blockquote");
+});
+
 test("read-only rate detail offers navigation and history without edit controls", async () => {
   mocks.canEdit.mockReturnValue(false);
   mount(<RecordDetailPage table="rates" id={id} />);
