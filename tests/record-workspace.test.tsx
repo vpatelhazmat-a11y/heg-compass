@@ -320,6 +320,58 @@ test("supporting records open from lists and relationship links do not activate 
   expect(rowClick).not.toHaveBeenCalled();
 });
 
+test("record save shortcuts use validation and block repeated saves while pending", async () => {
+  let finish!: (row: unknown) => void;
+  mocks.insert.mockImplementation(
+    () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  );
+  mount(
+    <RecordForm
+      open
+      presentation="create"
+      onOpenChange={vi.fn()}
+      title="New customer"
+      table="customers"
+      fields={[{ name: "legal_name", label: "Name", required: true }]}
+    />,
+  );
+  const name = screen.getByLabelText(/^Name/);
+  fireEvent.keyDown(name, { key: "s", ctrlKey: true });
+  expect(await screen.findByText("Name is required")).toBeTruthy();
+  expect(mocks.insert).not.toHaveBeenCalled();
+  fireEvent.change(name, { target: { value: "Example" } });
+  fireEvent.keyDown(name, { key: "s", metaKey: true });
+  await waitFor(() => expect(mocks.insert).toHaveBeenCalledTimes(1));
+  fireEvent.keyDown(name, { key: "s", ctrlKey: true });
+  expect(mocks.insert).toHaveBeenCalledTimes(1);
+  finish({ id, legal_name: "Example" });
+  await waitFor(() => expect(screen.queryByText("Saving…")).toBeNull());
+});
+
+test("read-only forms do not save through keyboard shortcuts", () => {
+  mount(
+    <RecordForm
+      open
+      readOnly
+      presentation="create"
+      onOpenChange={vi.fn()}
+      title="Customer preview"
+      table="customers"
+      fields={[{ name: "legal_name", label: "Name" }]}
+    />,
+  );
+  const forwarded = fireEvent.keyDown(screen.getByRole("region", { name: "Customer preview" }), {
+    key: "s",
+    ctrlKey: true,
+  });
+  expect(forwarded).toBe(true);
+  expect(mocks.insert).not.toHaveBeenCalled();
+  expect(mocks.update).not.toHaveBeenCalled();
+});
+
 test("record Notes keeps its editor open while using the formatting menu", async () => {
   Object.defineProperty(Range.prototype, "getClientRects", { configurable: true, value: () => [] });
   Object.defineProperty(Range.prototype, "getBoundingClientRect", {
