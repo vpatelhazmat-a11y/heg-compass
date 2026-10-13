@@ -40,6 +40,12 @@ try {
         await page.getByRole("checkbox", { name: "Select Sample Freight", exact: true }).waitFor();
       await page.evaluate(() => document.fonts.ready);
       await page.screenshot({ path: `cloud-ui-results/${device}-${screen}.png`, fullPage: true });
+      if (screen === "customers") {
+        await page.getByRole("button", { name: "Search options", exact: true }).click();
+        await page.getByRole("combobox", { name: "Record visibility", exact: true }).waitFor();
+        await page.screenshot({ path: `cloud-ui-results/${device}-filters.png`, fullPage: true });
+        await page.keyboard.press("Escape");
+      }
       if (screen === "record") {
         await page.getByRole("button", { name: "Edit Commercial notes", exact: true }).click();
         await page.getByRole("textbox", { name: "Commercial notes", exact: true }).waitFor();

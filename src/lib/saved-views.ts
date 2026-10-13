@@ -1,5 +1,6 @@
 import type { RecordPageRequest } from "./record-lists";
 export type SavedViewState = {
+  archived?: boolean;
   reportDate?: { field: string; from: string; to: string };
   columns?: string[];
   refused?: RecordPageRequest["refused"];
@@ -27,6 +28,7 @@ const cleanState = (value: unknown): SavedViewState | null => {
       ? (state["refused"] as Record<string, unknown>)
       : undefined;
   return {
+    ...(typeof state["archived"] === "boolean" ? { archived: state["archived"] } : {}),
     ...(state["reportDate"] && typeof state["reportDate"] === "object"
       ? {
           reportDate: Object.fromEntries(

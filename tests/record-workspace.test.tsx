@@ -750,6 +750,25 @@ test("column picker hides a column while keeping at least one visible", async ()
   expect(screen.getByRole("columnheader", { name: "Name" })).toBeTruthy();
 });
 
+test("archive visibility lives in search filters and favorites preserve it", async () => {
+  const change = vi.fn();
+  mount(<RecordListPage table="customers" state={{ archived: true }} onChange={change} />);
+  expect(screen.queryByRole("combobox", { name: "Record visibility" })).toBeNull();
+  expect(screen.getByRole("button", { name: "Remove archived filter" })).toBeTruthy();
+  fireEvent.click(screen.getByRole("button", { name: "Search options" }));
+  expect(screen.getByRole("combobox", { name: "Record visibility" })).toHaveProperty(
+    "value",
+    "archived",
+  );
+  fireEvent.change(screen.getByLabelText("View name"), { target: { value: "Archived customers" } });
+  fireEvent.click(screen.getByRole("button", { name: "Save" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Archived customers" }));
+  expect(change).toHaveBeenCalledWith(expect.objectContaining({ archived: true, page: 0 }));
+  await waitFor(() => expect(screen.queryByRole("dialog", { name: "Search options" })).toBeNull());
+  fireEvent.click(screen.getByRole("button", { name: "Remove archived filter" }));
+  expect(change).toHaveBeenLastCalledWith({ archived: false, page: 0 });
+});
+
 test("collapsed list groups exclude hidden rows from page selection and restore on expansion", async () => {
   mocks.listRowsPage.mockResolvedValue({
     rows: [
