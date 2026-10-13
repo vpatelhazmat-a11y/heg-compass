@@ -178,4 +178,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 ## Keyboard navigation scope — 2026-10-13
 
 - Global search respects consumed keyboard events and composition. Typing within menus, listboxes, trees and tab controls stays within those controls; free typing on the launcher still starts search.
-- Cloud acceptance checks account-menu typeahead, launcher typing and command navigation without a document reload at desktop/mobile widths. Hosted verification is pending. No database migration or live record writes.
+- Cloud acceptance checks account-menu typeahead, launcher typing and command navigation without a document reload at desktop/mobile widths. Hosted CI and cloud checks passed. PR #68 was merged, and publication was requested after Lovable sync. No database migration or live record writes; production acceptance remains pending.
+
+## Read-only cloud acceptance — 2026-10-13
+
+- The fixture no longer seeds the session query. Both actual guards and the session hook read the synthetic active profile and role through the offline adapter. A test-only query parameter selects a read-only persona.
+- Desktop/mobile acceptance checks that read-only customer lists and records offer no create, edit, archive or chatter write actions. All existing administrator layout and navigation checks remain. This verifies UI permission behavior, not production RLS. Hosted checks are pending.

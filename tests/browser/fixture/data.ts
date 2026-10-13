@@ -2,6 +2,11 @@
 import { RECORDS } from "@/lib/record-registry";
 export const customerId = "11111111-1111-4111-8111-111111111111";
 export const userId = "22222222-2222-4222-8222-222222222222";
+// This query is read only by the separate offline fixture, never production code.
+const role =
+  new URL(window.location.href).searchParams.get("__reviewRole") === "read_only"
+    ? "read_only"
+    : "admin";
 const tables: Record<string, Record<string, unknown>[]> = {
   customers: [
     {
@@ -32,8 +37,8 @@ const tables: Record<string, Record<string, unknown>[]> = {
       status: "Active",
     },
   ],
-  profiles: [{ id: userId, full_name: "Sample User", active: true }],
-  user_roles: [{ user_id: userId, role: "admin" }],
+  profiles: [{ id: userId, full_name: "Sample User", title: "UI review", active: true }],
+  user_roles: [{ user_id: userId, role }],
 };
 // Database rows include nullable fields too; retaining that shape exercises
 // the complete form instead of accidentally hiding unpopulated sections.
