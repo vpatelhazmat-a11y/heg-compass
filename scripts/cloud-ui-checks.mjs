@@ -98,7 +98,7 @@ try {
         await commandSearch.waitFor();
         assert.equal(await commandSearch.inputValue(), "c", "Typing on the launcher starts search");
         await page.getByRole("option", { name: "Customers", exact: true }).click();
-        await page.waitForURL(/\/customers\/?$/);
+        await page.waitForURL((url) => url.pathname.replace(/\/$/, "") === "/customers");
         assert.equal(
           await page.evaluate(() => window.__navigationMarker),
           "cloud-route-check",
