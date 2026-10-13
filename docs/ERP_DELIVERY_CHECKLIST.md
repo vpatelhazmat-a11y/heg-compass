@@ -188,4 +188,9 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 ## Role-aware app entry points — 2026-10-13
 
 - Home and global search filter app destinations using the existing read rules. Command record searches query and render only allowed tables. Keyboard app rearrangement skips hidden apps while preserving the complete saved order. Database access grants remain unchanged.
-- Cloud acceptance adds read-only launcher/command checks, keyboard movement across hidden apps, and native Chromium mouse/touch hold-and-drag with reload persistence. These are isolated synthetic-device checks; physical pen/touch and production role acceptance remain open. Hosted verification is pending.
+- Cloud acceptance adds read-only launcher/command checks, keyboard movement across hidden apps, and native Chromium mouse/touch hold-and-drag with reload persistence. These are isolated synthetic-device checks; physical pen/touch and production role acceptance remain open. 203 tests, type checks, lint (zero errors; 12 existing warnings), production build, hosted CI and cloud checks passed. PR #70 was merged and publication requested after Lovable sync.
+
+## Role-aware record navigation — 2026-10-13
+
+- Smart buttons and secondary relationship lists show and count only destinations allowed by the existing read rules. Restricted parent records render plain text without fetching their labels or exposing an unusable link.
+- Regression checks cover omitted links/count requests and restricted parent labels. Desktop/mobile cloud acceptance checks the read-only smart-button strip. Hosted verification is pending; no database migration or access-policy changes.

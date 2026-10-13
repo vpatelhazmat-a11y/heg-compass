@@ -2,6 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight } from "lucide-react";
 import { getRow, type Row } from "@/lib/data";
+import { canViewTable } from "@/lib/permissions";
+import { useSession } from "@/hooks/use-session";
 import {
   ENTITY_TABLES,
   RELATION_TARGETS,
@@ -24,14 +26,17 @@ export function RecordLink({
   compact?: boolean;
   returnTo?: string | undefined;
 }) {
+  const { roles } = useSession();
+  const allowed = canViewTable(roles, table);
   const valid = Boolean(id && recordDefinition(table));
   const record = useQuery({
     queryKey: ["record-label", table, id],
     queryFn: () => getRow(table, id!),
-    enabled: valid && !label,
+    enabled: valid && allowed && !label,
     staleTime: 60_000,
   });
   if (!valid) return <span className="text-muted-foreground">—</span>;
+  if (!allowed) return <span className="text-muted-foreground">Restricted record</span>;
   const text =
     label ||
     (record.data

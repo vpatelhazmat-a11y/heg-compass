@@ -2,9 +2,14 @@ import { useQueries } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { RELATED_LISTS } from "@/lib/record-registry";
 import { countRelatedRecords } from "@/lib/record-lists";
+import { canViewTable } from "@/lib/permissions";
+import { useSession } from "@/hooks/use-session";
 
 export function SmartButtons({ table, id }: { table: string; id: string }) {
-  const relations = Object.hasOwn(RELATED_LISTS, table) ? (RELATED_LISTS[table] ?? []) : [];
+  const { roles } = useSession();
+  const relations = (
+    Object.hasOwn(RELATED_LISTS, table) ? (RELATED_LISTS[table] ?? []) : []
+  ).filter((relation) => canViewTable(roles, relation.table));
   const counts = useQueries({
     queries: relations.map((relation) => ({
       queryKey: ["related-count", table, id, relation.table],
