@@ -69,6 +69,45 @@ try {
         fullPage: true,
         animations: "disabled",
       });
+      if (screen === "documents") {
+        const allDocuments = page.getByRole("button", { name: "All documents", exact: true });
+        if (device === "mobile") {
+          const toggle = page.getByRole("button", { name: "Folders: All documents", exact: true });
+          assert.equal(await toggle.getAttribute("aria-expanded"), "false");
+          assert.equal(await allDocuments.isVisible(), false);
+          const searchBounds = await page.getByPlaceholder("Search documents…").boundingBox();
+          assert.ok(
+            searchBounds && searchBounds.y + searchBounds.height < viewport.height,
+            "Mobile document search must be visible before opening folders",
+          );
+          await toggle.click();
+          await allDocuments.waitFor();
+          await page.getByRole("button", { name: "Customers", exact: true }).click();
+          await page.getByRole("button", { name: "Sample Freight", exact: true }).waitFor();
+          await page.screenshot({
+            path: "cloud-ui-results/mobile-folders.png",
+            fullPage: true,
+            animations: "disabled",
+          });
+          await page.getByRole("button", { name: "Sample Freight", exact: true }).click();
+          await page.waitForURL(/parentId=11111111-1111-4111-8111-111111111111/);
+          assert.equal(await allDocuments.isVisible(), false);
+          assert.equal(
+            await page
+              .getByRole("button", { name: "Folders: Customers", exact: true })
+              .getAttribute("aria-expanded"),
+            "false",
+          );
+        } else {
+          await allDocuments.waitFor();
+          assert.equal(
+            await page
+              .getByRole("button", { name: "Folders: All documents", exact: true })
+              .isVisible(),
+            false,
+          );
+        }
+      }
       if (screen === "customers") {
         await page.getByRole("button", { name: "Search options", exact: true }).click();
         await page.getByRole("combobox", { name: "Record visibility", exact: true }).waitFor();

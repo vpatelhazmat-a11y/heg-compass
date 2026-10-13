@@ -1204,6 +1204,9 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
+.document-folder-toggle {
+  display: none;
+}
 .document-folder,
 .document-folder-child {
   display: flex;
@@ -1945,6 +1948,26 @@
     min-height: 0;
     border-right: 0;
     border-bottom: 1px solid var(--border);
+    padding: 6px 16px;
+  }
+  .document-folder-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 36px;
+    color: var(--foreground);
+    font-size: 13px;
+    text-align: left;
+  }
+  .document-folder-toggle[aria-expanded="true"] > svg:last-child {
+    transform: rotate(180deg);
+  }
+  .document-folder-list[data-open="false"] {
+    display: none;
+  }
+  .document-folder-list h2 {
+    display: none;
   }
   .record-list-controls {
     flex-wrap: wrap;
