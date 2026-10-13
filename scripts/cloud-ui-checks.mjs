@@ -69,6 +69,42 @@ try {
         fullPage: true,
         animations: "disabled",
       });
+      if (screen === "launcher") {
+        await page.getByRole("button", { name: "Account menu", exact: true }).click();
+        await page.getByRole("menu").waitFor();
+        await page.keyboard.press("p");
+        await page.waitForFunction(
+          () => document.activeElement?.textContent?.trim() === "Personal settings",
+        );
+        assert.equal(
+          await page
+            .getByRole("combobox", { name: "Search apps and records", exact: true })
+            .isVisible(),
+          false,
+          "Menu typeahead must not open global search",
+        );
+        await page.keyboard.press("Escape");
+        await page.getByRole("menu").waitFor({ state: "hidden" });
+        await page.evaluate(() => {
+          document.body.tabIndex = -1;
+          document.body.focus();
+          window.__navigationMarker = "cloud-route-check";
+        });
+        await page.keyboard.press("c");
+        const commandSearch = page.getByRole("combobox", {
+          name: "Search apps and records",
+          exact: true,
+        });
+        await commandSearch.waitFor();
+        assert.equal(await commandSearch.inputValue(), "c", "Typing on the launcher starts search");
+        await page.getByRole("option", { name: "Customers", exact: true }).click();
+        await page.waitForURL((url) => url.pathname.replace(/\/$/, "") === "/customers");
+        assert.equal(
+          await page.evaluate(() => window.__navigationMarker),
+          "cloud-route-check",
+          "Command navigation must preserve the application document",
+        );
+      }
       if (screen === "documents") {
         const allDocuments = page.getByRole("button", { name: "All documents", exact: true });
         if (device === "mobile") {

@@ -42,6 +42,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handler = (event: KeyboardEvent) => {
+      if (event.defaultPrevented || event.isComposing) return;
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
         event.preventDefault();
         setPaletteQuery("");
@@ -58,7 +59,7 @@ function ShellLayout({ children }: { children: ReactNode }) {
           event.target instanceof HTMLElement &&
           (event.target.isContentEditable ||
             event.target.closest(
-              'input, textarea, select, button, a, [role="combobox"], [role="dialog"]',
+              'input, textarea, select, button, a, [role="combobox"], [role="dialog"], [role="menu"], [role="listbox"], [role="tree"], [role="tablist"]',
             ))
         )
       ) {
