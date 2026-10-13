@@ -41,11 +41,11 @@ try {
       await page.evaluate(() => document.fonts.ready);
       await page.screenshot({ path: `cloud-ui-results/${device}-${screen}.png`, fullPage: true });
       if (screen === "record") {
-        await page.getByRole("button", { name: "Edit Notes", exact: true }).click();
-        await page.getByRole("textbox", { name: "Notes", exact: true }).waitFor();
+        await page.getByRole("button", { name: "Edit Commercial notes", exact: true }).click();
+        await page.getByRole("textbox", { name: "Commercial notes", exact: true }).waitFor();
         await page.getByRole("button", { name: "More formatting", exact: true }).click();
         await page.getByRole("menuitem", { name: "Quote", exact: true }).click();
-        await page.getByRole("textbox", { name: "Notes", exact: true }).waitFor();
+        await page.getByRole("textbox", { name: "Commercial notes", exact: true }).waitFor();
         await page.screenshot({ path: `cloud-ui-results/${device}-notes.png`, fullPage: true });
       }
     }

@@ -1,4 +1,5 @@
 /** Synthetic, memory-only data. This fixture never connects to a database. */
+import { RECORDS } from "@/lib/record-registry";
 export const customerId = "11111111-1111-4111-8111-111111111111";
 export const userId = "22222222-2222-4222-8222-222222222222";
 const tables: Record<string, Record<string, unknown>[]> = {
@@ -9,7 +10,7 @@ const tables: Record<string, Record<string, unknown>[]> = {
       status: "Active",
       city: "Cleveland",
       state: "OH",
-      notes: "Review delivery requirements before scheduling.",
+      commercial_notes: "Review delivery requirements before scheduling.",
       updated_at: "2026-10-01T12:00:00Z",
     },
     {
@@ -34,6 +35,21 @@ const tables: Record<string, Record<string, unknown>[]> = {
   profiles: [{ id: userId, full_name: "Sample User", active: true }],
   user_roles: [{ user_id: userId, role: "admin" }],
 };
+// Database rows include nullable fields too; retaining that shape exercises
+// the complete form instead of accidentally hiding unpopulated sections.
+for (const [table, rows] of Object.entries(tables)) {
+  const definition = RECORDS[table];
+  if (!definition) continue;
+  const empty = Object.fromEntries(
+    definition.fields.map((field) => [field.name, field.type === "checkbox" ? false : null]),
+  );
+  tables[table] = rows.map((row) => ({
+    ...empty,
+    created_at: "2026-10-01T12:00:00Z",
+    updated_at: "2026-10-01T12:00:00Z",
+    ...row,
+  }));
+}
 function matching(table: string, options: Record<string, unknown> = {}) {
   return (tables[table] ?? []).filter((row) =>
     Object.entries((options["filters"] ?? {}) as Record<string, unknown>).every(

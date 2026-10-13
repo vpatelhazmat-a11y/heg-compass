@@ -36,3 +36,5 @@ dist-ssr
 .cloud-browser/
 .cloud-ui-build/
 cloud-ui-results/
+review/cloud-ui-*/
+review/cloud-ui-*.zip
