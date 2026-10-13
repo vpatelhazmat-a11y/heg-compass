@@ -1,18 +1,18 @@
-import { useState, type ComponentProps } from "react";
-import { RecordListPage } from "@/components/app/RecordWorkspace";
+import { useState } from "react";
+import { MasterRecordList } from "@/components/app/MasterRecordList";
+import { parseRecordListSearch } from "@/lib/record-lists";
 export default function Customers() {
-  const [state, setState] = useState<NonNullable<ComponentProps<typeof RecordListPage>["state"]>>(
-    {},
+  const [search, setSearch] = useState(() =>
+    parseRecordListSearch({} as Parameters<typeof parseRecordListSearch>[0]),
   );
   return (
-    <RecordListPage
+    <MasterRecordList
       table="customers"
-      state={state}
+      search={search}
       onChange={(patch) =>
-        setState((previous) => ({
+        setSearch((previous) => ({
           ...previous,
           ...patch,
-          ...(patch.q !== undefined ? { search: patch.q } : {}),
         }))
       }
     />

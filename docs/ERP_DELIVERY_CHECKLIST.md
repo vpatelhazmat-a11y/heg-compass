@@ -153,8 +153,13 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 - Local verification: 201 tests, type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. No database migration or live saves.
 - PR #61 (group collapse) and #62 (Notes focus integration) passed hosted CI and were merged; publication was requested after Lovable synced each merge. Production visual acceptance remains pending.
 
-## Isolated cloud UI checks — preparation
+## Isolated cloud UI checks
 
 - A separate sample-data harness renders the real shell, launcher, customer list, record form and Notes editor. Its data adapter is memory-only; the harness is outside production routes and uses a separate Vite configuration.
 - GitHub’s isolated Linux runner will capture desktop/mobile screens and check Notes menu behavior. The browser blocks and reports unexpected external requests, so it cannot contact the production database. No desktop automation or production authentication state is used.
-- Fixture type checking, offline bundle compilation and lint (zero errors; 12 existing warnings) passed. Browser execution and screenshot review remain pending until the cloud workflow runs. These checks do not replace production role/data acceptance.
+- Fixture type checking, offline bundle compilation, regular CI and cloud browser checks passed. Eight desktop/mobile screenshots were retrieved and launcher/list/record layouts were visually reviewed. No unexpected external requests or uncaught browser errors occurred. PR #64 was merged. These synthetic-data checks do not replace production role/data acceptance.
+
+## Compact list filters — 2026-10-13
+
+- Archive visibility now lives in Search options instead of occupying its own toolbar row. Archived lists show a removable search facet, and personal favorites preserve archived/active visibility. Older favorites retain their active-record default.
+- The cloud harness now renders the application’s actual master-list component and captures its filter menu on desktop/mobile. Local verification: 202 tests, app/fixture type checks, lint (zero errors; 12 existing warnings), production and fixture builds, and diff checks passed. Cloud screenshots and publication remain pending for this pass.

@@ -354,6 +354,17 @@ export function RecordListPage({
             <div className="record-search-content">
               <Search className="h-4 w-4 shrink-0" aria-hidden />
               {activeFilters}
+              {state.archived && ["customers", "sites", "equipment"].includes(table) && (
+                <div className="table-active-filters">
+                  <button
+                    type="button"
+                    aria-label="Remove archived filter"
+                    onClick={() => onChange?.({ archived: false, page: 0 })}
+                  >
+                    Archived ×
+                  </button>
+                </div>
+              )}
               {(state.filterValue || state.groupBy) && (
                 <div className="table-active-filters" aria-label="Active search conditions">
                   {state.filterValue && (
@@ -388,6 +399,12 @@ export function RecordListPage({
               filters={
                 <>
                   {extraFilters}
+                  {["customers", "sites", "equipment"].includes(table) && (
+                    <ArchiveVisibility
+                      archived={Boolean(state.archived)}
+                      onChange={(archived) => onChange?.({ archived, page: 0 })}
+                    />
+                  )}
                   <p className="field-label">Search in</p>
                   {fields.search.length > 1 && (
                     <select
@@ -483,10 +500,14 @@ export function RecordListPage({
                           groupBy: state.groupBy ?? "",
                           view: state.view ?? "list",
                           columns: visibleColumns.map((column) => column.key),
+                          ...(["customers", "sites", "equipment"].includes(table)
+                            ? { archived: Boolean(state.archived) }
+                            : {}),
                         }}
                         onApply={(saved) => {
                           columnChoice.select(saved.columns ?? knownKeys);
                           onChange?.({
+                            archived: saved.archived ?? false,
                             refused: saved.refused,
                             sort: saved.sort ?? "",
                             ascending: Boolean(saved.ascending),
@@ -556,12 +577,6 @@ export function RecordListPage({
               <LayoutGrid className="h-4 w-4" />
             </button>
           </div>
-          {["customers", "sites", "equipment"].includes(table) && (
-            <ArchiveVisibility
-              archived={Boolean(state.archived)}
-              onChange={(archived) => onChange?.({ archived, page: 0 })}
-            />
-          )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button type="button" className="record-list-actions" aria-label="List actions">
