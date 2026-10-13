@@ -107,6 +107,7 @@ export function relationshipOrFilter() {
 }
 export const supabase = {
   auth: {
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
     getUser: async () => ({ data: { user: { id: userId, email: "sample@example.test" } } }),
     signOut: async () => ({ error: null }),
   },

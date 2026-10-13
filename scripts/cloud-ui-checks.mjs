@@ -25,6 +25,17 @@ try {
       launcher: "/command-center",
       customers: "/customers",
       record: "/customers/11111111-1111-4111-8111-111111111111",
+      sites: "/sites",
+      assessments: "/records/site_assessments",
+      equipment: "/equipment",
+      bids: "/bids",
+      refused: "/lost-loads/records",
+      safety: "/safety",
+      documents: "/records/documents",
+      knowledge: "/knowledge",
+      tasks: "/tasks",
+      reports: "/reports",
+      settings: "/settings",
     })) {
       await page.goto(`http://127.0.0.1:4177${pathname}`);
       await page.getByRole("main").waitFor();
@@ -32,7 +43,21 @@ try {
       else
         await page
           .getByRole("heading", {
-            name: screen === "customers" ? "Customers" : "Sample Freight",
+            name: {
+              customers: "Customers",
+              record: "Sample Freight",
+              sites: "Sites",
+              assessments: "Site Assessments",
+              equipment: "Equipment",
+              bids: "Bids / RFPs",
+              refused: "Refused Loads",
+              safety: "Incidents",
+              documents: "Documents",
+              knowledge: "Knowledge",
+              tasks: "Tasks",
+              reports: "Reports",
+              settings: "Settings",
+            }[screen],
             exact: true,
           })
           .waitFor();
