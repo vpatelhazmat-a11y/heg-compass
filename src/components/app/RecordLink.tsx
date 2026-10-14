@@ -26,17 +26,38 @@ export function RecordLink({
   compact?: boolean;
   returnTo?: string | undefined;
 }) {
-  const { roles } = useSession();
+  const { roles, isPending: sessionPending } = useSession();
   const allowed = canViewTable(roles, table);
   const valid = Boolean(id && recordDefinition(table));
   const record = useQuery({
     queryKey: ["record-label", table, id],
     queryFn: () => getRow(table, id!),
     enabled: valid && allowed && !label,
+    retry: false,
     staleTime: 60_000,
   });
   if (!valid) return <span className="text-muted-foreground">—</span>;
+  if (sessionPending) return <span className="text-muted-foreground">Loading…</span>;
   if (!allowed) return <span className="text-muted-foreground">Restricted record</span>;
+  if (!label && record.isLoading) return <span className="text-muted-foreground">Loading…</span>;
+  if (!label && record.isError)
+    return (
+      <button
+        type="button"
+        aria-label={`Retry ${recordDefinition(table)!.singular.toLowerCase()} link`}
+        disabled={record.isFetching}
+        onClick={(event) => {
+          event.stopPropagation();
+          void record.refetch();
+        }}
+        onKeyDown={(event) => event.stopPropagation()}
+        className="text-primary hover:underline disabled:opacity-50"
+      >
+        {record.isFetching ? "Loading…" : "Retry linked record"}
+      </button>
+    );
+  if (!label && !record.data)
+    return <span className="text-muted-foreground">Unavailable record</span>;
   const text =
     label ||
     (record.data

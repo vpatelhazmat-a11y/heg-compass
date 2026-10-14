@@ -174,6 +174,43 @@ try {
         });
       }
     }
+    await page.goto(
+      "http://127.0.0.1:4177/sites/44444444-4444-4444-8444-444444444444?__reviewLinkFailure=once",
+    );
+    await page.getByRole("heading", { name: "Sample receiving facility", exact: true }).waitFor();
+    const linkedRecords = page.getByRole("region", { name: "Linked records", exact: true });
+    const retryLink = linkedRecords.getByRole("button", {
+      name: "Retry customer link",
+      exact: true,
+    });
+    await retryLink.waitFor();
+    assert.equal(
+      await linkedRecords.getByRole("link").count(),
+      0,
+      "Failed labels must not offer dead-end links",
+    );
+    await page.screenshot({
+      path: `cloud-ui-results/${device}-linked-record-failure.png`,
+      fullPage: true,
+      animations: "disabled",
+    });
+    await retryLink.click();
+    const recoveredLink = linkedRecords.getByRole("link", { name: "Sample Freight", exact: true });
+    await recoveredLink.waitFor();
+    assert.ok(
+      (await recoveredLink.getAttribute("href")).includes("returnTo="),
+      "Recovered links must retain the originating record",
+    );
+    await page.goto(
+      "http://127.0.0.1:4177/sites/44444444-4444-4444-8444-444444444444?__reviewLinkFailure=missing",
+    );
+    await page.getByRole("heading", { name: "Sample receiving facility", exact: true }).waitFor();
+    await linkedRecords.getByText("Unavailable record", { exact: true }).waitFor();
+    assert.equal(
+      await linkedRecords.getByRole("link").count(),
+      0,
+      "Missing records must not offer dead-end links",
+    );
     assert.deepEqual(errors, [], `${device}: uncaught browser errors`);
     assert.deepEqual(external, [], `${device}: unexpected external requests`);
     await context.close();
