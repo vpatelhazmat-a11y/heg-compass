@@ -162,6 +162,23 @@ try {
         await page.keyboard.press("Escape");
       }
       if (screen === "record") {
+        await page.getByRole("button", { name: "Record actions", exact: true }).click();
+        await page.getByRole("menuitem", { name: "Archive", exact: true }).waitFor();
+        await page.screenshot({
+          path: `cloud-ui-results/${device}-record-actions.png`,
+          fullPage: true,
+          animations: "disabled",
+        });
+        await page.getByRole("menuitem", { name: "Archive", exact: true }).click();
+        const confirmation = page.getByRole("alertdialog");
+        await confirmation.waitFor();
+        await page.screenshot({
+          path: `cloud-ui-results/${device}-archive-confirmation.png`,
+          fullPage: true,
+          animations: "disabled",
+        });
+        await confirmation.getByRole("button", { name: "Cancel", exact: true }).click();
+        await confirmation.waitFor({ state: "hidden" });
         await page.getByRole("button", { name: "Edit Commercial notes", exact: true }).click();
         await page.getByRole("textbox", { name: "Commercial notes", exact: true }).waitFor();
         await page.getByRole("button", { name: "More formatting", exact: true }).click();
@@ -286,7 +303,7 @@ try {
         0,
         `Read-only smart buttons must not offer ${label}`,
       );
-    for (const action of ["Edit Legal name", "Edit Commercial notes", "Archive"])
+    for (const action of ["Edit Legal name", "Edit Commercial notes", "Archive", "Record actions"])
       assert.equal(
         await readOnlyPage.getByRole("button", { name: action, exact: true }).isVisible(),
         false,
