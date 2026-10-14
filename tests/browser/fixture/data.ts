@@ -7,6 +7,8 @@ const role =
   new URL(window.location.href).searchParams.get("__reviewRole") === "read_only"
     ? "read_only"
     : "admin";
+const linkFailure = new URL(window.location.href).searchParams.get("__reviewLinkFailure");
+let failedLinkOnce = false;
 const tables: Record<string, Record<string, unknown>[]> = {
   customers: [
     {
@@ -70,6 +72,13 @@ export async function countRows(table: string, filters: Record<string, unknown> 
   return matching(table, { filters }).length;
 }
 export async function getRow(table: string, id: string) {
+  if (table === "customers" && id === customerId) {
+    if (linkFailure === "missing") return null;
+    if (linkFailure === "once" && !failedLinkOnce) {
+      failedLinkOnce = true;
+      throw new Error("Synthetic linked-record request failure");
+    }
+  }
   return (tables[table] ?? []).find((row) => row["id"] === id) ?? null;
 }
 export async function listRowsPage(table: string, options: Record<string, unknown> = {}) {

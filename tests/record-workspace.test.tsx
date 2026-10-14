@@ -624,6 +624,26 @@ test("restricted parent records are plain text without fetching their labels", (
   expect(mocks.getRow).not.toHaveBeenCalled();
 });
 
+test("linked record failures can retry without opening the containing row", async () => {
+  const openRow = vi.fn();
+  mocks.getRow.mockRejectedValueOnce(new Error("Network unavailable"));
+  mount(
+    <div onClick={openRow}>
+      <RecordLink table="customers" id={customer} />
+    </div>,
+  );
+  fireEvent.click(await screen.findByRole("button", { name: "Retry customer link" }));
+  expect(openRow).not.toHaveBeenCalled();
+  expect(await screen.findByRole("link", { name: "Example customer" })).toBeTruthy();
+});
+
+test("missing linked records do not offer dead-end navigation", async () => {
+  mocks.getRow.mockResolvedValue(null);
+  mount(<RecordLink table="customers" id={customer} />);
+  expect(await screen.findByText("Unavailable record")).toBeTruthy();
+  expect(screen.queryByRole("link")).toBeNull();
+});
+
 test("record row opening uses application navigation without reloading the document", () => {
   mount(
     <DataTable

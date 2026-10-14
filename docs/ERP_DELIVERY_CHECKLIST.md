@@ -193,4 +193,11 @@ Each workflow must have a concrete supported implementation, relevant checks, a 
 ## Role-aware record navigation — 2026-10-13
 
 - Smart buttons and secondary relationship lists show and count only destinations allowed by the existing read rules. Restricted parent records render plain text without fetching their labels or exposing an unusable link.
-- Regression checks cover omitted links/count requests and restricted parent labels. Desktop/mobile cloud acceptance checks the read-only smart-button strip. Hosted verification is pending; no database migration or access-policy changes.
+- Regression checks cover omitted links/count requests and restricted parent labels. Desktop/mobile cloud acceptance checks the read-only smart-button strip. 205 tests, type/schema/link checks, lint, production build and hosted CI/cloud checks passed. PR #71 was merged; publication was requested on 2026-10-14 after Lovable confirmed sync. No database migration or access-policy changes.
+
+## Odoo source comparison and linked-record recovery — 2026-10-14
+
+- The user supplied https://github.com/odoo/odoo as the reference. Following the installed REA skill, complete-source inspection uses normal repository tools rather than artifact decompilation. No REA engine output or runtime evidence is claimed.
+- Reference: Odoo 19.0 addons/web/static/src/views/fields/many2one/many2one_field.js separates canOpen, canCreate and canWrite; addons/web/static/src/views/form/form_controller.js separates form actions, model state, layout, smart-button box and pager. HEG keeps its React/TanStack/Supabase stack; no Odoo code or dependencies are copied.
+- Linked fields now distinguish loading, restricted access, missing records and failed requests. Failed requests offer retry without opening the containing row; missing records do not offer a dead-end link. Successful recovery preserves the return path.
+- Local verification: 207 tests, app/fixture type checks, lint (zero errors; 12 existing warnings), production build and diff checks passed. Cloud acceptance covers request failure, retry and missing-parent navigation through the actual Site record route on desktop/mobile. Hosted verification is pending; no database migration or live record writes.
